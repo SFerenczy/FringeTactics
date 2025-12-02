@@ -29,8 +29,8 @@ This document breaks down **Milestone 3** from `ROADMAP.md` into concrete implem
 | Attack commands on visible enemies | ✅ Complete | `IssueAttackOrder()` works |
 | Hit chance based on distance + accuracy | ✅ Complete | `CalculateHitChance()` with distance falloff |
 | Damage reduces HP; 0 HP = death | ✅ Complete | `TakeDamage()` handles death |
-| Magazine + reserve ammo | ❌ Missing | No ammo system |
-| Reload action with time cost | ❌ Missing | No reload mechanic |
+| Magazine + reserve ammo | ✅ Complete | `CurrentMagazine`, `ReserveAmmo` on Actor |
+| Reload action with time cost | ✅ Complete | `StartReload()`, `ReloadTicks` duration |
 | Auto-defend (return fire) | ❌ Missing | Units don't auto-retaliate |
 | Simple enemy AI | ✅ Complete | `AIController` moves and attacks |
 

@@ -33,6 +33,15 @@ public partial class Actor
     public int AttackCooldown { get; set; } = 0; // ticks until can fire again
     public int? AttackTargetId { get; set; } = null; // current attack order target
 
+    // Ammunition
+    public int CurrentMagazine { get; set; } = 30;
+    public int ReserveAmmo { get; set; } = 90; // 3 extra magazines worth
+    public bool IsReloading { get; private set; } = false;
+    public int ReloadProgress { get; private set; } = 0; // ticks remaining
+    
+    // Event for reload completion
+    public event Action<Actor> ReloadCompleted;
+
     // Movement
     public Vector2I TargetPosition { get; private set; } = Vector2I.Zero;
     public bool IsMoving { get; private set; } = false;
@@ -62,6 +71,8 @@ public partial class Actor
         Abilities = new List<string>();
         StatusEffects = new List<string>();
         EquippedWeapon = WeaponData.DefaultRifle;
+        CurrentMagazine = EquippedWeapon.MagazineSize;
+        ReserveAmmo = EquippedWeapon.MagazineSize * 3;
     }
 
     public void SetTarget(Vector2I target)
@@ -86,6 +97,17 @@ public partial class Actor
         if (AttackCooldown > 0)
         {
             AttackCooldown--;
+        }
+
+        // Handle reload progress
+        if (IsReloading)
+        {
+            ReloadProgress--;
+            if (ReloadProgress <= 0)
+            {
+                CompleteReload();
+            }
+            return; // Can't move while reloading
         }
 
         // Handle movement
@@ -212,7 +234,80 @@ public partial class Actor
 
     public bool CanFire()
     {
-        return State == ActorState.Alive && AttackCooldown <= 0;
+        return State == ActorState.Alive 
+            && AttackCooldown <= 0 
+            && CurrentMagazine > 0 
+            && !IsReloading;
+    }
+
+    /// <summary>
+    /// Consume one round of ammo. Called when firing.
+    /// </summary>
+    public void ConsumeAmmo()
+    {
+        if (CurrentMagazine > 0)
+        {
+            CurrentMagazine--;
+        }
+    }
+
+    /// <summary>
+    /// Check if magazine is empty and reserve ammo available.
+    /// </summary>
+    public bool NeedsReload()
+    {
+        return CurrentMagazine == 0 && ReserveAmmo > 0;
+    }
+
+    /// <summary>
+    /// Check if completely out of ammo.
+    /// </summary>
+    public bool IsOutOfAmmo()
+    {
+        return CurrentMagazine == 0 && ReserveAmmo == 0;
+    }
+
+    /// <summary>
+    /// Start the reload process.
+    /// </summary>
+    public void StartReload()
+    {
+        if (IsReloading || CurrentMagazine == EquippedWeapon.MagazineSize || ReserveAmmo == 0)
+        {
+            return;
+        }
+        
+        IsReloading = true;
+        ReloadProgress = EquippedWeapon.ReloadTicks;
+        
+        // Clear attack target during reload
+        SetAttackTarget(null);
+    }
+
+    /// <summary>
+    /// Cancel reload (e.g., when receiving movement order).
+    /// </summary>
+    public void CancelReload()
+    {
+        IsReloading = false;
+        ReloadProgress = 0;
+    }
+
+    /// <summary>
+    /// Complete the reload, filling magazine from reserve.
+    /// </summary>
+    private void CompleteReload()
+    {
+        var ammoNeeded = EquippedWeapon.MagazineSize - CurrentMagazine;
+        var ammoToLoad = Math.Min(ammoNeeded, ReserveAmmo);
+        
+        CurrentMagazine += ammoToLoad;
+        ReserveAmmo -= ammoToLoad;
+        
+        IsReloading = false;
+        ReloadProgress = 0;
+        
+        ReloadCompleted?.Invoke(this);
     }
 
     public void StartCooldown()

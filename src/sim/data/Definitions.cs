@@ -24,7 +24,9 @@ public class WeaponDef
     public int Damage { get; set; }
     public int Range { get; set; }
     public int CooldownTicks { get; set; }
-    public float Accuracy { get; set; } = 0.70f; // Base hit chance modifier
+    public float Accuracy { get; set; } = 0.70f;
+    public int MagazineSize { get; set; } = 30;
+    public int ReloadTicks { get; set; } = 40; // 2 seconds at 20 ticks/sec
 }
 
 public class WeaponDefinitions
@@ -38,7 +40,9 @@ public class WeaponDefinitions
             Damage = 25,
             Range = 8,
             CooldownTicks = 10,
-            Accuracy = 0.70f
+            Accuracy = 0.70f,
+            MagazineSize = 30,
+            ReloadTicks = 40  // 2 sec
         },
         ["pistol"] = new WeaponDef
         {
@@ -47,7 +51,9 @@ public class WeaponDefinitions
             Damage = 15,
             Range = 5,
             CooldownTicks = 6,
-            Accuracy = 0.75f
+            Accuracy = 0.75f,
+            MagazineSize = 12,
+            ReloadTicks = 20  // 1 sec
         },
         ["smg"] = new WeaponDef
         {
@@ -56,16 +62,20 @@ public class WeaponDefinitions
             Damage = 18,
             Range = 6,
             CooldownTicks = 5,
-            Accuracy = 0.60f
+            Accuracy = 0.55f,
+            MagazineSize = 25,
+            ReloadTicks = 30  // 1.5 sec
         },
         ["shotgun"] = new WeaponDef
         {
             Id = "shotgun",
             Name = "Shotgun",
-            Damage = 40,
+            Damage = 45,
             Range = 4,
-            CooldownTicks = 15,
-            Accuracy = 0.80f
+            CooldownTicks = 18,
+            Accuracy = 0.85f,
+            MagazineSize = 6,
+            ReloadTicks = 60  // 3 sec
         }
     };
 

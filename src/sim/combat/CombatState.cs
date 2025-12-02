@@ -258,6 +258,12 @@ public partial class CombatState
 
             if (!attacker.CanFire())
             {
+                // Auto-reload if out of ammo in magazine but have reserve
+                if (attacker.NeedsReload())
+                {
+                    attacker.StartReload();
+                    SimLog.Log($"[Combat] {attacker.Type}#{attacker.Id} auto-reloading (empty magazine)");
+                }
                 continue;
             }
 
@@ -274,6 +280,7 @@ public partial class CombatState
             {
                 var result = CombatResolver.ResolveAttack(attacker, target, attacker.EquippedWeapon, MapState, Rng.GetRandom());
                 attacker.StartCooldown();
+                attacker.ConsumeAmmo();
 
                 if (result.Hit)
                 {
@@ -420,6 +427,36 @@ public partial class CombatState
     public bool IssueAbilityOrder(int actorId, AbilityData ability, Vector2I targetTile)
     {
         return AbilitySystem.UseAbility(actorId, ability, targetTile);
+    }
+
+    /// <summary>
+    /// Order an actor to reload their weapon.
+    /// </summary>
+    public void IssueReloadOrder(int actorId)
+    {
+        var actor = GetActorById(actorId);
+        if (actor == null || actor.State != ActorState.Alive)
+        {
+            return;
+        }
+
+        if (actor.IsReloading)
+        {
+            return; // Already reloading
+        }
+
+        if (actor.CurrentMagazine == actor.EquippedWeapon.MagazineSize)
+        {
+            return; // Magazine full
+        }
+
+        if (actor.ReserveAmmo == 0)
+        {
+            return; // No reserve ammo
+        }
+
+        SimLog.Log($"[Combat] {actor.Type}#{actor.Id} manually reloading ({actor.CurrentMagazine}/{actor.EquippedWeapon.MagazineSize})");
+        actor.StartReload();
     }
 
     /// <summary>

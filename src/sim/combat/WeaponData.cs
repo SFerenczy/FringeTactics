@@ -11,6 +11,8 @@ public struct WeaponData
     public int Damage { get; set; }
     public int CooldownTicks { get; set; }
     public float Accuracy { get; set; }
+    public int MagazineSize { get; set; }
+    public int ReloadTicks { get; set; }
 
     /// <summary>
     /// Create WeaponData from a definition.
@@ -22,7 +24,9 @@ public struct WeaponData
         Range = def.Range,
         Damage = def.Damage,
         CooldownTicks = def.CooldownTicks,
-        Accuracy = def.Accuracy
+        Accuracy = def.Accuracy,
+        MagazineSize = def.MagazineSize,
+        ReloadTicks = def.ReloadTicks
     };
 
     /// <summary>

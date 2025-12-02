@@ -716,6 +716,16 @@ public partial class MissionView : Node2D
             return;
         }
 
+        // Reload (R key)
+        if (@event is InputEventKey rEvent && rEvent.Pressed && rEvent.Keycode == Key.R)
+        {
+            foreach (var actorId in selectedActorIds)
+            {
+                CombatState.IssueReloadOrder(actorId);
+            }
+            return;
+        }
+
         // Cancel targeting with Escape
         if (@event is InputEventKey escEvent && escEvent.Pressed && escEvent.Keycode == Key.Escape)
         {
