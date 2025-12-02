@@ -858,7 +858,15 @@ private void ProcessMovementCollisions()
 
 ### Automated Tests
 
-Create `tests/sim/combat/FormationCalculatorTests.cs`:
+✅ **Created**: `tests/sim/combat/M1Tests.cs`
+
+Tests cover:
+- FormationCalculator: single unit, multiple units, no overlapping destinations, blocked tiles
+- MissionConfig: M1 test mission has 6 crew, no enemies
+- Collision avoidance: wall collision, unit collision, move progress reset
+- Group movement integration: all units reach destinations
+
+Example tests (actual implementation in file):
 
 ```csharp
 [TestClass]
@@ -877,7 +885,7 @@ public class FormationCalculatorTests
         Assert.AreEqual(new Vector2I(5, 5), destinations[0]);
     }
     
-    [TestMethod]
+    [TestMethod]Better, but not gone honestly.
     public void MultipleActors_MaintainRelativePositions()
     {
         var map = MapBuilder.BuildTestMap(new Vector2I(10, 10));

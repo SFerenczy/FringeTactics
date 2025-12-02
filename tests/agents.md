@@ -8,7 +8,8 @@ Unit and integration tests using GdUnit4.
 tests/
 └── sim/
     └── combat/
-        └── M0Tests.cs    # M0 milestone tests
+        ├── M0Tests.cs    # M0 milestone tests (map, movement, time)
+        └── M1Tests.cs    # M1 milestone tests (formation, collision, group movement)
 ```
 
 ## Running Tests
@@ -44,9 +45,10 @@ or from project folder (adjust to your local setup)
 **Good candidates for unit tests:**
 - `MapBuilder` - Template parsing, map generation
 - `MapState` - Walkability, LOS blocking, entry zones
-- `CombatState` - Win/lose conditions, phase transitions
-- `Actor` - Movement, damage, state changes
+- `CombatState` - Win/lose conditions, phase transitions, collision avoidance
+- `Actor` - Movement, damage, state changes, wall collision
 - `TimeSystem` - Pause/resume, tick accumulation
+- `FormationCalculator` - Group destinations, formation maintenance
 
 **Not ideal for unit tests:**
 - Scene rendering (use manual testing)
