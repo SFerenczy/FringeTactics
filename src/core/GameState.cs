@@ -16,6 +16,9 @@ public partial class GameState : Node
 
     // Track crew-to-actor mapping for mission results
     private Dictionary<int, int> actorToCrewMap = new(); // actorId -> crewId
+    
+    // Track current sandbox mission config for restart
+    private MissionConfig currentSandboxConfig = null;
 
     // Scene paths
     private const string MainMenuScene = "res://src/scenes/menu/MainMenu.tscn";
@@ -123,6 +126,15 @@ public partial class GameState : Node
     public void StartSandboxMission()
     {
         var config = MissionConfig.CreateTestMission();
+        StartSandboxWithConfig(config);
+    }
+    
+    /// <summary>
+    /// Start a sandbox mission with a specific config.
+    /// </summary>
+    private void StartSandboxWithConfig(MissionConfig config)
+    {
+        currentSandboxConfig = config;
         CurrentCombat = MissionFactory.BuildSandbox(config);
         actorToCrewMap.Clear();
 
@@ -131,16 +143,27 @@ public partial class GameState : Node
     }
     
     /// <summary>
+    /// Restart the current sandbox mission with the same config.
+    /// </summary>
+    public void RestartCurrentMission()
+    {
+        if (currentSandboxConfig != null)
+        {
+            StartSandboxWithConfig(currentSandboxConfig);
+        }
+        else
+        {
+            StartSandboxMission();
+        }
+    }
+    
+    /// <summary>
     /// Start the M0 test mission (single unit, no enemies).
     /// </summary>
     public void StartM0TestMission()
     {
         var config = MissionConfig.CreateM0TestMission();
-        CurrentCombat = MissionFactory.BuildSandbox(config);
-        actorToCrewMap.Clear();
-
-        Mode = "mission";
-        GetTree().ChangeSceneToFile(MissionScene);
+        StartSandboxWithConfig(config);
     }
 
     /// <summary>
@@ -149,11 +172,7 @@ public partial class GameState : Node
     public void StartM1TestMission()
     {
         var config = MissionConfig.CreateM1TestMission();
-        CurrentCombat = MissionFactory.BuildSandbox(config);
-        actorToCrewMap.Clear();
-
-        Mode = "mission";
-        GetTree().ChangeSceneToFile(MissionScene);
+        StartSandboxWithConfig(config);
     }
 
     /// <summary>
@@ -162,11 +181,16 @@ public partial class GameState : Node
     public void StartM2TestMission()
     {
         var config = MissionConfig.CreateM2TestMission();
-        CurrentCombat = MissionFactory.BuildSandbox(config);
-        actorToCrewMap.Clear();
+        StartSandboxWithConfig(config);
+    }
 
-        Mode = "mission";
-        GetTree().ChangeSceneToFile(MissionScene);
+    /// <summary>
+    /// Start the M3 test mission for testing basic combat (hit chance, ammo, auto-defend).
+    /// </summary>
+    public void StartM3TestMission()
+    {
+        var config = MissionConfig.CreateM3TestMission();
+        StartSandboxWithConfig(config);
     }
 
     public void EndMission(bool victory, CombatState combatState)

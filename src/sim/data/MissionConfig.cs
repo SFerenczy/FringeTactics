@@ -210,6 +210,58 @@ public class MissionConfig
     }
 
     /// <summary>
+    /// M3 test mission - basic combat testing.
+    /// Open arena with enemies at various ranges for testing hit chance, ammo, and auto-defend.
+    /// </summary>
+    public static MissionConfig CreateM3TestMission()
+    {
+        return new MissionConfig
+        {
+            Id = "m3_test",
+            Name = "M3 Test - Basic Combat",
+            GridSize = new Vector2I(20, 16),
+            MapTemplate = new string[]
+            {
+                "####################",
+                "#..................#",
+                "#.EE...............#",
+                "#.EE...............#",
+                "#..................#",
+                "#..................#",
+                "#......##..........#",
+                "#......##..........#",
+                "#..................#",
+                "#..................#",
+                "#..................#",
+                "#..................#",
+                "#..................#",
+                "#..................#",
+                "#..................#",
+                "####################"
+            },
+            CrewWeaponId = "rifle",
+            CrewSpawnPositions = new List<Vector2I>
+            {
+                new Vector2I(2, 2),
+                new Vector2I(3, 2),
+                new Vector2I(2, 3),
+                new Vector2I(3, 3)
+            },
+            EnemySpawns = new List<EnemySpawn>
+            {
+                // Close range enemy (easy target)
+                new EnemySpawn("grunt", new Vector2I(8, 4)),
+                // Medium range enemy
+                new EnemySpawn("grunt", new Vector2I(12, 6)),
+                // Long range enemy (harder to hit)
+                new EnemySpawn("gunner", new Vector2I(17, 10)),
+                // Flanking enemy
+                new EnemySpawn("grunt", new Vector2I(15, 2))
+            }
+        };
+    }
+
+    /// <summary>
     /// Harder mission with more enemies and interior walls.
     /// </summary>
     public static MissionConfig CreateHardMission()

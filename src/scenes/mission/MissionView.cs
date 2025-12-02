@@ -285,8 +285,8 @@ public partial class MissionView : Node2D
         }
         else
         {
-            // Sandbox mode - create fresh combat state and reload
-            GameState.Instance?.StartSandboxMission();
+            // Sandbox mode - restart with same mission config
+            GameState.Instance?.RestartCurrentMission();
         }
     }
 
