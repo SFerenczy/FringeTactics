@@ -1,0 +1,25 @@
+[gd_scene load_steps=2 format=3 uid="uid://ctime_state_widget"]
+
+[ext_resource type="Script" path="res://src/scenes/mission/TimeStateWidget.cs" id="1_widget"]
+
+[node name="TimeStateWidget" type="HBoxContainer"]
+offset_right = 200.0
+offset_bottom = 30.0
+script = ExtResource("1_widget")
+theme_override_constants/separation = 16
+
+[node name="StateLabel" type="Label" parent="."]
+layout_mode = 2
+theme_override_font_sizes/font_size = 16
+text = "⏸ PAUSED"
+
+[node name="SpeedLabel" type="Label" parent="."]
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+text = "1.0x"
+
+[node name="TickLabel" type="Label" parent="."]
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
+theme_override_colors/font_color = Color(0.6, 0.6, 0.6, 1)
+text = "T:0"

@@ -1,0 +1,591 @@
+using Godot;
+using System.Collections.Generic;
+
+namespace FringeTactics;
+
+public partial class MissionView : Node2D
+{
+    public const int TileSize = 32;
+    private const string ActorViewScenePath = "res://src/scenes/mission/ActorView.tscn";
+    private const string TimeStateWidgetScenePath = "res://src/scenes/mission/TimeStateWidget.tscn";
+
+    private PackedScene actorViewScene;
+    private PackedScene timeStateWidgetScene;
+
+    public CombatState CombatState { get; private set; }
+    private Dictionary<int, ActorView> actorViews = new(); // actorId -> ActorView
+    private List<int> crewActorIds = new(); // ordered list of crew actor IDs for number key selection
+    private List<int> selectedActorIds = new(); // supports multi-selection
+
+    // Ability targeting
+    private AbilityData pendingAbility = null; // ability waiting for target selection
+    private Label abilityTargetingLabel;
+
+    // Mission result tracking
+    private bool missionVictory = false;
+
+    [ExportGroup("Node Paths")]
+    [Export] private Node2D gridDisplayPath;
+    [Export] private Node2D actorsContainerPath;
+    [Export] private CanvasLayer uiLayerPath;
+    [Export] private Label instructionsLabelPath;
+
+    private Node2D gridDisplay;
+    private Node2D actorsContainer;
+    private CanvasLayer uiLayer;
+    private Label instructionsLabel;
+
+    private TimeStateWidget timeStateWidget;
+    private Panel missionEndPanel;
+    private Label missionResultLabel;
+    private Label missionSummaryLabel;
+    private Button restartButton;
+
+    public override void _Ready()
+    {
+        // Load scenes
+        actorViewScene = GD.Load<PackedScene>(ActorViewScenePath);
+        timeStateWidgetScene = GD.Load<PackedScene>(TimeStateWidgetScenePath);
+
+        // Get node references
+        gridDisplay = GetNode<Node2D>("GridDisplay");
+        actorsContainer = GetNode<Node2D>("Actors");
+        uiLayer = GetNode<CanvasLayer>("UI");
+        instructionsLabel = GetNode<Label>("UI/InstructionsLabel");
+
+        InitializeCombat();
+        SetupUI();
+        DrawGrid();
+        SpawnActorViews();
+    }
+
+    private void InitializeCombat()
+    {
+        // Get CombatState from GameState (already built by MissionFactory)
+        CombatState = GameState.Instance?.CurrentCombat;
+
+        if (CombatState == null)
+        {
+            // Fallback for testing in editor without going through menu
+            GD.PrintErr("[MissionView] No CurrentCombat found! Creating fallback sandbox.");
+            var config = MissionConfig.CreateTestMission();
+            CombatState = MissionFactory.BuildSandbox(config);
+        }
+
+        // Subscribe to events
+        CombatState.MissionEnded += OnMissionEnded;
+    }
+
+    private void SetupUI()
+    {
+        // Create and add TimeStateWidget
+        timeStateWidget = timeStateWidgetScene.Instantiate<TimeStateWidget>();
+        timeStateWidget.Position = new Vector2(10, 10);
+        uiLayer.AddChild(timeStateWidget);
+        timeStateWidget.ConnectToTimeSystem(CombatState.TimeSystem);
+
+        // Update instructions
+        instructionsLabel.Text = "Space: Pause/Resume | G: Grenade\n1-3: Select crew | A: Select all\nLClick: Select | RClick: Move/Attack";
+
+        // Create ability targeting label
+        abilityTargetingLabel = new Label();
+        abilityTargetingLabel.Position = new Vector2(10, 60);
+        abilityTargetingLabel.AddThemeColorOverride("font_color", Colors.Yellow);
+        abilityTargetingLabel.AddThemeFontSizeOverride("font_size", 16);
+        abilityTargetingLabel.Visible = false;
+        uiLayer.AddChild(abilityTargetingLabel);
+
+        // Subscribe to ability events for visual feedback
+        CombatState.AbilitySystem.AbilityDetonated += OnAbilityDetonated;
+
+        // Create mission end panel (hidden initially)
+        CreateMissionEndPanel();
+    }
+
+    private void CreateMissionEndPanel()
+    {
+        missionEndPanel = new Panel();
+        missionEndPanel.Position = new Vector2(120, 80);
+        missionEndPanel.Size = new Vector2(280, 220);
+        missionEndPanel.Visible = false;
+        uiLayer.AddChild(missionEndPanel);
+
+        var vbox = new VBoxContainer();
+        vbox.Position = new Vector2(20, 15);
+        vbox.Size = new Vector2(240, 190);
+        missionEndPanel.AddChild(vbox);
+
+        // Result label
+        missionResultLabel = new Label();
+        missionResultLabel.AddThemeFontSizeOverride("font_size", 32);
+        missionResultLabel.HorizontalAlignment = HorizontalAlignment.Center;
+        vbox.AddChild(missionResultLabel);
+
+        // Spacer
+        var spacer = new Control();
+        spacer.CustomMinimumSize = new Vector2(0, 10);
+        vbox.AddChild(spacer);
+
+        // Summary label
+        missionSummaryLabel = new Label();
+        missionSummaryLabel.AddThemeFontSizeOverride("font_size", 14);
+        vbox.AddChild(missionSummaryLabel);
+
+        // Spacer before button
+        var spacer2 = new Control();
+        spacer2.CustomMinimumSize = new Vector2(0, 15);
+        vbox.AddChild(spacer2);
+
+        // Continue/Restart button
+        restartButton = new Button();
+        restartButton.Pressed += OnRestartPressed;
+        vbox.AddChild(restartButton);
+    }
+
+    private void OnMissionEnded(bool victory)
+    {
+        missionVictory = victory;
+
+        // Set result text and color
+        missionResultLabel.Text = victory ? "VICTORY!" : "DEFEAT!";
+        missionResultLabel.AddThemeColorOverride("font_color", victory ? Colors.Green : Colors.Red);
+
+        // Update button text based on mode
+        var hasCampaign = GameState.Instance?.HasActiveCampaign() ?? false;
+        restartButton.Text = hasCampaign ? "Continue" : "Restart Test Mission";
+
+        // Build summary
+        var stats = CombatState.Stats;
+        var crewAlive = 0;
+        var crewDead = 0;
+        foreach (var actor in CombatState.Actors)
+        {
+            if (actor.Type == "crew")
+            {
+                if (actor.State == ActorState.Alive)
+                {
+                    crewAlive++;
+                }
+                else
+                {
+                    crewDead++;
+                }
+            }
+        }
+
+        var summary = $"--- CREW ---\n";
+        summary += $"Alive: {crewAlive}  Dead: {crewDead}\n\n";
+        summary += $"--- COMBAT ---\n";
+        summary += $"Shots: {stats.PlayerShotsFired}  Hits: {stats.PlayerHits}  Misses: {stats.PlayerMisses}\n";
+        summary += $"Accuracy: {stats.PlayerAccuracy:F0}%";
+
+        missionSummaryLabel.Text = summary;
+
+        // Print to console as well
+        GD.Print("\n=== MISSION SUMMARY ===");
+        GD.Print($"Result: {(victory ? "VICTORY" : "DEFEAT")}");
+        GD.Print($"Crew Alive: {crewAlive}, Dead: {crewDead}");
+        GD.Print($"Player Shots: {stats.PlayerShotsFired}, Hits: {stats.PlayerHits}, Misses: {stats.PlayerMisses}, Accuracy: {stats.PlayerAccuracy:F1}%");
+        GD.Print($"Enemy Shots: {stats.EnemyShotsFired}, Hits: {stats.EnemyHits}, Misses: {stats.EnemyMisses}, Accuracy: {stats.EnemyAccuracy:F1}%");
+        GD.Print("========================\n");
+
+        missionEndPanel.Visible = true;
+    }
+
+    private void OnRestartPressed()
+    {
+        var hasCampaign = GameState.Instance?.HasActiveCampaign() ?? false;
+
+        if (hasCampaign)
+        {
+            // Return to campaign with results
+            GameState.Instance.EndMission(missionVictory, CombatState);
+        }
+        else
+        {
+            // Sandbox mode - create fresh combat state and reload
+            GameState.Instance?.StartSandboxMission();
+        }
+    }
+
+    private void DrawGrid()
+    {
+        // Draw a simple floor grid
+        var gridSize = CombatState.MapState.GridSize;
+        for (int y = 0; y < gridSize.Y; y++)
+        {
+            for (int x = 0; x < gridSize.X; x++)
+            {
+                var tile = new ColorRect();
+                tile.Size = new Vector2(TileSize - 1, TileSize - 1);
+                tile.Position = new Vector2(x * TileSize, y * TileSize);
+
+                // Checkerboard pattern
+                if ((x + y) % 2 == 0)
+                {
+                    tile.Color = new Color(0.15f, 0.15f, 0.2f);
+                }
+                else
+                {
+                    tile.Color = new Color(0.2f, 0.2f, 0.25f);
+                }
+
+                gridDisplay.AddChild(tile);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Create visual representations for all actors already in CombatState.
+    /// MissionView no longer decides what to spawn - that's MissionFactory's job.
+    /// </summary>
+    private void SpawnActorViews()
+    {
+        var crewColors = new Color[]
+        {
+            new Color(0.2f, 0.6f, 1.0f), // Blue
+            new Color(0.2f, 0.8f, 0.3f), // Green
+            new Color(0.4f, 0.7f, 0.9f), // Light Blue
+            new Color(0.6f, 0.4f, 0.9f)  // Purple
+        };
+        var enemyColor = new Color(0.9f, 0.2f, 0.2f); // Red
+
+        crewActorIds.Clear();
+        int crewIndex = 0;
+
+        foreach (var actor in CombatState.Actors)
+        {
+            var view = actorViewScene.Instantiate<ActorView>();
+            actorsContainer.AddChild(view);
+            actorViews[actor.Id] = view;
+
+            if (actor.Type == "crew")
+            {
+                var color = crewColors[crewIndex % crewColors.Length];
+                view.Setup(actor, color);
+                crewActorIds.Add(actor.Id);
+                crewIndex++;
+            }
+            else if (actor.Type == "enemy")
+            {
+                view.Setup(actor, enemyColor);
+            }
+            else
+            {
+                view.Setup(actor, Colors.White);
+            }
+        }
+
+        GD.Print($"[MissionView] Created views for {CombatState.Actors.Count} actors ({crewActorIds.Count} crew)");
+    }
+
+    private void OnActorRemoved(Actor actor)
+    {
+        if (actorViews.ContainsKey(actor.Id))
+        {
+            actorViews[actor.Id].QueueFree();
+            actorViews.Remove(actor.Id);
+        }
+    }
+
+    public override void _ExitTree()
+    {
+        // Unsubscribe from events to prevent disposed object access on scene reload
+        if (CombatState != null)
+        {
+            CombatState.MissionEnded -= OnMissionEnded;
+            CombatState.AbilitySystem.AbilityDetonated -= OnAbilityDetonated;
+        }
+    }
+
+    public override void _Process(double delta)
+    {
+        CombatState.Update((float)delta);
+    }
+
+    public override void _Input(InputEvent @event)
+    {
+        // Toggle pause with Space
+        if (@event.IsActionPressed("pause_toggle"))
+        {
+            GD.Print("Pause toggle pressed!");
+            CombatState.TimeSystem.TogglePause();
+            return;
+        }
+
+        // Number key crew selection
+        if (@event.IsActionPressed("select_crew_1"))
+        {
+            SelectCrewByIndex(0);
+            return;
+        }
+        if (@event.IsActionPressed("select_crew_2"))
+        {
+            SelectCrewByIndex(1);
+            return;
+        }
+        if (@event.IsActionPressed("select_crew_3"))
+        {
+            SelectCrewByIndex(2);
+            return;
+        }
+        if (@event.IsActionPressed("select_all"))
+        {
+            SelectAllCrew();
+            return;
+        }
+
+        // Grenade ability (G key)
+        if (@event is InputEventKey keyEvent && keyEvent.Pressed && keyEvent.Keycode == Key.G)
+        {
+            var grenade = Definitions.Abilities.Get("frag_grenade")?.ToAbilityData();
+            if (grenade != null)
+            {
+                StartAbilityTargeting(grenade);
+            }
+            return;
+        }
+
+        // Cancel targeting with Escape
+        if (@event is InputEventKey escEvent && escEvent.Pressed && escEvent.Keycode == Key.Escape)
+        {
+            CancelAbilityTargeting();
+            return;
+        }
+
+        // Handle mouse input
+        if (@event is InputEventMouseButton mouseEvent)
+        {
+            HandleMouseClick(mouseEvent);
+        }
+    }
+
+    private void SelectCrewByIndex(int index)
+    {
+        // Select crew member by their index (0-based).
+        if (index >= 0 && index < crewActorIds.Count)
+        {
+            var actorId = crewActorIds[index];
+            SelectActor(actorId);
+        }
+    }
+
+    private void SelectAllCrew()
+    {
+        // Select all crew members.
+        ClearSelection();
+        foreach (var actorId in crewActorIds)
+        {
+            if (actorViews.ContainsKey(actorId))
+            {
+                selectedActorIds.Add(actorId);
+                actorViews[actorId].SetSelected(true);
+            }
+        }
+    }
+
+    private void SelectActor(int actorId)
+    {
+        // Select a single actor by ID (clears previous selection).
+        GD.Print($"SelectActor: actorId={actorId}");
+        ClearSelection();
+        if (actorViews.ContainsKey(actorId))
+        {
+            selectedActorIds.Add(actorId);
+            actorViews[actorId].SetSelected(true);
+            GD.Print($"Actor {actorId} selected, selectedActorIds.Count={selectedActorIds.Count}");
+        }
+    }
+
+    private void ClearSelection()
+    {
+        // Deselect all currently selected actors.
+        foreach (var actorId in selectedActorIds)
+        {
+            if (actorViews.ContainsKey(actorId))
+            {
+                actorViews[actorId].SetSelected(false);
+            }
+        }
+        selectedActorIds.Clear();
+    }
+
+    private void HandleMouseClick(InputEventMouseButton @event)
+    {
+        if (!@event.Pressed)
+        {
+            return;
+        }
+
+        var gridPos = ScreenToGrid(@event.Position);
+
+        // If targeting an ability, left click confirms, right click cancels
+        if (pendingAbility != null)
+        {
+            if (@event.ButtonIndex == MouseButton.Left)
+            {
+                ConfirmAbilityTarget(gridPos);
+            }
+            else if (@event.ButtonIndex == MouseButton.Right)
+            {
+                CancelAbilityTargeting();
+            }
+            return;
+        }
+
+        if (@event.ButtonIndex == MouseButton.Left)
+        {
+            HandleSelection(gridPos);
+        }
+        else if (@event.ButtonIndex == MouseButton.Right)
+        {
+            HandleRightClick(gridPos);
+        }
+    }
+
+    private void HandleSelection(Vector2I gridPos)
+    {
+        // Check if clicking on an actor
+        var clickedActor = CombatState.GetActorAtPosition(gridPos);
+        if (clickedActor != null)
+        {
+            SelectActor(clickedActor.Id);
+        }
+        else
+        {
+            // Deselect if clicking empty space
+            ClearSelection();
+        }
+    }
+
+    private void HandleRightClick(Vector2I gridPos)
+    {
+        GD.Print($"HandleRightClick: gridPos={gridPos}, selectedCount={selectedActorIds.Count}");
+
+        // Check if clicking on an enemy actor
+        var targetActor = CombatState.GetActorAtPosition(gridPos);
+        if (targetActor != null && targetActor.State == ActorState.Alive)
+        {
+            // Check if target is an enemy (different type from selected)
+            var isEnemy = false;
+            foreach (var actorId in selectedActorIds)
+            {
+                var selected = CombatState.GetActorById(actorId);
+                if (selected != null && selected.Type != targetActor.Type)
+                {
+                    isEnemy = true;
+                    break;
+                }
+            }
+
+            if (isEnemy)
+            {
+                // Issue attack order
+                foreach (var actorId in selectedActorIds)
+                {
+                    CombatState.IssueAttackOrder(actorId, targetActor.Id);
+                }
+                return;
+            }
+        }
+
+        // Otherwise, issue move order
+        foreach (var actorId in selectedActorIds)
+        {
+            CombatState.IssueMovementOrder(actorId, gridPos);
+        }
+    }
+
+    // === Ability Targeting ===
+
+    private void StartAbilityTargeting(AbilityData ability)
+    {
+        // Need exactly one actor selected
+        if (selectedActorIds.Count != 1)
+        {
+            GD.Print("[Ability] Select exactly one crew member to use ability");
+            return;
+        }
+
+        var actorId = selectedActorIds[0];
+        var actor = CombatState.GetActorById(actorId);
+        if (actor == null || actor.Type != "crew")
+        {
+            GD.Print("[Ability] Only crew can use abilities");
+            return;
+        }
+
+        // Check cooldown
+        if (CombatState.AbilitySystem.IsOnCooldown(actorId, ability.Id))
+        {
+            var remaining = CombatState.AbilitySystem.GetCooldownRemaining(actorId, ability.Id);
+            GD.Print($"[Ability] {ability.Name} on cooldown: {remaining} ticks remaining");
+            return;
+        }
+
+        pendingAbility = ability;
+        abilityTargetingLabel.Text = $"Targeting: {ability.Name} (Range: {ability.Range})\nLeft Click to confirm, Right Click to cancel";
+        abilityTargetingLabel.Visible = true;
+        GD.Print($"[Ability] Targeting {ability.Name} - click to select target tile");
+    }
+
+    private void ConfirmAbilityTarget(Vector2I targetTile)
+    {
+        if (pendingAbility == null || selectedActorIds.Count == 0)
+        {
+            CancelAbilityTargeting();
+            return;
+        }
+
+        var actorId = selectedActorIds[0];
+        var success = CombatState.IssueAbilityOrder(actorId, pendingAbility, targetTile);
+
+        if (success)
+        {
+            GD.Print($"[Ability] {pendingAbility.Name} launched at {targetTile}!");
+        }
+        else
+        {
+            GD.Print($"[Ability] Cannot use {pendingAbility.Name} at {targetTile} (out of range?)");
+        }
+
+        CancelAbilityTargeting();
+    }
+
+    private void CancelAbilityTargeting()
+    {
+        pendingAbility = null;
+        abilityTargetingLabel.Visible = false;
+    }
+
+    private void OnAbilityDetonated(AbilityData ability, Vector2I tile)
+    {
+        // Visual feedback for grenade explosion
+        // For now, just flash the affected tiles
+        GD.Print($"[Visual] {ability.Name} exploded at {tile}!");
+
+        // Create a simple explosion visual
+        var explosion = new ColorRect();
+        explosion.Size = new Vector2((ability.Radius * 2 + 1) * TileSize, (ability.Radius * 2 + 1) * TileSize);
+        explosion.Position = new Vector2(
+            (tile.X - ability.Radius) * TileSize,
+            (tile.Y - ability.Radius) * TileSize
+        );
+        explosion.Color = new Color(1.0f, 0.5f, 0.0f, 0.6f); // Orange flash
+        AddChild(explosion);
+
+        // Remove after a short delay using a timer
+        var timer = GetTree().CreateTimer(0.3f);
+        timer.Timeout += () => explosion.QueueFree();
+    }
+
+    private Vector2I ScreenToGrid(Vector2 screenPos)
+    {
+        // Account for camera/node position
+        var localPos = screenPos - GlobalPosition;
+        return new Vector2I(
+            (int)(localPos.X) / TileSize,
+            (int)(localPos.Y) / TileSize
+        );
+    }
+}
