@@ -8,6 +8,7 @@ public partial class MainMenu : Control
     private Button startTestMissionButton;
     private Button startM0TestButton;
     private Button startM1TestButton;
+    private Button startM2TestButton;
     private Button quitButton;
     private Label titleLabel;
 
@@ -85,6 +86,18 @@ public partial class MainMenu : Control
         spacer5.CustomMinimumSize = new Vector2(0, 10);
         vbox.AddChild(spacer5);
 
+        // M2 Test Mission button (visibility and fog of war)
+        startM2TestButton = new Button();
+        startM2TestButton.Text = "M2 Test (Visibility & Fog)";
+        startM2TestButton.CustomMinimumSize = new Vector2(250, 50);
+        startM2TestButton.Pressed += OnStartM2TestPressed;
+        vbox.AddChild(startM2TestButton);
+
+        // Spacer
+        var spacer6 = new Control();
+        spacer6.CustomMinimumSize = new Vector2(0, 10);
+        vbox.AddChild(spacer6);
+
         // Quit button
         quitButton = new Button();
         quitButton.Text = "Quit";
@@ -115,6 +128,12 @@ public partial class MainMenu : Control
     {
         GD.Print("[MainMenu] Starting M1 test mission (6 units for selection testing)...");
         GameState.Instance.StartM1TestMission();
+    }
+
+    private void OnStartM2TestPressed()
+    {
+        GD.Print("[MainMenu] Starting M2 test mission (visibility & fog of war)...");
+        GameState.Instance.StartM2TestMission();
     }
 
     private void OnQuitPressed()

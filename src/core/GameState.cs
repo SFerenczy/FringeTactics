@@ -156,6 +156,19 @@ public partial class GameState : Node
         GetTree().ChangeSceneToFile(MissionScene);
     }
 
+    /// <summary>
+    /// Start the M2 test mission for testing visibility and fog of war.
+    /// </summary>
+    public void StartM2TestMission()
+    {
+        var config = MissionConfig.CreateM2TestMission();
+        CurrentCombat = MissionFactory.BuildSandbox(config);
+        actorToCrewMap.Clear();
+
+        Mode = "mission";
+        GetTree().ChangeSceneToFile(MissionScene);
+    }
+
     public void EndMission(bool victory, CombatState combatState)
     {
         if (Campaign == null)

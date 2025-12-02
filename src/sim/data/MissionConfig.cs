@@ -159,6 +159,57 @@ public class MissionConfig
     }
 
     /// <summary>
+    /// M2 test mission - visibility and fog of war testing.
+    /// Map has multiple rooms and corridors to test LOS blocking.
+    /// Enemies placed in hidden areas to test fog hiding.
+    /// </summary>
+    public static MissionConfig CreateM2TestMission()
+    {
+        return new MissionConfig
+        {
+            Id = "m2_test",
+            Name = "M2 Test - Visibility & Fog of War",
+            GridSize = new Vector2I(24, 16),
+            MapTemplate = new string[]
+            {
+                "########################",
+                "#......#...............#",
+                "#.EE...#...............#",
+                "#.EE...#...............#",
+                "#......#...............#",
+                "#......#####.###.......#",
+                "#..........#.#.........#",
+                "#..........#.#.........#",
+                "######.#####.#.........#",
+                "#..........#.#.........#",
+                "#..........#.#####.#####",
+                "#..........#.......#...#",
+                "#..........#.......#...#",
+                "#..........#########...#",
+                "#......................#",
+                "########################"
+            },
+            CrewWeaponId = "rifle",
+            CrewSpawnPositions = new List<Vector2I>
+            {
+                new Vector2I(2, 2),
+                new Vector2I(3, 2),
+                new Vector2I(2, 3),
+                new Vector2I(3, 3)
+            },
+            EnemySpawns = new List<EnemySpawn>
+            {
+                // Enemy in far room (should be hidden initially)
+                new EnemySpawn("grunt", new Vector2I(20, 2)),
+                // Enemy behind wall (tests LOS blocking)
+                new EnemySpawn("grunt", new Vector2I(14, 7)),
+                // Enemy in bottom-right room
+                new EnemySpawn("gunner", new Vector2I(21, 12))
+            }
+        };
+    }
+
+    /// <summary>
     /// Harder mission with more enemies and interior walls.
     /// </summary>
     public static MissionConfig CreateHardMission()
