@@ -13,6 +13,7 @@ Visual representation of tactical combat. Renders CombatState and handles player
 - **MissionView.cs** - Main controller: spawns actors, handles input, issues orders to CombatState
 - **ActorView.cs** - Actor visual: position sync, HP bar, hit flash, death state
 - **TimeStateWidget.cs** - Displays pause state and current time
+- **TacticalCamera.cs** - Camera controller: pan (WASD/edge), zoom (scroll), follow selected unit
 
 ### Unused
 - **MissionView.gd** - Empty placeholder (using C# instead)
@@ -25,6 +26,7 @@ Visual representation of tactical combat. Renders CombatState and handles player
 - Translate right-click to move or attack orders
 - Show movement target marker when units are moving
 - Show HP bars, hit feedback, death states
+- Camera control: pan, zoom, follow selected unit
 
 ## Dependencies
 

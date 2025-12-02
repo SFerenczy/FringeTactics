@@ -38,6 +38,7 @@ public partial class MissionView : Node2D
     private Node2D actorsContainer;
     private CanvasLayer uiLayer;
     private Label instructionsLabel;
+    private TacticalCamera tacticalCamera;
 
     private TimeStateWidget timeStateWidget;
     private Panel missionEndPanel;
@@ -56,11 +57,23 @@ public partial class MissionView : Node2D
         actorsContainer = GetNode<Node2D>("Actors");
         uiLayer = GetNode<CanvasLayer>("UI");
         instructionsLabel = GetNode<Label>("UI/InstructionsLabel");
+        tacticalCamera = GetNode<TacticalCamera>("TacticalCamera");
 
         InitializeCombat();
         SetupUI();
+        SetupCamera();
         DrawGrid();
         SpawnActorViews();
+    }
+    
+    private void SetupCamera()
+    {
+        // Set camera bounds based on map size
+        var gridSize = CombatState.MapState.GridSize;
+        tacticalCamera.SetMapBoundsFromGrid(gridSize, TileSize);
+        
+        // Center camera on map
+        tacticalCamera.CenterOnMap();
     }
 
     private void InitializeCombat()
@@ -89,7 +102,7 @@ public partial class MissionView : Node2D
         timeStateWidget.ConnectToTimeSystem(CombatState.TimeSystem);
 
         // Update instructions
-        instructionsLabel.Text = "Space: Pause/Resume | G: Grenade\n1-3: Select crew | A: Select all\nLClick: Select | RClick: Move/Attack";
+        instructionsLabel.Text = "Space: Pause/Resume | G: Grenade | Scroll: Zoom\n1-3: Select crew | Tab: Select all | WASD: Pan camera\nLClick: Select | RClick: Move/Attack | C: Center on unit";
 
         // Create ability targeting label
         abilityTargetingLabel = new Label();
@@ -398,7 +411,7 @@ public partial class MissionView : Node2D
             SelectCrewByIndex(2);
             return;
         }
-        if (@event.IsActionPressed("select_all"))
+        if (@event.IsActionPressed("select_all") || (@event is InputEventKey keyEvent && keyEvent.Pressed && keyEvent.Keycode == Key.Tab))
         {
             SelectAllCrew();
             return;
@@ -462,6 +475,10 @@ public partial class MissionView : Node2D
         {
             selectedActorIds.Add(actorId);
             actorViews[actorId].SetSelected(true);
+            
+            // Set camera to follow this actor
+            tacticalCamera.SetFollowTarget(actorViews[actorId]);
+            
             GD.Print($"Actor {actorId} selected, selectedActorIds.Count={selectedActorIds.Count}");
         }
     }
@@ -477,6 +494,9 @@ public partial class MissionView : Node2D
             }
         }
         selectedActorIds.Clear();
+        
+        // Clear camera follow target
+        tacticalCamera.ClearFollowTarget();
     }
 
     private void HandleMouseClick(InputEventMouseButton @event)
@@ -691,11 +711,11 @@ public partial class MissionView : Node2D
 
     private Vector2I ScreenToGrid(Vector2 screenPos)
     {
-        // Account for camera/node position
-        var localPos = screenPos - GlobalPosition;
+        // Convert screen position to world position using camera transform
+        var worldPos = GetCanvasTransform().AffineInverse() * screenPos;
         return new Vector2I(
-            (int)(localPos.X) / TileSize,
-            (int)(localPos.Y) / TileSize
+            (int)(worldPos.X) / TileSize,
+            (int)(worldPos.Y) / TileSize
         );
     }
 }
