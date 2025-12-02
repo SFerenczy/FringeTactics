@@ -31,7 +31,7 @@ This document breaks down **Milestone 3** from `ROADMAP.md` into concrete implem
 | Damage reduces HP; 0 HP = death | ✅ Complete | `TakeDamage()` handles death |
 | Magazine + reserve ammo | ✅ Complete | `CurrentMagazine`, `ReserveAmmo` on Actor |
 | Reload action with time cost | ✅ Complete | `StartReload()`, `ReloadTicks` duration |
-| Auto-defend (return fire) | ❌ Missing | Units don't auto-retaliate |
+| Auto-defend (return fire) | ✅ Complete | `AutoDefendTargetId`, `ProcessAutoDefend()` |
 | Simple enemy AI | ✅ Complete | `AIController` moves and attacks |
 
 ---

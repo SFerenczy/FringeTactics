@@ -46,7 +46,7 @@ public class AIController
 
     private void Think(Actor enemy)
     {
-        // If already attacking a valid target in range, keep attacking
+        // If already attacking a valid target in range, consider switching to better target
         if (enemy.AttackTargetId.HasValue)
         {
             var currentTarget = combatState.GetActorById(enemy.AttackTargetId.Value);
@@ -54,7 +54,20 @@ public class AIController
             {
                 if (CombatResolver.CanAttack(enemy, currentTarget, enemy.EquippedWeapon, combatState.MapState))
                 {
-                    // Still valid, keep attacking
+                    // Check if there's a significantly better target
+                    var betterTarget = FindBestTarget(enemy);
+                    if (betterTarget != null && betterTarget.Id != currentTarget.Id)
+                    {
+                        var currentScore = ScoreTarget(enemy, currentTarget);
+                        var betterScore = ScoreTarget(enemy, betterTarget);
+                        
+                        // Only switch if new target is significantly better (25% threshold)
+                        if (betterScore > currentScore * 1.25f)
+                        {
+                            enemy.SetAttackTarget(betterTarget.Id);
+                            SimLog.Log($"[AI] Enemy#{enemy.Id} switching target to Player#{betterTarget.Id} (better priority)");
+                        }
+                    }
                     return;
                 }
             }
@@ -62,8 +75,8 @@ public class AIController
             enemy.SetAttackTarget(null);
         }
 
-        // Find closest visible player actor
-        var target = FindClosestPlayerActor(enemy);
+        // Find best target using priority scoring
+        var target = FindBestTarget(enemy);
         if (target == null)
         {
             return;
@@ -88,10 +101,14 @@ public class AIController
         }
     }
 
-    private Actor FindClosestPlayerActor(Actor enemy)
+    /// <summary>
+    /// Find the best target using priority scoring.
+    /// Considers: distance, health, threat level.
+    /// </summary>
+    private Actor FindBestTarget(Actor enemy)
     {
-        Actor closest = null;
-        float closestDist = float.MaxValue;
+        Actor bestTarget = null;
+        float bestScore = float.MinValue;
 
         foreach (var actor in combatState.Actors)
         {
@@ -106,15 +123,59 @@ public class AIController
                 continue;
             }
 
-            var dist = CombatResolver.GetDistance(enemy.GridPosition, actor.GridPosition);
-            if (dist < closestDist)
+            var score = ScoreTarget(enemy, actor);
+            if (score > bestScore)
             {
-                closestDist = dist;
-                closest = actor;
+                bestScore = score;
+                bestTarget = actor;
             }
         }
 
-        return closest;
+        return bestTarget;
+    }
+
+    /// <summary>
+    /// Score a potential target for priority.
+    /// Higher score = higher priority.
+    /// </summary>
+    private float ScoreTarget(Actor enemy, Actor target)
+    {
+        var distance = CombatResolver.GetDistance(enemy.GridPosition, target.GridPosition);
+        
+        // Distance score: closer targets are better (inverse relationship)
+        // Range 0-1, where 1 = adjacent, approaches 0 at long range
+        var distanceScore = 1f / (distance + 1f);
+        
+        // Health score: wounded targets are prioritized (finish them off)
+        // Range 0-1, where 1 = nearly dead, 0 = full health
+        var healthScore = 1f - (target.Hp / (float)target.MaxHp);
+        
+        // Threat score: prioritize targets that are attacking us
+        var threatScore = 0f;
+        if (target.AttackTargetId == enemy.Id)
+        {
+            threatScore = 0.5f; // Significant bonus for threats
+        }
+        else if (target.AutoDefendTargetId == enemy.Id)
+        {
+            threatScore = 0.3f; // Smaller bonus for auto-defend targets
+        }
+        
+        // In-range bonus: prefer targets we can actually shoot right now
+        var inRangeBonus = 0f;
+        if (CombatResolver.CanAttack(enemy, target, enemy.EquippedWeapon, combatState.MapState))
+        {
+            inRangeBonus = 0.4f;
+        }
+        
+        // Weighted combination
+        // Distance is most important, then in-range, then threat, then health
+        var totalScore = distanceScore * 1.0f 
+                       + inRangeBonus 
+                       + threatScore 
+                       + healthScore * 0.3f;
+        
+        return totalScore;
     }
 
     private Vector2I GetMoveTowardTarget(Actor enemy, Actor target)

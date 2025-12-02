@@ -32,6 +32,8 @@ public partial class Actor
     public WeaponData EquippedWeapon { get; set; } = WeaponData.DefaultRifle;
     public int AttackCooldown { get; set; } = 0; // ticks until can fire again
     public int? AttackTargetId { get; set; } = null; // current attack order target
+    public int? AutoDefendTargetId { get; set; } = null; // auto-retaliate target (set when attacked)
+    public bool AutoDefendEnabled { get; set; } = true; // can be toggled per-unit
 
     // Ammunition
     public int CurrentMagazine { get; set; } = 30;
@@ -200,8 +202,28 @@ public partial class Actor
     public void ClearOrders()
     {
         AttackTargetId = null;
+        AutoDefendTargetId = null;
         IsMoving = false;
         TargetPosition = GridPosition;
+    }
+
+    /// <summary>
+    /// Set the auto-defend target (called when this actor is attacked).
+    /// </summary>
+    public void SetAutoDefendTarget(int attackerId)
+    {
+        if (AutoDefendEnabled && State == ActorState.Alive)
+        {
+            AutoDefendTargetId = attackerId;
+        }
+    }
+
+    /// <summary>
+    /// Clear auto-defend target (e.g., when target dies or manual order given).
+    /// </summary>
+    public void ClearAutoDefendTarget()
+    {
+        AutoDefendTargetId = null;
     }
 
     /// <summary>

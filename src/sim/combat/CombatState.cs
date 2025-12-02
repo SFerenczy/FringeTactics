@@ -244,6 +244,7 @@ public partial class CombatState
 
     private void ProcessAttacks()
     {
+        // Process manual attack orders
         foreach (var attacker in Actors)
         {
             if (attacker.State != ActorState.Alive)
@@ -278,53 +279,119 @@ public partial class CombatState
             // Try to attack
             if (CombatResolver.CanAttack(attacker, target, attacker.EquippedWeapon, MapState))
             {
-                var result = CombatResolver.ResolveAttack(attacker, target, attacker.EquippedWeapon, MapState, Rng.GetRandom());
-                attacker.StartCooldown();
-                attacker.ConsumeAmmo();
+                ExecuteAttack(attacker, target, isAutoDefend: false);
+            }
+        }
 
-                if (result.Hit)
-                {
-                    target.TakeDamage(result.Damage);
-                    SimLog.Log($"[Combat] {attacker.Type}#{attacker.Id} hit {target.Type}#{target.Id} for {result.Damage} damage ({result.HitChance:P0} chance). HP: {target.Hp}/{target.MaxHp}");
+        // Process auto-defend (return fire)
+        ProcessAutoDefend();
+    }
 
-                    if (target.State == ActorState.Dead)
-                    {
-                        SimLog.Log($"[Combat] {target.Type}#{target.Id} DIED!");
-                        ActorDied?.Invoke(target);
-                    }
-                }
-                else
-                {
-                    SimLog.Log($"[Combat] {attacker.Type}#{attacker.Id} missed {target.Type}#{target.Id} ({result.HitChance:P0} chance)");
-                }
+    private void ProcessAutoDefend()
+    {
+        foreach (var defender in Actors)
+        {
+            if (defender.State != ActorState.Alive)
+            {
+                continue;
+            }
 
-                AttackResolved?.Invoke(attacker, target, result);
+            // Skip if has manual attack order (manual orders take priority)
+            if (defender.AttackTargetId.HasValue)
+            {
+                continue;
+            }
 
-                // Track stats
-                if (attacker.Type == "crew")
+            // Skip if no auto-defend target
+            if (!defender.AutoDefendTargetId.HasValue)
+            {
+                continue;
+            }
+
+            if (!defender.CanFire())
+            {
+                // Auto-reload during auto-defend too
+                if (defender.NeedsReload())
                 {
-                    Stats.PlayerShotsFired++;
-                    if (result.Hit)
-                    {
-                        Stats.PlayerHits++;
-                    }
-                    else
-                    {
-                        Stats.PlayerMisses++;
-                    }
+                    defender.StartReload();
+                    SimLog.Log($"[Combat] {defender.Type}#{defender.Id} auto-reloading (auto-defend)");
                 }
-                else
-                {
-                    Stats.EnemyShotsFired++;
-                    if (result.Hit)
-                    {
-                        Stats.EnemyHits++;
-                    }
-                    else
-                    {
-                        Stats.EnemyMisses++;
-                    }
-                }
+                continue;
+            }
+
+            var attacker = GetActorById(defender.AutoDefendTargetId.Value);
+            if (attacker == null || attacker.State != ActorState.Alive)
+            {
+                // Attacker gone or dead, clear auto-defend
+                defender.ClearAutoDefendTarget();
+                continue;
+            }
+
+            // Try to return fire
+            if (CombatResolver.CanAttack(defender, attacker, defender.EquippedWeapon, MapState))
+            {
+                ExecuteAttack(defender, attacker, isAutoDefend: true);
+            }
+        }
+    }
+
+    private void ExecuteAttack(Actor attacker, Actor target, bool isAutoDefend)
+    {
+        var result = CombatResolver.ResolveAttack(attacker, target, attacker.EquippedWeapon, MapState, Rng.GetRandom());
+        attacker.StartCooldown();
+        attacker.ConsumeAmmo();
+
+        var attackType = isAutoDefend ? "auto-defend" : "attack";
+
+        if (result.Hit)
+        {
+            target.TakeDamage(result.Damage);
+            SimLog.Log($"[Combat] {attacker.Type}#{attacker.Id} hit {target.Type}#{target.Id} ({attackType}) for {result.Damage} damage ({result.HitChance:P0} chance). HP: {target.Hp}/{target.MaxHp}");
+
+            // Set auto-defend target on the victim (they'll return fire)
+            if (target.State == ActorState.Alive)
+            {
+                target.SetAutoDefendTarget(attacker.Id);
+            }
+            else
+            {
+                SimLog.Log($"[Combat] {target.Type}#{target.Id} DIED!");
+                ActorDied?.Invoke(target);
+            }
+        }
+        else
+        {
+            SimLog.Log($"[Combat] {attacker.Type}#{attacker.Id} missed {target.Type}#{target.Id} ({attackType}) ({result.HitChance:P0} chance)");
+            
+            // Even a miss triggers auto-defend (they know they're being shot at)
+            target.SetAutoDefendTarget(attacker.Id);
+        }
+
+        AttackResolved?.Invoke(attacker, target, result);
+
+        // Track stats
+        if (attacker.Type == "crew")
+        {
+            Stats.PlayerShotsFired++;
+            if (result.Hit)
+            {
+                Stats.PlayerHits++;
+            }
+            else
+            {
+                Stats.PlayerMisses++;
+            }
+        }
+        else
+        {
+            Stats.EnemyShotsFired++;
+            if (result.Hit)
+            {
+                Stats.EnemyHits++;
+            }
+            else
+            {
+                Stats.EnemyMisses++;
             }
         }
     }
