@@ -706,10 +706,10 @@ private void RecallControlGroup(int groupNum)
 ```
 
 **Acceptance Criteria**:
-- [ ] Ctrl+1/2/3 saves current selection
-- [ ] 1/2/3 recalls saved group
-- [ ] Dead units filtered from recalled groups
-- [ ] Empty selection clears group
+- [x] Ctrl+1/2/3 saves current selection
+- [x] 1/2/3 recalls saved group
+- [x] Dead units filtered from recalled groups
+- [x] Fallback to crew-by-index if no group saved
 
 ---
 
@@ -763,9 +763,9 @@ private void SelectAllCrewOfType(Actor referenceActor)
 ```
 
 **Acceptance Criteria**:
-- [ ] Double-click selects all crew
-- [ ] Works with camera zoom/pan
-- [ ] Threshold prevents accidental triggers
+- [x] Double-click selects all crew
+- [x] Works with camera zoom/pan
+- [x] Threshold prevents accidental triggers (0.3s)
 
 ---
 

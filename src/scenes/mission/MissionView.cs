@@ -34,6 +34,14 @@ public partial class MissionView : Node2D
     private ColorRect selectionBox;
     private const float DragThreshold = 5f;
 
+    // Control groups (Ctrl+1-3 to save, 1-3 to recall)
+    private Dictionary<int, List<int>> controlGroups = new(); // group number -> actor IDs
+
+    // Double-click detection
+    private float lastClickTime = 0f;
+    private int lastClickedActorId = -1;
+    private const float DoubleClickThreshold = 0.3f;
+
     // Mission result tracking
     private bool missionVictory = false;
 
@@ -111,7 +119,7 @@ public partial class MissionView : Node2D
         timeStateWidget.ConnectToTimeSystem(CombatState.TimeSystem);
 
         // Update instructions
-        instructionsLabel.Text = "Space: Pause/Resume | G: Grenade | Scroll: Zoom\n1-3: Select crew | Tab: Select all | WASD: Pan camera\nLClick: Select | Shift+Click: Add/Remove | Drag: Box select\nRClick: Move/Attack | C: Center on unit";
+        instructionsLabel.Text = "Space: Pause/Resume | G: Grenade | Scroll: Zoom | WASD: Pan\n1-3: Select/Recall group | Ctrl+1-3: Save group | Tab: Select all\nClick: Select | Shift+Click: Add/Remove | Drag: Box | DblClick: All\nRClick: Move/Attack | C: Center on unit";
 
         // Create ability targeting label
         abilityTargetingLabel = new Label();
@@ -473,26 +481,36 @@ public partial class MissionView : Node2D
             return;
         }
 
-        // Number key crew selection
-        if (@event.IsActionPressed("select_crew_1"))
+        // Number key selection / control groups
+        if (@event is InputEventKey keyEvent && keyEvent.Pressed)
         {
-            SelectCrewByIndex(0);
-            return;
-        }
-        if (@event.IsActionPressed("select_crew_2"))
-        {
-            SelectCrewByIndex(1);
-            return;
-        }
-        if (@event.IsActionPressed("select_crew_3"))
-        {
-            SelectCrewByIndex(2);
-            return;
-        }
-        if (@event.IsActionPressed("select_all") || (@event is InputEventKey tabEvent && tabEvent.Pressed && tabEvent.Keycode == Key.Tab))
-        {
-            SelectAllCrew();
-            return;
+            bool ctrlHeld = Input.IsKeyPressed(Key.Ctrl);
+            int groupNum = keyEvent.Keycode switch
+            {
+                Key.Key1 => 1,
+                Key.Key2 => 2,
+                Key.Key3 => 3,
+                _ => -1
+            };
+
+            if (groupNum > 0)
+            {
+                if (ctrlHeld)
+                {
+                    SaveControlGroup(groupNum);
+                }
+                else
+                {
+                    RecallControlGroup(groupNum);
+                }
+                return;
+            }
+
+            if (keyEvent.Keycode == Key.Tab)
+            {
+                SelectAllCrew();
+                return;
+            }
         }
 
         // Grenade ability (G key)
@@ -520,14 +538,40 @@ public partial class MissionView : Node2D
         }
     }
 
-    private void SelectCrewByIndex(int index)
+    private void SaveControlGroup(int groupNum)
     {
-        // Select crew member by their index (0-based).
-        if (index >= 0 && index < crewActorIds.Count)
+        if (selectedActorIds.Count == 0)
         {
-            var actorId = crewActorIds[index];
-            SelectActor(actorId);
+            GD.Print($"[ControlGroup] Cannot save empty selection to group {groupNum}");
+            return;
         }
+
+        controlGroups[groupNum] = new List<int>(selectedActorIds);
+        GD.Print($"[ControlGroup] Saved {selectedActorIds.Count} units to group {groupNum}");
+    }
+
+    private void RecallControlGroup(int groupNum)
+    {
+        if (!controlGroups.TryGetValue(groupNum, out var actorIds) || actorIds.Count == 0)
+        {
+            // Fallback: select crew by index if no control group saved
+            if (groupNum - 1 < crewActorIds.Count)
+            {
+                SelectActor(crewActorIds[groupNum - 1]);
+            }
+            return;
+        }
+
+        ClearSelection();
+        foreach (var actorId in actorIds)
+        {
+            var actor = CombatState.GetActorById(actorId);
+            if (actor != null && actor.State == ActorState.Alive)
+            {
+                AddToSelection(actorId);
+            }
+        }
+        GD.Print($"[ControlGroup] Recalled group {groupNum}: {selectedActorIds.Count} units");
     }
 
     private void SelectAllCrew()
@@ -732,9 +776,22 @@ public partial class MissionView : Node2D
     private void HandleSelection(Vector2I gridPos, bool additive)
     {
         var clickedActor = CombatState.GetActorAtPosition(gridPos);
+        float currentTime = Time.GetTicksMsec() / 1000f;
 
         if (clickedActor != null && clickedActor.Type == "crew" && clickedActor.State == ActorState.Alive)
         {
+            // Check for double-click to select all crew
+            if (clickedActor.Id == lastClickedActorId &&
+                currentTime - lastClickTime < DoubleClickThreshold)
+            {
+                SelectAllCrew();
+                lastClickedActorId = -1;
+                return;
+            }
+
+            lastClickTime = currentTime;
+            lastClickedActorId = clickedActor.Id;
+
             if (additive)
             {
                 if (selectedActorIds.Contains(clickedActor.Id))
@@ -756,6 +813,7 @@ public partial class MissionView : Node2D
         else if (!additive)
         {
             ClearSelection();
+            lastClickedActorId = -1;
         }
     }
 

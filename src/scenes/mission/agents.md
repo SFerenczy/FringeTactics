@@ -26,7 +26,9 @@ Visual representation of tactical combat. Renders CombatState and handles player
   - Single click to select one unit
   - Shift+click to add/remove from selection
   - Drag box to select multiple units
-  - Number keys (1-3) for quick crew selection
+  - Double-click to select all crew
+  - Number keys (1-3) to recall control groups (or select crew by index if no group saved)
+  - Ctrl+1-3 to save current selection as control group
   - Tab to select all crew
 - Translate right-click to move or attack orders
 - Show movement target marker when units are moving
