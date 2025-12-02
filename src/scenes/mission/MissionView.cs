@@ -21,6 +21,10 @@ public partial class MissionView : Node2D
     private AbilityData pendingAbility = null; // ability waiting for target selection
     private Label abilityTargetingLabel;
 
+    // Movement target marker
+    private ColorRect moveTargetMarker;
+    private Dictionary<int, Vector2I> actorMoveTargets = new(); // actorId -> target position
+
     // Mission result tracking
     private bool missionVictory = false;
 
@@ -98,8 +102,21 @@ public partial class MissionView : Node2D
         // Subscribe to ability events for visual feedback
         CombatState.AbilitySystem.AbilityDetonated += OnAbilityDetonated;
 
+        // Create movement target marker
+        CreateMoveTargetMarker();
+
         // Create mission end panel (hidden initially)
         CreateMissionEndPanel();
+    }
+    
+    private void CreateMoveTargetMarker()
+    {
+        moveTargetMarker = new ColorRect();
+        moveTargetMarker.Size = new Vector2(TileSize - 2, TileSize - 2);
+        moveTargetMarker.Color = new Color(0.3f, 0.8f, 0.3f, 0.5f); // Semi-transparent green
+        moveTargetMarker.Visible = false;
+        moveTargetMarker.ZIndex = 1; // Above grid, below actors
+        gridDisplay.AddChild(moveTargetMarker);
     }
 
     private void CreateMissionEndPanel()
@@ -330,6 +347,29 @@ public partial class MissionView : Node2D
     public override void _Process(double delta)
     {
         CombatState.Update((float)delta);
+        
+        // Update movement target marker visibility
+        UpdateMoveTargetMarker();
+        
+        // Clean up completed movement targets
+        CleanupCompletedMoveTargets();
+    }
+    
+    private void CleanupCompletedMoveTargets()
+    {
+        var toRemove = new List<int>();
+        foreach (var kvp in actorMoveTargets)
+        {
+            var actor = CombatState.GetActorById(kvp.Key);
+            if (actor == null || !actor.IsMoving)
+            {
+                toRemove.Add(kvp.Key);
+            }
+        }
+        foreach (var id in toRemove)
+        {
+            actorMoveTargets.Remove(id);
+        }
     }
 
     public override void _Input(InputEvent @event)
@@ -522,7 +562,48 @@ public partial class MissionView : Node2D
         foreach (var actorId in selectedActorIds)
         {
             CombatState.IssueMovementOrder(actorId, gridPos);
+            
+            // Track movement target for visual feedback
+            var actor = CombatState.GetActorById(actorId);
+            if (actor != null && actor.IsMoving)
+            {
+                actorMoveTargets[actorId] = gridPos;
+            }
         }
+        
+        // Show marker for first selected actor's target
+        UpdateMoveTargetMarker();
+    }
+    
+    private void UpdateMoveTargetMarker()
+    {
+        // Show marker at the target of the first selected actor that is moving
+        foreach (var actorId in selectedActorIds)
+        {
+            if (actorMoveTargets.TryGetValue(actorId, out var target))
+            {
+                var actor = CombatState.GetActorById(actorId);
+                if (actor != null && actor.IsMoving)
+                {
+                    ShowMoveTarget(target);
+                    return;
+                }
+            }
+        }
+        
+        // No selected actor is moving, hide marker
+        HideMoveTarget();
+    }
+    
+    private void ShowMoveTarget(Vector2I gridPos)
+    {
+        moveTargetMarker.Position = new Vector2(gridPos.X * TileSize + 1, gridPos.Y * TileSize + 1);
+        moveTargetMarker.Visible = true;
+    }
+    
+    private void HideMoveTarget()
+    {
+        moveTargetMarker.Visible = false;
     }
 
     // === Ability Targeting ===

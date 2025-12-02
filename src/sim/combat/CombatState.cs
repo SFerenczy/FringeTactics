@@ -4,6 +4,16 @@ using System.Collections.Generic;
 
 namespace FringeTactics;
 
+/// <summary>
+/// Mission phase for tracking tactical session state.
+/// </summary>
+public enum MissionPhase
+{
+    Setup,      // Before mission starts (future: loadout screen)
+    Active,     // Mission in progress
+    Complete    // Mission ended (victory or defeat)
+}
+
 public partial class CombatState
 {
     public MissionConfig MissionConfig { get; set; } = null;
@@ -15,6 +25,12 @@ public partial class CombatState
     public bool Victory { get; set; } = false;
     private int nextActorId = 0;
     private AIController aiController;
+    
+    // Mission phase tracking
+    public MissionPhase Phase { get; private set; } = MissionPhase.Active;
+    
+    // Track if mission was spawned with enemies (for win condition logic)
+    private bool hasEnemyObjective = false;
 
     // Seeded RNG for deterministic simulation
     public CombatRng Rng { get; private set; }
@@ -31,6 +47,7 @@ public partial class CombatState
     public event Action<Actor, Actor, AttackResult> AttackResolved; // attacker, target, result
     public event Action<Actor> ActorDied;
     public event Action<bool> MissionEnded; // true = victory, false = defeat
+    public event Action<MissionPhase> PhaseChanged;
 
     public CombatState() : this(System.Environment.TickCount)
     {
@@ -87,7 +104,7 @@ public partial class CombatState
 
     private void CheckMissionEnd()
     {
-        if (IsComplete)
+        if (IsComplete || Phase == MissionPhase.Complete)
         {
             return;
         }
@@ -112,24 +129,43 @@ public partial class CombatState
             }
         }
 
-        if (aliveEnemyCount == 0)
+        // Only check victory if mission has enemy objective
+        // (prevents auto-win in M0 sandbox with no enemies)
+        if (hasEnemyObjective && aliveEnemyCount == 0)
         {
             // Victory - all enemies dead
-            IsComplete = true;
-            Victory = true;
-            TimeSystem.Pause();
+            EndMission(victory: true);
             SimLog.Log("[Combat] VICTORY! All enemies eliminated.");
-            MissionEnded?.Invoke(true);
         }
         else if (aliveCrewCount == 0)
         {
             // Defeat - all crew dead
-            IsComplete = true;
-            Victory = false;
-            TimeSystem.Pause();
+            EndMission(victory: false);
             SimLog.Log("[Combat] DEFEAT! All crew eliminated.");
-            MissionEnded?.Invoke(false);
         }
+    }
+    
+    /// <summary>
+    /// End the mission with the given result.
+    /// </summary>
+    private void EndMission(bool victory)
+    {
+        IsComplete = true;
+        Victory = victory;
+        Phase = MissionPhase.Complete;
+        TimeSystem.Pause();
+        PhaseChanged?.Invoke(Phase);
+        MissionEnded?.Invoke(victory);
+    }
+    
+    /// <summary>
+    /// Mark that this mission has an enemy elimination objective.
+    /// Called by MissionFactory when enemies are spawned.
+    /// </summary>
+    public void SetHasEnemyObjective(bool hasEnemies)
+    {
+        hasEnemyObjective = hasEnemies;
+        SimLog.Log($"[CombatState] Enemy objective set: {hasEnemies}");
     }
 
     private void ProcessAttacks()

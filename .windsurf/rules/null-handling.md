@@ -1,5 +1,5 @@
 ---
-trigger: model_decision
+trigger: always_on
 ---
 
 ## Godot C# – Component / Null-Handling Rules

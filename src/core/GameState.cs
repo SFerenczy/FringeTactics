@@ -139,10 +139,8 @@ public partial class GameState : Node
             return;
         }
 
-        // Build mission result
         var result = new MissionResult { Victory = victory };
 
-        // Count enemies killed for XP
         foreach (var actor in combatState.Actors)
         {
             if (actor.Type == "enemy" && actor.State == ActorState.Dead)
@@ -151,7 +149,6 @@ public partial class GameState : Node
             }
         }
 
-        // Process crew outcomes
         foreach (var actor in combatState.Actors)
         {
             if (actor.Type != "crew") continue;
@@ -165,7 +162,7 @@ public partial class GameState : Node
             {
                 // Surviving crew get XP
                 int xp = CampaignState.XP_PARTICIPATION;
-                // Bonus XP for kills (simplified: divide kills among survivors)
+                // Bonus XP for kills (divide kills among survivors)
                 result.CrewXpGains[crewId] = xp;
 
                 // Injured if took significant damage

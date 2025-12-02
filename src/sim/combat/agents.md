@@ -5,7 +5,7 @@ Real-time with pause (RTwP) tactical combat logic.
 ## Files
 
 ### State
-- **CombatState.cs** - Root combat state: actors, map, time system, objectives. Processes ticks and attacks.
+- **CombatState.cs** - Root combat state: actors, map, time system, MissionPhase (Setup/Active/Complete), objectives. Processes ticks and attacks.
 - **Actor.cs** - Individual combatant: position, HP, state (Alive/Down/Dead), movement, attack orders
 - **MapState.cs** - Grid map state: TileType (Floor/Wall/Void), cover flags, entry zones, interactables
 - **MapBuilder.cs** - Factory for creating MapState from templates or configs
@@ -43,9 +43,10 @@ Real-time with pause (RTwP) tactical combat logic.
 - **Tick-based simulation**: TimeSystem accumulates delta time, fires discrete ticks
 - **Order-based control**: Actors receive orders (SetTarget, SetAttackTarget), execute over time
 - **Stateless resolution**: CombatResolver takes all inputs explicitly, returns results
-- **Event-driven updates**: Actors emit DamageTaken, Died; CombatState emits AttackResolved
+- **Event-driven updates**: Actors emit DamageTaken, Died; CombatState emits AttackResolved, PhaseChanged
 - **Seeded RNG**: All randomness through CombatRng for reproducible battles
 - **Headless simulation**: CombatSimulator can run battles without UI for testing
+- **Conditional victory**: Mission only auto-wins if hasEnemyObjective is true (set by MissionFactory)
 
 ## Mission Setup Flow
 

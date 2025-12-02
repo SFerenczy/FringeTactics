@@ -19,10 +19,11 @@ Visual representation of tactical combat. Renders CombatState and handles player
 
 ## Responsibilities
 
-- Draw the tactical grid
+- Draw the tactical grid with tile type visualization (floor/wall/entry zone)
 - Spawn and position actor visuals
 - Handle selection (click, number keys)
 - Translate right-click to move or attack orders
+- Show movement target marker when units are moving
 - Show HP bars, hit feedback, death states
 
 ## Dependencies

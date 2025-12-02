@@ -85,6 +85,9 @@ public static class MissionFactory
 
     private static void SpawnEnemies(CombatState combat, MissionConfig config)
     {
+        var hasEnemies = config.EnemySpawns.Count > 0;
+        combat.SetHasEnemyObjective(hasEnemies);
+        
         foreach (var spawn in config.EnemySpawns)
         {
             var enemyDef = Definitions.Enemies.Get(spawn.EnemyId);
