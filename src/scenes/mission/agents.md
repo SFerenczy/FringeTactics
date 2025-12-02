@@ -10,7 +10,7 @@ Visual representation of tactical combat. Renders CombatState and handles player
 - **TimeStateWidget.tscn** - Pause/time display widget
 
 ### Scripts
-- **MissionView.cs** - Main controller: spawns actors, handles input, issues orders to CombatState
+- **MissionView.cs** - Main controller: spawns actors, handles input, issues orders to CombatState, renders fog of war
 - **ActorView.cs** - Actor visual: position sync, HP bar, hit flash, death state
 - **TimeStateWidget.cs** - Displays pause state and current time
 - **TacticalCamera.cs** - Camera controller: pan (WASD/edge), zoom (scroll), follow selected unit
@@ -21,6 +21,9 @@ Visual representation of tactical combat. Renders CombatState and handles player
 ## Responsibilities
 
 - Draw the tactical grid with tile type visualization (floor/wall/entry zone)
+- Render fog of war overlay (Unknown=black, Revealed=semi-transparent, Visible=clear)
+- Hide enemies in fog, show when visible
+- Prevent targeting enemies through fog
 - Spawn and position actor visuals
 - Handle selection:
   - Single click to select one unit
@@ -37,7 +40,7 @@ Visual representation of tactical combat. Renders CombatState and handles player
 
 ## Dependencies
 
-- **Imports from**: `src/sim/combat/` (CombatState, Actor, TimeSystem, ActorState)
+- **Imports from**: `src/sim/combat/` (CombatState, Actor, TimeSystem, ActorState, VisibilitySystem, VisibilityState)
 - **Imported by**: Nothing (leaf node)
 
 ## Input Flow
@@ -46,3 +49,11 @@ Visual representation of tactical combat. Renders CombatState and handles player
 2. MissionView calls CombatState.IssueMovementOrder() or IssueAttackOrder()
 3. CombatState processes orders in simulation ticks
 4. Actor events fire → ActorView updates visuals
+
+## Fog of War Flow
+
+1. MissionView.CreateFogLayer() creates fog tiles for entire grid
+2. MissionView subscribes to CombatState.Visibility.VisibilityChanged
+3. Each frame: UpdateFogVisuals() sets fog tile colors based on visibility state
+4. Each frame: UpdateActorFogVisibility() hides/shows enemy actors based on visibility
+5. HandleRightClick() checks visibility before allowing attack orders

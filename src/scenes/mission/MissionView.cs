@@ -37,6 +37,11 @@ public partial class MissionView : Node2D
     // Control groups (Ctrl+1-3 to save, 1-3 to recall)
     private Dictionary<int, List<int>> controlGroups = new(); // group number -> actor IDs
 
+    // Fog of war overlay
+    private Node2D fogLayer;
+    private Dictionary<Vector2I, ColorRect> fogTiles = new();
+    private bool fogDirty = true;
+
     // Double-click detection
     private float lastClickTime = 0f;
     private int lastClickedActorId = -1;
@@ -80,6 +85,7 @@ public partial class MissionView : Node2D
         SetupUI();
         SetupCamera();
         DrawGrid();
+        CreateFogLayer();
         SpawnActorViews();
     }
     
@@ -374,6 +380,98 @@ public partial class MissionView : Node2D
         gridDisplay.AddChild(right);
     }
 
+    private void CreateFogLayer()
+    {
+        fogLayer = new Node2D();
+        fogLayer.ZIndex = 5; // Above grid, below actors
+        fogLayer.Name = "FogLayer";
+        gridDisplay.AddChild(fogLayer);
+
+        // Subscribe to visibility changes
+        CombatState.Visibility.VisibilityChanged += OnVisibilityChanged;
+
+        // Create fog tiles for entire grid
+        var gridSize = CombatState.MapState.GridSize;
+        for (int y = 0; y < gridSize.Y; y++)
+        {
+            for (int x = 0; x < gridSize.X; x++)
+            {
+                var pos = new Vector2I(x, y);
+                var fogTile = new ColorRect();
+                fogTile.Size = new Vector2(TileSize, TileSize);
+                fogTile.Position = new Vector2(x * TileSize, y * TileSize);
+                fogTile.MouseFilter = Control.MouseFilterEnum.Ignore;
+                fogLayer.AddChild(fogTile);
+                fogTiles[pos] = fogTile;
+            }
+        }
+
+        // Initial fog update
+        fogDirty = true;
+        UpdateFogVisuals();
+    }
+
+    private void OnVisibilityChanged()
+    {
+        fogDirty = true;
+    }
+
+    private void UpdateFogVisuals()
+    {
+        if (!fogDirty)
+        {
+            return;
+        }
+        fogDirty = false;
+
+        foreach (var kvp in fogTiles)
+        {
+            var pos = kvp.Key;
+            var tile = kvp.Value;
+            var visibility = CombatState.Visibility.GetVisibility(pos);
+
+            switch (visibility)
+            {
+                case VisibilityState.Unknown:
+                    tile.Color = new Color(0.0f, 0.0f, 0.0f, 0.95f); // Nearly opaque black
+                    tile.Visible = true;
+                    break;
+                case VisibilityState.Revealed:
+                    tile.Color = new Color(0.0f, 0.0f, 0.0f, 0.5f); // Semi-transparent
+                    tile.Visible = true;
+                    break;
+                case VisibilityState.Visible:
+                    tile.Visible = false; // Fully visible, no fog
+                    break;
+            }
+        }
+    }
+
+    private void UpdateActorFogVisibility()
+    {
+        foreach (var kvp in actorViews)
+        {
+            var actor = CombatState.GetActorById(kvp.Key);
+            var view = kvp.Value;
+
+            if (actor == null)
+            {
+                continue;
+            }
+
+            // Crew are always visible to player
+            if (actor.Type == "crew")
+            {
+                view.Visible = true;
+                continue;
+            }
+
+            // Enemies only visible if their tile is visible
+            var isVisible = CombatState.Visibility.IsVisible(actor.GridPosition);
+            view.Visible = isVisible;
+        }
+    }
+
     /// <summary>
     /// Create visual representations for all actors already in CombatState.
     /// MissionView no longer decides what to spawn - that's MissionFactory's job.
@@ -434,12 +532,19 @@ public partial class MissionView : Node2D
         {
             CombatState.MissionEnded -= OnMissionEnded;
             CombatState.AbilitySystem.AbilityDetonated -= OnAbilityDetonated;
+            CombatState.Visibility.VisibilityChanged -= OnVisibilityChanged;
         }
     }
 
     public override void _Process(double delta)
     {
         CombatState.Update((float)delta);
+
+        // Update fog of war visuals
+        UpdateFogVisuals();
+
+        // Update enemy visibility based on fog
+        UpdateActorFogVisibility();
         
         // Update movement target marker visibility
         UpdateMoveTargetMarker();
@@ -825,6 +930,14 @@ public partial class MissionView : Node2D
         var targetActor = CombatState.GetActorAtPosition(gridPos);
         if (targetActor != null && targetActor.State == ActorState.Alive)
         {
+            // Can only target visible enemies
+            if (!CombatState.Visibility.IsVisible(targetActor.GridPosition))
+            {
+                // Target not visible, treat as move order
+                IssueGroupMoveOrder(gridPos);
+                return;
+            }
+
             // Check if target is an enemy (different type from selected)
             var isEnemy = false;
             foreach (var actorId in selectedActorIds)
