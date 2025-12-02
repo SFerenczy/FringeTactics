@@ -7,6 +7,7 @@ public partial class MainMenu : Control
     private Button startCampaignButton;
     private Button startTestMissionButton;
     private Button startM0TestButton;
+    private Button startM1TestButton;
     private Button quitButton;
     private Label titleLabel;
 
@@ -72,6 +73,18 @@ public partial class MainMenu : Control
         spacer4.CustomMinimumSize = new Vector2(0, 10);
         vbox.AddChild(spacer4);
 
+        // M1 Test Mission button (6 units for selection testing)
+        startM1TestButton = new Button();
+        startM1TestButton.Text = "M1 Test (Multi-Unit Selection)";
+        startM1TestButton.CustomMinimumSize = new Vector2(250, 50);
+        startM1TestButton.Pressed += OnStartM1TestPressed;
+        vbox.AddChild(startM1TestButton);
+
+        // Spacer
+        var spacer5 = new Control();
+        spacer5.CustomMinimumSize = new Vector2(0, 10);
+        vbox.AddChild(spacer5);
+
         // Quit button
         quitButton = new Button();
         quitButton.Text = "Quit";
@@ -96,6 +109,12 @@ public partial class MainMenu : Control
     {
         GD.Print("[MainMenu] Starting M0 test mission (single unit, no enemies)...");
         GameState.Instance.StartM0TestMission();
+    }
+
+    private void OnStartM1TestPressed()
+    {
+        GD.Print("[MainMenu] Starting M1 test mission (6 units for selection testing)...");
+        GameState.Instance.StartM1TestMission();
     }
 
     private void OnQuitPressed()

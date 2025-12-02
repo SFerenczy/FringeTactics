@@ -22,7 +22,12 @@ Visual representation of tactical combat. Renders CombatState and handles player
 
 - Draw the tactical grid with tile type visualization (floor/wall/entry zone)
 - Spawn and position actor visuals
-- Handle selection (click, number keys)
+- Handle selection:
+  - Single click to select one unit
+  - Shift+click to add/remove from selection
+  - Drag box to select multiple units
+  - Number keys (1-3) for quick crew selection
+  - Tab to select all crew
 - Translate right-click to move or attack orders
 - Show movement target marker when units are moving
 - Show HP bars, hit feedback, death states

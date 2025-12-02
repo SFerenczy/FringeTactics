@@ -143,6 +143,19 @@ public partial class GameState : Node
         GetTree().ChangeSceneToFile(MissionScene);
     }
 
+    /// <summary>
+    /// Start the M1 test mission (6 units, no enemies) for testing selection and group movement.
+    /// </summary>
+    public void StartM1TestMission()
+    {
+        var config = MissionConfig.CreateM1TestMission();
+        CurrentCombat = MissionFactory.BuildSandbox(config);
+        actorToCrewMap.Clear();
+
+        Mode = "mission";
+        GetTree().ChangeSceneToFile(MissionScene);
+    }
+
     public void EndMission(bool victory, CombatState combatState)
     {
         if (Campaign == null)

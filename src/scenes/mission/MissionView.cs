@@ -27,6 +27,13 @@ public partial class MissionView : Node2D
     private ColorRect moveTargetBorder;
     private Dictionary<int, Vector2I> actorMoveTargets = new(); // actorId -> target position
 
+    // Box selection state
+    private bool isDragSelecting = false;
+    private Vector2 dragStartScreen;
+    private Vector2 dragStartWorld;
+    private ColorRect selectionBox;
+    private const float DragThreshold = 5f;
+
     // Mission result tracking
     private bool missionVictory = false;
 
@@ -104,7 +111,7 @@ public partial class MissionView : Node2D
         timeStateWidget.ConnectToTimeSystem(CombatState.TimeSystem);
 
         // Update instructions
-        instructionsLabel.Text = "Space: Pause/Resume | G: Grenade | Scroll: Zoom\n1-3: Select crew | Tab: Select all | WASD: Pan camera\nLClick: Select | RClick: Move/Attack | C: Center on unit";
+        instructionsLabel.Text = "Space: Pause/Resume | G: Grenade | Scroll: Zoom\n1-3: Select crew | Tab: Select all | WASD: Pan camera\nLClick: Select | Shift+Click: Add/Remove | Drag: Box select\nRClick: Move/Attack | C: Center on unit";
 
         // Create ability targeting label
         abilityTargetingLabel = new Label();
@@ -120,10 +127,22 @@ public partial class MissionView : Node2D
         // Create movement target marker
         CreateMoveTargetMarker();
 
+        // Create selection box for drag-select
+        CreateSelectionBox();
+
         // Create mission end panel (hidden initially)
         CreateMissionEndPanel();
     }
     
+    private void CreateSelectionBox()
+    {
+        selectionBox = new ColorRect();
+        selectionBox.Color = new Color(0.3f, 0.6f, 1.0f, 0.3f);
+        selectionBox.Visible = false;
+        selectionBox.ZIndex = 100;
+        AddChild(selectionBox);
+    }
+
     private void CreateMoveTargetMarker()
     {
         moveTargetMarker = new Node2D();
@@ -419,6 +438,12 @@ public partial class MissionView : Node2D
         
         // Clean up completed movement targets
         CleanupCompletedMoveTargets();
+        
+        // Update box selection if mouse is held (check for drag start or update existing drag)
+        if (Input.IsMouseButtonPressed(MouseButton.Left) && pendingAbility == null)
+        {
+            UpdateBoxSelectionVisual();
+        }
     }
     
     private void CleanupCompletedMoveTargets()
@@ -507,15 +532,40 @@ public partial class MissionView : Node2D
 
     private void SelectAllCrew()
     {
-        // Select all crew members.
         ClearSelection();
         foreach (var actorId in crewActorIds)
         {
-            if (actorViews.ContainsKey(actorId))
+            var actor = CombatState.GetActorById(actorId);
+            if (actor != null && actor.State == ActorState.Alive && actorViews.ContainsKey(actorId))
             {
                 selectedActorIds.Add(actorId);
                 actorViews[actorId].SetSelected(true);
             }
+        }
+        GD.Print($"[Selection] Selected all {selectedActorIds.Count} crew");
+    }
+
+    private void AddToSelection(int actorId)
+    {
+        var actor = CombatState.GetActorById(actorId);
+        if (actor == null || actor.State != ActorState.Alive)
+            return;
+        if (actor.Type != "crew")
+            return;
+        if (selectedActorIds.Contains(actorId))
+            return;
+        if (!actorViews.ContainsKey(actorId))
+            return;
+
+        selectedActorIds.Add(actorId);
+        actorViews[actorId].SetSelected(true);
+    }
+
+    private void RemoveFromSelection(int actorId)
+    {
+        if (selectedActorIds.Remove(actorId) && actorViews.ContainsKey(actorId))
+        {
+            actorViews[actorId].SetSelected(false);
         }
     }
 
@@ -554,48 +604,157 @@ public partial class MissionView : Node2D
 
     private void HandleMouseClick(InputEventMouseButton @event)
     {
-        if (!@event.Pressed)
-        {
-            return;
-        }
-
         var gridPos = ScreenToGrid(@event.Position);
 
         // If targeting an ability, left click confirms, right click cancels
         if (pendingAbility != null)
         {
-            if (@event.ButtonIndex == MouseButton.Left)
+            if (@event.Pressed)
             {
-                ConfirmAbilityTarget(gridPos);
-            }
-            else if (@event.ButtonIndex == MouseButton.Right)
-            {
-                CancelAbilityTargeting();
+                if (@event.ButtonIndex == MouseButton.Left)
+                {
+                    ConfirmAbilityTarget(gridPos);
+                }
+                else if (@event.ButtonIndex == MouseButton.Right)
+                {
+                    CancelAbilityTargeting();
+                }
             }
             return;
         }
 
         if (@event.ButtonIndex == MouseButton.Left)
         {
-            HandleSelection(gridPos);
+            if (@event.Pressed)
+            {
+                StartPotentialDrag(@event.Position);
+            }
+            else
+            {
+                FinishLeftClick(@event.Position, gridPos);
+            }
         }
-        else if (@event.ButtonIndex == MouseButton.Right)
+        else if (@event.ButtonIndex == MouseButton.Right && @event.Pressed)
         {
             HandleRightClick(gridPos);
         }
     }
 
-    private void HandleSelection(Vector2I gridPos)
+    private void StartPotentialDrag(Vector2 screenPos)
     {
-        // Check if clicking on an actor
-        var clickedActor = CombatState.GetActorAtPosition(gridPos);
-        if (clickedActor != null)
+        dragStartScreen = screenPos;
+        dragStartWorld = GetCanvasTransform().AffineInverse() * screenPos;
+    }
+
+    private void FinishLeftClick(Vector2 screenPos, Vector2I gridPos)
+    {
+        if (isDragSelecting)
         {
-            SelectActor(clickedActor.Id);
+            FinishBoxSelection(screenPos);
         }
         else
         {
-            // Deselect if clicking empty space
+            bool shiftHeld = Input.IsKeyPressed(Key.Shift);
+            HandleSelection(gridPos, shiftHeld);
+        }
+    }
+
+    private void UpdateBoxSelectionVisual()
+    {
+        if (!Input.IsMouseButtonPressed(MouseButton.Left))
+        {
+            return;
+        }
+
+        var currentScreen = GetViewport().GetMousePosition();
+        var distance = (currentScreen - dragStartScreen).Length();
+
+        if (!isDragSelecting && distance > DragThreshold)
+        {
+            isDragSelecting = true;
+            selectionBox.Visible = true;
+        }
+
+        if (isDragSelecting)
+        {
+            var currentWorld = GetCanvasTransform().AffineInverse() * currentScreen;
+            var minX = Mathf.Min(dragStartWorld.X, currentWorld.X);
+            var minY = Mathf.Min(dragStartWorld.Y, currentWorld.Y);
+            var maxX = Mathf.Max(dragStartWorld.X, currentWorld.X);
+            var maxY = Mathf.Max(dragStartWorld.Y, currentWorld.Y);
+
+            selectionBox.Position = new Vector2(minX, minY);
+            selectionBox.Size = new Vector2(maxX - minX, maxY - minY);
+        }
+    }
+
+    private void FinishBoxSelection(Vector2 endScreen)
+    {
+        isDragSelecting = false;
+        selectionBox.Visible = false;
+
+        var endWorld = GetCanvasTransform().AffineInverse() * endScreen;
+        var rect = new Rect2(
+            Mathf.Min(dragStartWorld.X, endWorld.X),
+            Mathf.Min(dragStartWorld.Y, endWorld.Y),
+            Mathf.Abs(endWorld.X - dragStartWorld.X),
+            Mathf.Abs(endWorld.Y - dragStartWorld.Y)
+        );
+
+        bool shiftHeld = Input.IsKeyPressed(Key.Shift);
+        if (!shiftHeld)
+        {
+            ClearSelection();
+        }
+
+        int addedCount = 0;
+        foreach (var actor in CombatState.Actors)
+        {
+            if (actor.Type != "crew" || actor.State != ActorState.Alive)
+                continue;
+
+            var actorWorldPos = actor.GetVisualPosition(TileSize);
+            var actorCenter = actorWorldPos + new Vector2(TileSize / 2f, TileSize / 2f);
+
+            if (rect.HasPoint(actorCenter))
+            {
+                AddToSelection(actor.Id);
+                addedCount++;
+            }
+        }
+
+        if (addedCount > 0)
+        {
+            GD.Print($"[Selection] Box selected {addedCount} units, total: {selectedActorIds.Count}");
+        }
+    }
+
+    private void HandleSelection(Vector2I gridPos, bool additive)
+    {
+        var clickedActor = CombatState.GetActorAtPosition(gridPos);
+
+        if (clickedActor != null && clickedActor.Type == "crew" && clickedActor.State == ActorState.Alive)
+        {
+            if (additive)
+            {
+                if (selectedActorIds.Contains(clickedActor.Id))
+                {
+                    RemoveFromSelection(clickedActor.Id);
+                    GD.Print($"[Selection] Removed actor {clickedActor.Id}, total: {selectedActorIds.Count}");
+                }
+                else
+                {
+                    AddToSelection(clickedActor.Id);
+                    GD.Print($"[Selection] Added actor {clickedActor.Id}, total: {selectedActorIds.Count}");
+                }
+            }
+            else
+            {
+                SelectActor(clickedActor.Id);
+            }
+        }
+        else if (!additive)
+        {
             ClearSelection();
         }
     }

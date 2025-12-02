@@ -115,6 +115,50 @@ public class MissionConfig
     }
 
     /// <summary>
+    /// M1 test mission - multiple units, no enemies, for testing selection and group movement.
+    /// Units are spread out to test box selection and formation movement.
+    /// </summary>
+    public static MissionConfig CreateM1TestMission()
+    {
+        return new MissionConfig
+        {
+            Id = "m1_test",
+            Name = "M1 Test - Multi-Unit Selection",
+            GridSize = new Vector2I(18, 14),
+            MapTemplate = new string[]
+            {
+                "##################",
+                "#................#",
+                "#.EE.............#",
+                "#.EE.............#",
+                "#................#",
+                "#......###.......#",
+                "#......#.........#",
+                "#......#.........#",
+                "#................#",
+                "#........###.....#",
+                "#........#.......#",
+                "#................#",
+                "#................#",
+                "##################"
+            },
+            CrewWeaponId = "rifle",
+            CrewSpawnPositions = new List<Vector2I>
+            {
+                // Group A - clustered in entry zone (for box select testing)
+                new Vector2I(2, 2),
+                new Vector2I(3, 2),
+                new Vector2I(2, 3),
+                new Vector2I(3, 3),
+                // Group B - spread out (for shift-click testing)
+                new Vector2I(6, 6),
+                new Vector2I(10, 4)
+            },
+            EnemySpawns = new List<EnemySpawn>() // No enemies for M1
+        };
+    }
+
+    /// <summary>
     /// Harder mission with more enemies and interior walls.
     /// </summary>
     public static MissionConfig CreateHardMission()
