@@ -17,6 +17,7 @@ Real-time with pause (RTwP) tactical combat logic.
 - **AbilitySystem.cs** - Ability execution: cooldowns, delayed effects, AoE damage, status effects
 - **MissionFactory.cs** - Builds CombatState from MissionConfig + CampaignState
 - **CombatSimulator.cs** - Headless battle simulator for testing/balancing
+- **FormationCalculator.cs** - Stateless utility for group movement: calculates spread destinations maintaining relative formation
 
 ### Data
 - **WeaponData.cs** - Weapon stats: range, damage, cooldown ticks

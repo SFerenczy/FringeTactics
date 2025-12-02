@@ -27,8 +27,8 @@ This document breaks down **Milestone 1** from `ROADMAP.md` into concrete implem
 | Single selection (click) | ✅ Complete | Works |
 | Box/multi-selection | ✅ Complete | Drag-select rectangle implemented |
 | Shift-click multi-select | ✅ Complete | Additive selection implemented |
-| Group move orders | ⚠️ Partial | Works but all units go to same tile |
-| Basic separation/spacing | ❌ Missing | Units stack on destination |
+| Group move orders | ✅ Complete | Formation-based movement implemented |
+| Basic separation/spacing | ✅ Complete | Units spread around destination |
 
 ---
 
@@ -462,10 +462,10 @@ public static class FormationCalculator
 ```
 
 **Acceptance Criteria**:
-- [ ] Single unit goes directly to target
-- [ ] Multiple units maintain relative positions
-- [ ] Blocked destinations find nearest walkable
-- [ ] No two units assigned same destination
+- [x] Single unit goes directly to target
+- [x] Multiple units maintain relative positions
+- [x] Blocked destinations find nearest walkable
+- [x] No two units assigned same destination
 
 ---
 
@@ -557,10 +557,10 @@ private void IssueGroupAttackOrder(int targetId)
 ```
 
 **Acceptance Criteria**:
-- [ ] Single unit moves directly to clicked position
-- [ ] Multiple units spread around clicked position
-- [ ] Units don't overlap at destination
-- [ ] Formation roughly maintained during movement
+- [x] Single unit moves directly to clicked position
+- [x] Multiple units spread around clicked position
+- [x] Units don't overlap at destination
+- [x] Formation roughly maintained during movement
 
 ---
 

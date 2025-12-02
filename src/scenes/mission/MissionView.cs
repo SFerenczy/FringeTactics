@@ -790,20 +790,46 @@ public partial class MissionView : Node2D
             }
         }
 
-        // Otherwise, issue move order
+        // Otherwise, issue move order with formation
+        IssueGroupMoveOrder(gridPos);
+    }
+
+    private void IssueGroupMoveOrder(Vector2I targetPos)
+    {
+        // Gather selected actors
+        var selectedActors = new List<Actor>();
         foreach (var actorId in selectedActorIds)
         {
-            CombatState.IssueMovementOrder(actorId, gridPos);
-            
-            // Track movement target for visual feedback
             var actor = CombatState.GetActorById(actorId);
-            if (actor != null && actor.IsMoving)
+            if (actor != null && actor.State == ActorState.Alive)
             {
-                actorMoveTargets[actorId] = gridPos;
+                selectedActors.Add(actor);
             }
         }
-        
-        // Show marker for first selected actor's target
+
+        if (selectedActors.Count == 0)
+            return;
+
+        // Calculate formation destinations
+        var destinations = FormationCalculator.CalculateGroupDestinations(
+            selectedActors,
+            targetPos,
+            CombatState.MapState
+        );
+
+        // Issue individual orders
+        foreach (var kvp in destinations)
+        {
+            CombatState.IssueMovementOrder(kvp.Key, kvp.Value);
+
+            var actor = CombatState.GetActorById(kvp.Key);
+            if (actor != null && actor.IsMoving)
+            {
+                actorMoveTargets[kvp.Key] = kvp.Value;
+            }
+        }
+
+        GD.Print($"[Movement] Group move: {selectedActors.Count} units to formation around {targetPos}");
         UpdateMoveTargetMarker();
     }
     
