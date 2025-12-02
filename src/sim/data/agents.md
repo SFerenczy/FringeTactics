@@ -8,7 +8,7 @@ Static configuration types and data definitions used across the sim layer.
   - `Definitions.Weapons` - WeaponDef lookup by ID (rifle, pistol, smg, shotgun)
   - `Definitions.Enemies` - EnemyDef lookup by ID (grunt, gunner, sniper, heavy)
   - `Definitions.Abilities` - AbilityDef lookup by ID (frag_grenade, stun_grenade, stun_shot)
-- **MissionConfig.cs** - Mission setup: grid size, crew spawns, enemy spawns with IDs. Has `CreateTestMission()`, `CreateHardMission()`.
+- **MissionConfig.cs** - Mission setup: grid size, map template, entry zone, crew spawns, enemy spawns. Has `CreateTestMission()`, `CreateM0TestMission()`, `CreateHardMission()`.
 
 ## Responsibilities
 

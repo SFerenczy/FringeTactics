@@ -7,7 +7,8 @@ Real-time with pause (RTwP) tactical combat logic.
 ### State
 - **CombatState.cs** - Root combat state: actors, map, time system, objectives. Processes ticks and attacks.
 - **Actor.cs** - Individual combatant: position, HP, state (Alive/Down/Dead), movement, attack orders
-- **MapState.cs** - Grid definition: walkable tiles, cover flags, spawn points
+- **MapState.cs** - Grid map state: TileType (Floor/Wall/Void), cover flags, entry zones, interactables
+- **MapBuilder.cs** - Factory for creating MapState from templates or configs
 
 ### Systems
 - **TimeSystem.cs** - Tick-based time: pause/resume, time scale, accumulator pattern
@@ -49,9 +50,16 @@ Real-time with pause (RTwP) tactical combat logic.
 ## Mission Setup Flow
 
 1. GameState.StartMission() calls MissionFactory.BuildFromCampaign()
-2. MissionFactory creates CombatState, spawns crew from campaign, spawns enemies
-3. GameState stores result in CurrentCombat
-4. MissionView reads CurrentCombat, creates ActorViews for existing actors
+2. MissionFactory uses MapBuilder.BuildFromConfig() to create MapState from template
+3. MissionFactory spawns crew from campaign, spawns enemies
+4. GameState stores result in CurrentCombat
+5. MissionView reads CurrentCombat, creates ActorViews for existing actors
+
+## Map Building
+
+- **MapBuilder.BuildFromTemplate()** - Parse string[] template with '#'=wall, '.'=floor, 'E'=entry
+- **MapBuilder.BuildFromConfig()** - Use MissionConfig.MapTemplate if present, else create basic map
+- **MapBuilder.BuildTestMap()** - Create simple walled room with default entry zone
 
 ## Combat Flow
 

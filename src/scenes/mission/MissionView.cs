@@ -210,24 +210,53 @@ public partial class MissionView : Node2D
 
     private void DrawGrid()
     {
-        // Draw a simple floor grid
+        // Draw grid with tile type visualization
         var gridSize = CombatState.MapState.GridSize;
+        var map = CombatState.MapState;
+        
         for (int y = 0; y < gridSize.Y; y++)
         {
             for (int x = 0; x < gridSize.X; x++)
             {
+                var pos = new Vector2I(x, y);
                 var tile = new ColorRect();
                 tile.Size = new Vector2(TileSize - 1, TileSize - 1);
                 tile.Position = new Vector2(x * TileSize, y * TileSize);
 
-                // Checkerboard pattern
-                if ((x + y) % 2 == 0)
+                // Color based on tile type
+                var tileType = map.GetTileType(pos);
+                switch (tileType)
                 {
-                    tile.Color = new Color(0.15f, 0.15f, 0.2f);
+                    case TileType.Wall:
+                        tile.Color = new Color(0.35f, 0.35f, 0.4f);
+                        break;
+                    case TileType.Void:
+                        tile.Color = new Color(0.05f, 0.05f, 0.08f);
+                        break;
+                    case TileType.Floor:
+                    default:
+                        // Checkerboard pattern for floor
+                        if ((x + y) % 2 == 0)
+                        {
+                            tile.Color = new Color(0.15f, 0.15f, 0.2f);
+                        }
+                        else
+                        {
+                            tile.Color = new Color(0.2f, 0.2f, 0.25f);
+                        }
+                        break;
                 }
-                else
+                
+                // Subtle highlight for entry zone
+                if (map.IsInEntryZone(pos))
                 {
-                    tile.Color = new Color(0.2f, 0.2f, 0.25f);
+                    tile.Color = tile.Color.Lightened(0.15f);
+                    // Add a slight green tint to entry zone
+                    tile.Color = new Color(
+                        tile.Color.R * 0.9f,
+                        tile.Color.G * 1.1f,
+                        tile.Color.B * 0.9f
+                    );
                 }
 
                 gridDisplay.AddChild(tile);

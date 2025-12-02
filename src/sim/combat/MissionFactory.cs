@@ -28,8 +28,8 @@ public static class MissionFactory
         var combat = new CombatState(seed ?? System.Environment.TickCount);
         result.CombatState = combat;
 
-        // Configure map
-        combat.MapState.GridSize = config.GridSize;
+        // Build map from config using MapBuilder
+        combat.MapState = MapBuilder.BuildFromConfig(config);
         combat.MissionConfig = config;
 
         // Spawn crew from campaign with configured weapon
@@ -62,8 +62,8 @@ public static class MissionFactory
     {
         var combat = new CombatState(seed ?? System.Environment.TickCount);
 
-        // Configure map
-        combat.MapState.GridSize = config.GridSize;
+        // Build map from config using MapBuilder
+        combat.MapState = MapBuilder.BuildFromConfig(config);
         combat.MissionConfig = config;
 
         // Spawn sandbox crew with configured weapon

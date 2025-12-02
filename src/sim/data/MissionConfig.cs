@@ -28,6 +28,13 @@ public class MissionConfig
 
     // Map settings
     public Vector2I GridSize { get; set; } = new Vector2I(12, 10);
+    
+    // Map template (optional - if null, uses GridSize to create basic map)
+    // Template characters: '.' = floor, '#' = wall, 'E' = entry zone, ' ' = void
+    public string[] MapTemplate { get; set; } = null;
+    
+    // Entry zone (optional - if null, derived from template 'E' tiles or default)
+    public List<Vector2I> EntryZone { get; set; } = new();
 
     // Spawn positions
     public List<Vector2I> CrewSpawnPositions { get; set; } = new();
@@ -37,7 +44,7 @@ public class MissionConfig
     public string CrewWeaponId { get; set; } = "rifle";
 
     /// <summary>
-    /// Default test mission configuration.
+    /// Default test mission configuration with walls and entry zone.
     /// </summary>
     public static MissionConfig CreateTestMission()
     {
@@ -45,25 +52,70 @@ public class MissionConfig
         {
             Id = "test_mission",
             Name = "Test Mission",
-            GridSize = new Vector2I(12, 10),
+            GridSize = new Vector2I(14, 10),
+            MapTemplate = new string[]
+            {
+                "##############",
+                "#............#",
+                "#.EE.........#",
+                "#.EE.........#",
+                "#............#",
+                "#............#",
+                "#............#",
+                "#............#",
+                "#............#",
+                "##############"
+            },
             CrewWeaponId = "rifle",
             CrewSpawnPositions = new List<Vector2I>
             {
                 new Vector2I(2, 2),
-                new Vector2I(4, 2),
-                new Vector2I(3, 4),
-                new Vector2I(5, 4)
+                new Vector2I(3, 2),
+                new Vector2I(2, 3),
+                new Vector2I(3, 3)
             },
             EnemySpawns = new List<EnemySpawn>
             {
-                new EnemySpawn("grunt", new Vector2I(9, 3)),
-                new EnemySpawn("gunner", new Vector2I(10, 5))
+                new EnemySpawn("grunt", new Vector2I(10, 3)),
+                new EnemySpawn("gunner", new Vector2I(11, 5))
             }
+        };
+    }
+    
+    /// <summary>
+    /// M0 test mission - single unit, no enemies, for testing basic movement.
+    /// </summary>
+    public static MissionConfig CreateM0TestMission()
+    {
+        return new MissionConfig
+        {
+            Id = "m0_test",
+            Name = "M0 Test - Movement Only",
+            GridSize = new Vector2I(14, 10),
+            MapTemplate = new string[]
+            {
+                "##############",
+                "#............#",
+                "#.E..........#",
+                "#............#",
+                "#....###.....#",
+                "#....#.......#",
+                "#....#.......#",
+                "#............#",
+                "#............#",
+                "##############"
+            },
+            CrewWeaponId = "rifle",
+            CrewSpawnPositions = new List<Vector2I>
+            {
+                new Vector2I(2, 2)
+            },
+            EnemySpawns = new List<EnemySpawn>() // No enemies for M0
         };
     }
 
     /// <summary>
-    /// Harder mission with more enemies.
+    /// Harder mission with more enemies and interior walls.
     /// </summary>
     public static MissionConfig CreateHardMission()
     {
@@ -71,21 +123,36 @@ public class MissionConfig
         {
             Id = "hard_mission",
             Name = "Hard Mission",
-            GridSize = new Vector2I(14, 12),
+            GridSize = new Vector2I(16, 12),
+            MapTemplate = new string[]
+            {
+                "################",
+                "#..............#",
+                "#.EE...........#",
+                "#.EE...........#",
+                "#......###.....#",
+                "#......#.......#",
+                "#......#.......#",
+                "#..............#",
+                "#.....###......#",
+                "#..............#",
+                "#..............#",
+                "################"
+            },
             CrewWeaponId = "rifle",
             CrewSpawnPositions = new List<Vector2I>
             {
                 new Vector2I(2, 2),
-                new Vector2I(4, 2),
-                new Vector2I(3, 4),
-                new Vector2I(5, 4)
+                new Vector2I(3, 2),
+                new Vector2I(2, 3),
+                new Vector2I(3, 3)
             },
             EnemySpawns = new List<EnemySpawn>
             {
-                new EnemySpawn("grunt", new Vector2I(10, 3)),
-                new EnemySpawn("grunt", new Vector2I(11, 5)),
-                new EnemySpawn("gunner", new Vector2I(12, 4)),
-                new EnemySpawn("heavy", new Vector2I(11, 7))
+                new EnemySpawn("grunt", new Vector2I(12, 3)),
+                new EnemySpawn("grunt", new Vector2I(13, 5)),
+                new EnemySpawn("gunner", new Vector2I(14, 4)),
+                new EnemySpawn("heavy", new Vector2I(12, 8))
             }
         };
     }
