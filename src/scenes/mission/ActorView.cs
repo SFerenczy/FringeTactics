@@ -16,6 +16,8 @@ public partial class ActorView : Node2D
     private ColorRect selectionIndicator;
     private ColorRect hpBarBackground;
     private ColorRect hpBarFill;
+    private Label ammoLabel;
+    private ColorRect reloadIndicator;
 
     private float hitFlashTimer = 0f;
     private bool isFlashing = false;
@@ -31,12 +33,38 @@ public partial class ActorView : Node2D
 
         sprite.Color = baseColor;
 
+        CreateAmmoLabel();
+        CreateReloadIndicator();
+
         if (actor != null)
         {
             Position = actor.GetVisualPosition(TileSize);
             UpdateHpBar();
+            UpdateAmmoDisplay();
             SubscribeToActorEvents();
         }
+    }
+
+    private void CreateAmmoLabel()
+    {
+        ammoLabel = new Label();
+        ammoLabel.Position = new Vector2(0, TileSize - 4);
+        ammoLabel.AddThemeColorOverride("font_color", new Color(0.9f, 0.9f, 0.9f));
+        ammoLabel.AddThemeColorOverride("font_shadow_color", new Color(0, 0, 0));
+        ammoLabel.AddThemeFontSizeOverride("font_size", 10);
+        ammoLabel.AddThemeConstantOverride("shadow_offset_x", 1);
+        ammoLabel.AddThemeConstantOverride("shadow_offset_y", 1);
+        AddChild(ammoLabel);
+    }
+
+    private void CreateReloadIndicator()
+    {
+        reloadIndicator = new ColorRect();
+        reloadIndicator.Size = new Vector2(TileSize - 4, 3);
+        reloadIndicator.Position = new Vector2(2, TileSize - 8);
+        reloadIndicator.Color = new Color(0.3f, 0.6f, 1.0f); // Blue for reload
+        reloadIndicator.Visible = false;
+        AddChild(reloadIndicator);
     }
 
     public void Setup(Actor actorData, Color color)
@@ -69,6 +97,12 @@ public partial class ActorView : Node2D
 
         actor.DamageTaken += OnDamageTaken;
         actor.Died += OnDied;
+        actor.ReloadCompleted += OnReloadCompleted;
+    }
+
+    private void OnReloadCompleted(Actor a)
+    {
+        UpdateAmmoDisplay();
     }
 
     private void OnDamageTaken(Actor a, int damage)
@@ -97,6 +131,61 @@ public partial class ActorView : Node2D
         selectionIndicator.Visible = false;
         hpBarBackground.Visible = false;
         hpBarFill.Visible = false;
+        ammoLabel.Visible = false;
+        reloadIndicator.Visible = false;
+    }
+
+    private void UpdateAmmoDisplay()
+    {
+        if (actor == null || ammoLabel == null)
+        {
+            return;
+        }
+
+        // Only show ammo for player units
+        if (actor.Type != "crew")
+        {
+            ammoLabel.Visible = false;
+            return;
+        }
+
+        ammoLabel.Visible = true;
+        ammoLabel.Text = $"{actor.CurrentMagazine}";
+
+        // Color based on ammo state
+        if (actor.CurrentMagazine == 0)
+        {
+            ammoLabel.AddThemeColorOverride("font_color", new Color(1.0f, 0.3f, 0.3f)); // Red - empty
+        }
+        else if (actor.CurrentMagazine <= actor.EquippedWeapon.MagazineSize / 3)
+        {
+            ammoLabel.AddThemeColorOverride("font_color", new Color(1.0f, 0.8f, 0.2f)); // Yellow - low
+        }
+        else
+        {
+            ammoLabel.AddThemeColorOverride("font_color", new Color(0.9f, 0.9f, 0.9f)); // White - ok
+        }
+    }
+
+    private void UpdateReloadIndicator()
+    {
+        if (actor == null || reloadIndicator == null)
+        {
+            return;
+        }
+
+        if (actor.IsReloading && actor.Type == "crew")
+        {
+            reloadIndicator.Visible = true;
+            
+            // Show progress bar
+            var progress = 1f - (actor.ReloadProgress / (float)actor.EquippedWeapon.ReloadTicks);
+            reloadIndicator.Size = new Vector2((TileSize - 4) * progress, 3);
+        }
+        else
+        {
+            reloadIndicator.Visible = false;
+        }
     }
 
     private void UpdateHpBar()
@@ -133,6 +222,10 @@ public partial class ActorView : Node2D
         }
 
         Position = actor.GetVisualPosition(TileSize);
+
+        // Update ammo and reload display
+        UpdateAmmoDisplay();
+        UpdateReloadIndicator();
 
         // Handle hit flash
         if (isFlashing)
@@ -177,6 +270,7 @@ public partial class ActorView : Node2D
         {
             actor.DamageTaken -= OnDamageTaken;
             actor.Died -= OnDied;
+            actor.ReloadCompleted -= OnReloadCompleted;
         }
     }
 }
