@@ -22,7 +22,9 @@ public partial class MissionView : Node2D
     private Label abilityTargetingLabel;
 
     // Movement target marker
-    private ColorRect moveTargetMarker;
+    private Node2D moveTargetMarker;
+    private ColorRect moveTargetFill;
+    private ColorRect moveTargetBorder;
     private Dictionary<int, Vector2I> actorMoveTargets = new(); // actorId -> target position
 
     // Mission result tracking
@@ -124,12 +126,24 @@ public partial class MissionView : Node2D
     
     private void CreateMoveTargetMarker()
     {
-        moveTargetMarker = new ColorRect();
-        moveTargetMarker.Size = new Vector2(TileSize - 2, TileSize - 2);
-        moveTargetMarker.Color = new Color(0.3f, 0.8f, 0.3f, 0.5f); // Semi-transparent green
+        moveTargetMarker = new Node2D();
         moveTargetMarker.Visible = false;
         moveTargetMarker.ZIndex = 1; // Above grid, below actors
         gridDisplay.AddChild(moveTargetMarker);
+        
+        // Border (slightly larger, behind fill)
+        moveTargetBorder = new ColorRect();
+        moveTargetBorder.Size = new Vector2(TileSize - 2, TileSize - 2);
+        moveTargetBorder.Position = Vector2.Zero;
+        moveTargetBorder.Color = new Color(0.2f, 0.9f, 0.2f, 0.8f); // Bright green border
+        moveTargetMarker.AddChild(moveTargetBorder);
+        
+        // Inner fill (smaller, on top)
+        moveTargetFill = new ColorRect();
+        moveTargetFill.Size = new Vector2(TileSize - 8, TileSize - 8);
+        moveTargetFill.Position = new Vector2(3, 3);
+        moveTargetFill.Color = new Color(0.3f, 0.8f, 0.3f, 0.4f); // Semi-transparent green fill
+        moveTargetMarker.AddChild(moveTargetFill);
     }
 
     private void CreateMissionEndPanel()
@@ -244,6 +258,9 @@ public partial class MissionView : Node2D
         var gridSize = CombatState.MapState.GridSize;
         var map = CombatState.MapState;
         
+        // Draw map border
+        DrawMapBorder(gridSize);
+        
         for (int y = 0; y < gridSize.Y; y++)
         {
             for (int x = 0; x < gridSize.X; x++)
@@ -292,6 +309,42 @@ public partial class MissionView : Node2D
                 gridDisplay.AddChild(tile);
             }
         }
+    }
+    
+    private void DrawMapBorder(Vector2I gridSize)
+    {
+        var borderWidth = 2;
+        var borderColor = new Color(0.4f, 0.45f, 0.5f);
+        var mapWidth = gridSize.X * TileSize;
+        var mapHeight = gridSize.Y * TileSize;
+        
+        // Top border
+        var top = new ColorRect();
+        top.Size = new Vector2(mapWidth + borderWidth * 2, borderWidth);
+        top.Position = new Vector2(-borderWidth, -borderWidth);
+        top.Color = borderColor;
+        gridDisplay.AddChild(top);
+        
+        // Bottom border
+        var bottom = new ColorRect();
+        bottom.Size = new Vector2(mapWidth + borderWidth * 2, borderWidth);
+        bottom.Position = new Vector2(-borderWidth, mapHeight);
+        bottom.Color = borderColor;
+        gridDisplay.AddChild(bottom);
+        
+        // Left border
+        var left = new ColorRect();
+        left.Size = new Vector2(borderWidth, mapHeight);
+        left.Position = new Vector2(-borderWidth, 0);
+        left.Color = borderColor;
+        gridDisplay.AddChild(left);
+        
+        // Right border
+        var right = new ColorRect();
+        right.Size = new Vector2(borderWidth, mapHeight);
+        right.Position = new Vector2(mapWidth, 0);
+        right.Color = borderColor;
+        gridDisplay.AddChild(right);
     }
 
     /// <summary>
@@ -411,14 +464,14 @@ public partial class MissionView : Node2D
             SelectCrewByIndex(2);
             return;
         }
-        if (@event.IsActionPressed("select_all") || (@event is InputEventKey keyEvent && keyEvent.Pressed && keyEvent.Keycode == Key.Tab))
+        if (@event.IsActionPressed("select_all") || (@event is InputEventKey tabEvent && tabEvent.Pressed && tabEvent.Keycode == Key.Tab))
         {
             SelectAllCrew();
             return;
         }
 
         // Grenade ability (G key)
-        if (@event is InputEventKey keyEvent && keyEvent.Pressed && keyEvent.Keycode == Key.G)
+        if (@event is InputEventKey gEvent && gEvent.Pressed && gEvent.Keycode == Key.G)
         {
             var grenade = Definitions.Abilities.Get("frag_grenade")?.ToAbilityData();
             if (grenade != null)
