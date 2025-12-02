@@ -22,11 +22,11 @@ This document breaks down **Milestone 2** from `ROADMAP.md` into concrete implem
 
 | M2 Requirement | Current Status | Gap |
 |----------------|----------------|-----|
-| Line-of-sight blocked by walls/doors | ✅ Partial | `HasLineOfSight()` exists but uses `IsWalkable()` not `BlocksLOS()` |
-| Per-unit vision radius | ❌ Missing | Need `VisionRadius` property on Actor |
-| Fog-of-war states per cell | ❌ Missing | Need visibility state tracking in sim layer |
-| Unknown / Seen / Visible states | ❌ Missing | Need `VisibilityState` enum and per-tile tracking |
-| Visual representation of fog | ❌ Missing | Need fog overlay in MissionView |
+| Line-of-sight blocked by walls/doors | ✅ Complete | `HasLineOfSight()` now uses `BlocksLOS()` |
+| Per-unit vision radius | ✅ Complete | `Actor.VisionRadius` property (default: 8) |
+| Fog-of-war states per cell | ✅ Complete | `VisibilitySystem` tracks per-tile state |
+| Unknown / Seen / Visible states | ✅ Complete | `VisibilityState` enum implemented |
+| Visual representation of fog | ✅ Complete | Fog overlay in MissionView |
 
 ---
 

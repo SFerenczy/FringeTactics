@@ -42,6 +42,11 @@ public partial class MissionView : Node2D
     private Dictionary<Vector2I, ColorRect> fogTiles = new();
     private bool fogDirty = true;
 
+    // Debug overlay for visibility
+    private Node2D visibilityDebugLayer;
+    private Dictionary<Vector2I, ColorRect> debugTiles = new();
+    private bool showVisibilityDebug = false;
+
     // Double-click detection
     private float lastClickTime = 0f;
     private int lastClickedActorId = -1;
@@ -125,7 +130,7 @@ public partial class MissionView : Node2D
         timeStateWidget.ConnectToTimeSystem(CombatState.TimeSystem);
 
         // Update instructions
-        instructionsLabel.Text = "Space: Pause/Resume | G: Grenade | Scroll: Zoom | WASD: Pan\n1-3: Select/Recall group | Ctrl+1-3: Save group | Tab: Select all\nClick: Select | Shift+Click: Add/Remove | Drag: Box | DblClick: All\nRClick: Move/Attack | C: Center on unit";
+        instructionsLabel.Text = "Space: Pause/Resume | G: Grenade | Scroll: Zoom | WASD: Pan | F3: Debug\n1-3: Select/Recall group | Ctrl+1-3: Save group | Tab: Select all\nClick: Select | Shift+Click: Add/Remove | Drag: Box | DblClick: All\nRClick: Move/Attack | C: Center on unit";
 
         // Create ability targeting label
         abilityTargetingLabel = new Label();
@@ -472,6 +477,75 @@ public partial class MissionView : Node2D
         }
     }
 
+    private void ToggleVisibilityDebug()
+    {
+        showVisibilityDebug = !showVisibilityDebug;
+
+        if (showVisibilityDebug && visibilityDebugLayer == null)
+        {
+            CreateVisibilityDebugLayer();
+        }
+
+        if (visibilityDebugLayer != null)
+        {
+            visibilityDebugLayer.Visible = showVisibilityDebug;
+        }
+
+        if (showVisibilityDebug)
+        {
+            UpdateVisibilityDebug();
+        }
+
+        GD.Print($"[Debug] Visibility overlay: {(showVisibilityDebug ? "ON" : "OFF")}");
+    }
+
+    private void CreateVisibilityDebugLayer()
+    {
+        visibilityDebugLayer = new Node2D();
+        visibilityDebugLayer.ZIndex = 10; // Above fog layer
+        visibilityDebugLayer.Name = "VisibilityDebugLayer";
+        gridDisplay.AddChild(visibilityDebugLayer);
+
+        var gridSize = CombatState.MapState.GridSize;
+        for (int y = 0; y < gridSize.Y; y++)
+        {
+            for (int x = 0; x < gridSize.X; x++)
+            {
+                var pos = new Vector2I(x, y);
+                var debugTile = new ColorRect();
+                debugTile.Size = new Vector2(8, 8); // Small indicator
+                debugTile.Position = new Vector2(x * TileSize + 2, y * TileSize + 2);
+                debugTile.MouseFilter = Control.MouseFilterEnum.Ignore;
+                visibilityDebugLayer.AddChild(debugTile);
+                debugTiles[pos] = debugTile;
+            }
+        }
+    }
+
+    private void UpdateVisibilityDebug()
+    {
+        if (!showVisibilityDebug || visibilityDebugLayer == null)
+        {
+            return;
+        }
+
+        foreach (var kvp in debugTiles)
+        {
+            var pos = kvp.Key;
+            var tile = kvp.Value;
+            var visibility = CombatState.Visibility.GetVisibility(pos);
+
+            // Color code: Green=Visible, Yellow=Revealed, Red=Unknown
+            tile.Color = visibility switch
+            {
+                VisibilityState.Visible => new Color(0.0f, 1.0f, 0.0f, 0.8f),   // Green
+                VisibilityState.Revealed => new Color(1.0f, 1.0f, 0.0f, 0.8f), // Yellow
+                VisibilityState.Unknown => new Color(1.0f, 0.0f, 0.0f, 0.8f),  // Red
+                _ => Colors.White
+            };
+        }
+    }
+
     /// <summary>
     /// Create visual representations for all actors already in CombatState.
     /// MissionView no longer decides what to spawn - that's MissionFactory's job.
@@ -545,6 +619,12 @@ public partial class MissionView : Node2D
 
         // Update enemy visibility based on fog
         UpdateActorFogVisibility();
+
+        // Update debug overlay if enabled
+        if (showVisibilityDebug)
+        {
+            UpdateVisibilityDebug();
+        }
         
         // Update movement target marker visibility
         UpdateMoveTargetMarker();
@@ -616,6 +696,13 @@ public partial class MissionView : Node2D
                 SelectAllCrew();
                 return;
             }
+        }
+
+        // Toggle visibility debug overlay (F3)
+        if (@event is InputEventKey f3Event && f3Event.Pressed && f3Event.Keycode == Key.F3)
+        {
+            ToggleVisibilityDebug();
+            return;
         }
 
         // Grenade ability (G key)
