@@ -69,6 +69,7 @@ public partial class Actor
         if (TargetPosition != GridPosition)
         {
             IsMoving = true;
+            MoveProgress = 0f; // Reset progress when changing target to prevent tile jumps
         }
     }
 
