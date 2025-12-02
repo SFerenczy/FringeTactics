@@ -278,7 +278,7 @@ public partial class CombatState
                 if (result.Hit)
                 {
                     target.TakeDamage(result.Damage);
-                    SimLog.Log($"[Combat] {attacker.Type}#{attacker.Id} hit {target.Type}#{target.Id} for {result.Damage} damage. HP: {target.Hp}/{target.MaxHp}");
+                    SimLog.Log($"[Combat] {attacker.Type}#{attacker.Id} hit {target.Type}#{target.Id} for {result.Damage} damage ({result.HitChance:P0} chance). HP: {target.Hp}/{target.MaxHp}");
 
                     if (target.State == ActorState.Dead)
                     {
@@ -288,7 +288,7 @@ public partial class CombatState
                 }
                 else
                 {
-                    SimLog.Log($"[Combat] {attacker.Type}#{attacker.Id} missed {target.Type}#{target.Id}");
+                    SimLog.Log($"[Combat] {attacker.Type}#{attacker.Id} missed {target.Type}#{target.Id} ({result.HitChance:P0} chance)");
                 }
 
                 AttackResolved?.Invoke(attacker, target, result);

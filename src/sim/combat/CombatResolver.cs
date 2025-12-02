@@ -9,7 +9,10 @@ namespace FringeTactics;
 /// </summary>
 public static class CombatResolver
 {
-    public const float BASE_HIT_CHANCE = 0.70f;
+    // Hit chance tuning constants
+    public const float RANGE_PENALTY_FACTOR = 0.3f;  // At max range, 30% penalty
+    public const float MIN_HIT_CHANCE = 0.10f;       // Floor to prevent impossible shots
+    public const float MAX_HIT_CHANCE = 0.95f;       // Cap to prevent guaranteed hits
 
     /// <summary>
     /// Check if attacker can attack target with given weapon.
@@ -40,7 +43,32 @@ public static class CombatResolver
     }
 
     /// <summary>
+    /// Calculate hit chance based on distance, weapon accuracy, and attacker stats.
+    /// </summary>
+    public static float CalculateHitChance(Actor attacker, Actor target, WeaponData weapon)
+    {
+        var distance = GetDistance(attacker.GridPosition, target.GridPosition);
+        
+        // Base accuracy from weapon
+        var baseAccuracy = weapon.Accuracy;
+        
+        // Distance penalty: increases as you approach max range
+        var rangeFraction = distance / weapon.Range;
+        var distancePenalty = rangeFraction * RANGE_PENALTY_FACTOR;
+        
+        // Apply attacker's aim stat bonus (+1% per point)
+        var aimBonus = (attacker.Stats.TryGetValue("aim", out var aim) ? aim : 0) * 0.01f;
+        
+        // Final calculation
+        var hitChance = baseAccuracy * (1f - distancePenalty) + aimBonus;
+        
+        // Clamp to valid range
+        return Mathf.Clamp(hitChance, MIN_HIT_CHANCE, MAX_HIT_CHANCE);
+    }
+
+    /// <summary>
     /// Resolve an attack. Returns the result with damage dealt.
+    /// Uses distance-based hit chance calculation.
     /// </summary>
     public static AttackResult ResolveAttack(Actor attacker, Actor target, WeaponData weapon, MapState map, Random rng)
     {
@@ -55,12 +83,16 @@ public static class CombatResolver
         {
             result.Hit = false;
             result.Damage = 0;
+            result.HitChance = 0f;
             return result;
         }
 
-        // Simple flat hit chance for now
-        var roll = rng.NextDouble();
-        result.Hit = roll < BASE_HIT_CHANCE;
+        // Calculate hit chance based on distance and accuracy
+        var hitChance = CalculateHitChance(attacker, target, weapon);
+        result.HitChance = hitChance;
+        
+        var roll = (float)rng.NextDouble();
+        result.Hit = roll < hitChance;
 
         if (result.Hit)
         {
@@ -180,4 +212,5 @@ public struct AttackResult
     public string WeaponName { get; set; }
     public bool Hit { get; set; }
     public int Damage { get; set; }
+    public float HitChance { get; set; }  // For UI feedback
 }

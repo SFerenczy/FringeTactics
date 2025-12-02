@@ -27,7 +27,7 @@ This document breaks down **Milestone 3** from `ROADMAP.md` into concrete implem
 | Unit HP | ✅ Complete | `Actor.Hp`, `Actor.MaxHp` exist |
 | Basic ballistic weapon | ✅ Complete | `WeaponData` with Range, Damage, Cooldown |
 | Attack commands on visible enemies | ✅ Complete | `IssueAttackOrder()` works |
-| Hit chance based on distance + accuracy | ⚠️ Partial | Flat 70% hit chance, no distance falloff |
+| Hit chance based on distance + accuracy | ✅ Complete | `CalculateHitChance()` with distance falloff |
 | Damage reduces HP; 0 HP = death | ✅ Complete | `TakeDamage()` handles death |
 | Magazine + reserve ammo | ❌ Missing | No ammo system |
 | Reload action with time cost | ❌ Missing | No reload mechanic |
