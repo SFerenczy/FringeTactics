@@ -6,6 +6,7 @@ public partial class MainMenu : Control
 {
     private Button startCampaignButton;
     private Button startTestMissionButton;
+    private Button startM0TestButton;
     private Button quitButton;
     private Label titleLabel;
 
@@ -58,6 +59,18 @@ public partial class MainMenu : Control
         var spacer3 = new Control();
         spacer3.CustomMinimumSize = new Vector2(0, 10);
         vbox.AddChild(spacer3);
+        
+        // M0 Test Mission button (single unit, no enemies)
+        startM0TestButton = new Button();
+        startM0TestButton.Text = "M0 Test (Single Unit)";
+        startM0TestButton.CustomMinimumSize = new Vector2(250, 50);
+        startM0TestButton.Pressed += OnStartM0TestPressed;
+        vbox.AddChild(startM0TestButton);
+
+        // Spacer
+        var spacer4 = new Control();
+        spacer4.CustomMinimumSize = new Vector2(0, 10);
+        vbox.AddChild(spacer4);
 
         // Quit button
         quitButton = new Button();
@@ -77,6 +90,12 @@ public partial class MainMenu : Control
     {
         GD.Print("[MainMenu] Starting test mission (sandbox mode)...");
         GameState.Instance.StartSandboxMission();
+    }
+    
+    private void OnStartM0TestPressed()
+    {
+        GD.Print("[MainMenu] Starting M0 test mission (single unit, no enemies)...");
+        GameState.Instance.StartM0TestMission();
     }
 
     private void OnQuitPressed()

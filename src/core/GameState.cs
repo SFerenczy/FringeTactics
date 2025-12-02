@@ -129,6 +129,19 @@ public partial class GameState : Node
         Mode = "mission";
         GetTree().ChangeSceneToFile(MissionScene);
     }
+    
+    /// <summary>
+    /// Start the M0 test mission (single unit, no enemies).
+    /// </summary>
+    public void StartM0TestMission()
+    {
+        var config = MissionConfig.CreateM0TestMission();
+        CurrentCombat = MissionFactory.BuildSandbox(config);
+        actorToCrewMap.Clear();
+
+        Mode = "mission";
+        GetTree().ChangeSceneToFile(MissionScene);
+    }
 
     public void EndMission(bool victory, CombatState combatState)
     {

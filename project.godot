@@ -24,6 +24,10 @@ DevTools="*res://src/core/DevTools.cs"
 
 project/assembly_name="Fringe Tactics"
 
+[editor_plugins]
+
+enabled=PackedStringArray("res://addons/gdUnit4/plugin.cfg")
+
 [input]
 
 pause_toggle={
