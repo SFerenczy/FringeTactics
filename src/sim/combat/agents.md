@@ -29,6 +29,7 @@ Real-time with pause (RTwP) tactical combat logic.
 
 - Simulate tactical combat tick-by-tick
 - Process movement and attack orders
+- Resolve movement collisions (prevent units from occupying same tile)
 - Resolve combat (hit/miss, damage, death)
 - Emit events for state changes (ActorAdded, AttackResolved, ActorDied, MissionEnded)
 - Run enemy AI decisions

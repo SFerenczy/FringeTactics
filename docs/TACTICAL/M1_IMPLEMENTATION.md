@@ -817,9 +817,9 @@ private void ProcessMovementCollisions()
 **Note**: This is a simple solution. More sophisticated pathfinding with reservation would be [PLUS].
 
 **Acceptance Criteria**:
-- [ ] Units don't occupy same tile simultaneously
-- [ ] Movement feels smooth despite collision handling
-- [ ] No deadlocks (units stuck forever)
+- [x] Units don't occupy same tile simultaneously
+- [x] Movement feels smooth despite collision handling
+- [x] No deadlocks (units pause and retry next tick)
 
 ---
 

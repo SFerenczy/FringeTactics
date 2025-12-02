@@ -92,6 +92,9 @@ public partial class CombatState
         // Process attacks first
         ProcessAttacks();
 
+        // Resolve movement collisions before actors move
+        ResolveMovementCollisions();
+
         // Then process actor movement/cooldowns
         foreach (var actor in Actors)
         {
@@ -100,6 +103,60 @@ public partial class CombatState
 
         // Check win/lose conditions
         CheckMissionEnd();
+    }
+
+    private void ResolveMovementCollisions()
+    {
+        // Build map of next-tile destinations for moving actors
+        var destinations = new Dictionary<Vector2I, List<Actor>>();
+
+        foreach (var actor in Actors)
+        {
+            if (actor.State != ActorState.Alive || !actor.IsMoving)
+                continue;
+
+            // Calculate the tile this actor is about to enter
+            var diff = actor.TargetPosition - actor.GridPosition;
+            var moveDir = new Vector2I(
+                Mathf.Clamp(diff.X, -1, 1),
+                Mathf.Clamp(diff.Y, -1, 1)
+            );
+            var nextTile = actor.GridPosition + moveDir;
+
+            if (!destinations.ContainsKey(nextTile))
+                destinations[nextTile] = new List<Actor>();
+            destinations[nextTile].Add(actor);
+        }
+
+        // For tiles with multiple actors heading there, pause all but the closest
+        foreach (var kvp in destinations)
+        {
+            var tile = kvp.Key;
+            var actors = kvp.Value;
+
+            // Also check if an actor is already standing on that tile
+            var occupant = GetActorAtPosition(tile);
+            bool tileOccupied = occupant != null && occupant.State == ActorState.Alive && !occupant.IsMoving;
+
+            if (actors.Count > 1 || tileOccupied)
+            {
+                // Sort by distance to target (closest gets priority)
+                actors.Sort((a, b) =>
+                {
+                    var distA = (a.TargetPosition - a.GridPosition).LengthSquared();
+                    var distB = (b.TargetPosition - b.GridPosition).LengthSquared();
+                    return distA.CompareTo(distB);
+                });
+
+                // If tile is occupied by stationary unit, pause all movers
+                int startIndex = tileOccupied ? 0 : 1;
+
+                for (int i = startIndex; i < actors.Count; i++)
+                {
+                    actors[i].PauseMovement();
+                }
+            }
+        }
     }
 
     private void CheckMissionEnd()
@@ -254,6 +311,7 @@ public partial class CombatState
         var actor = new Actor(nextActorId, actorType);
         actor.GridPosition = position;
         actor.SetTarget(position);
+        actor.Map = MapState; // Set map reference for wall collision checking
         nextActorId += 1;
         Actors.Add(actor);
         ActorAdded?.Invoke(actor);

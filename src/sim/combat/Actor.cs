@@ -38,6 +38,9 @@ public partial class Actor
     public float MoveProgress { get; private set; } = 0.0f; // 0 to 1 between tiles
     public Vector2I MoveDirection { get; private set; } = Vector2I.Zero;
 
+    // Reference to map for pathfinding (set by CombatState)
+    public MapState Map { get; set; } = null;
+
     // C# Events
     public event Action<Actor, Vector2I> PositionChanged;
     public event Action<Actor> ArrivedAtTarget;
@@ -103,6 +106,44 @@ public partial class Actor
             Mathf.Clamp(diff.Y, -1, 1)
         );
 
+        // Check if next tile is walkable
+        var nextTile = GridPosition + MoveDirection;
+        if (Map != null && !Map.IsWalkable(nextTile))
+        {
+            // Try cardinal directions if diagonal is blocked
+            if (MoveDirection.X != 0 && MoveDirection.Y != 0)
+            {
+                // Try horizontal first
+                var horizontalTile = GridPosition + new Vector2I(MoveDirection.X, 0);
+                var verticalTile = GridPosition + new Vector2I(0, MoveDirection.Y);
+
+                if (Map.IsWalkable(horizontalTile))
+                {
+                    MoveDirection = new Vector2I(MoveDirection.X, 0);
+                    nextTile = horizontalTile;
+                }
+                else if (Map.IsWalkable(verticalTile))
+                {
+                    MoveDirection = new Vector2I(0, MoveDirection.Y);
+                    nextTile = verticalTile;
+                }
+                else
+                {
+                    // Completely blocked - stop movement
+                    IsMoving = false;
+                    TargetPosition = GridPosition;
+                    return;
+                }
+            }
+            else
+            {
+                // Cardinal direction blocked - stop movement
+                IsMoving = false;
+                TargetPosition = GridPosition;
+                return;
+            }
+        }
+
         // Progress movement
         MoveProgress += MoveSpeed * tickDuration;
 
@@ -137,6 +178,15 @@ public partial class Actor
         AttackTargetId = null;
         IsMoving = false;
         TargetPosition = GridPosition;
+    }
+
+    /// <summary>
+    /// Temporarily pause movement for one tick (collision avoidance).
+    /// The actor will resume moving next tick if path is clear.
+    /// </summary>
+    public void PauseMovement()
+    {
+        MoveProgress = 0f;
     }
 
     public void TakeDamage(int damage)
