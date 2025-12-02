@@ -26,6 +26,7 @@ public partial class Actor
     public Dictionary<string, int> Stats { get; set; } = new() { { "aim", 0 }, { "toughness", 0 }, { "reflexes", 0 } };
     public List<string> Abilities { get; set; } = new();
     public List<string> StatusEffects { get; set; } = new();
+    public int VisionRadius { get; set; } = 8;
 
     // Weapon and attack
     public WeaponData EquippedWeapon { get; set; } = WeaponData.DefaultRifle;

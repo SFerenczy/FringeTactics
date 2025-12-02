@@ -41,6 +41,9 @@ public partial class CombatState
     // Ability system
     public AbilitySystem AbilitySystem { get; private set; }
 
+    // Visibility system (fog of war)
+    public VisibilitySystem Visibility { get; private set; }
+
     // C# Events
     public event Action<Actor> ActorAdded;
     public event Action<Actor> ActorRemoved;
@@ -63,8 +66,19 @@ public partial class CombatState
         Objectives = new Dictionary<string, object>();
         aiController = new AIController(this);
         AbilitySystem = new AbilitySystem(this);
+        Visibility = new VisibilitySystem(MapState);
 
         SimLog.Log($"[CombatState] Initialized with seed {seed}");
+    }
+
+    /// <summary>
+    /// Initialize or reinitialize the visibility system after MapState is set.
+    /// Called by MissionFactory after building the map.
+    /// </summary>
+    public void InitializeVisibility()
+    {
+        Visibility = new VisibilitySystem(MapState);
+        SimLog.Log("[CombatState] Visibility system initialized");
     }
 
     public void Update(float dt)
@@ -100,6 +114,9 @@ public partial class CombatState
         {
             actor.Tick(tickDuration);
         }
+
+        // Update visibility after movement
+        Visibility.UpdateVisibility(Actors);
 
         // Check win/lose conditions
         CheckMissionEnd();

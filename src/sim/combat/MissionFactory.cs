@@ -31,6 +31,7 @@ public static class MissionFactory
         // Build map from config using MapBuilder
         combat.MapState = MapBuilder.BuildFromConfig(config);
         combat.MissionConfig = config;
+        combat.InitializeVisibility();
 
         // Spawn crew from campaign with configured weapon
         var crewWeapon = WeaponData.FromId(config.CrewWeaponId);
@@ -52,6 +53,9 @@ public static class MissionFactory
         // Spawn enemies from definitions
         SpawnEnemies(combat, config);
 
+        // Calculate initial visibility so entry zone is visible at start
+        combat.Visibility.UpdateVisibility(combat.Actors);
+
         return result;
     }
 
@@ -65,6 +69,7 @@ public static class MissionFactory
         // Build map from config using MapBuilder
         combat.MapState = MapBuilder.BuildFromConfig(config);
         combat.MissionConfig = config;
+        combat.InitializeVisibility();
 
         // Spawn sandbox crew with configured weapon
         var crewWeapon = WeaponData.FromId(config.CrewWeaponId);
@@ -79,6 +84,9 @@ public static class MissionFactory
 
         // Spawn enemies from definitions
         SpawnEnemies(combat, config);
+
+        // Calculate initial visibility so entry zone is visible at start
+        combat.Visibility.UpdateVisibility(combat.Actors);
 
         return combat;
     }

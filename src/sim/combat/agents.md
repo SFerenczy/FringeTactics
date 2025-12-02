@@ -15,6 +15,7 @@ Real-time with pause (RTwP) tactical combat logic.
 - **CombatResolver.cs** - Stateless attack resolution: range, LOS, hit chance, damage
 - **AIController.cs** - Simple enemy AI: every N ticks, pick closest visible player, move toward range, attack if able
 - **AbilitySystem.cs** - Ability execution: cooldowns, delayed effects, AoE damage, status effects
+- **VisibilitySystem.cs** - Fog of war: tracks per-tile visibility (Unknown/Revealed/Visible), LOS from crew positions
 - **MissionFactory.cs** - Builds CombatState from MissionConfig + CampaignState
 - **CombatSimulator.cs** - Headless battle simulator for testing/balancing
 - **FormationCalculator.cs** - Stateless utility for group movement: calculates spread destinations maintaining relative formation
@@ -24,6 +25,7 @@ Real-time with pause (RTwP) tactical combat logic.
 - **CombatStats.cs** - Combat statistics: shots fired, hits, misses for player and enemy
 - **AbilityData.cs** - Ability definitions: targeting type, range, cooldown, delay, radius, damage, effects
 - **CombatRng.cs** - Seeded RNG wrapper for deterministic simulation
+- **VisibilityState.cs** - Enum for tile visibility: Unknown, Revealed, Visible
 
 ## Responsibilities
 
@@ -34,6 +36,7 @@ Real-time with pause (RTwP) tactical combat logic.
 - Emit events for state changes (ActorAdded, AttackResolved, ActorDied, MissionEnded)
 - Run enemy AI decisions
 - Execute abilities with delayed effects and AoE
+- Track fog of war visibility per tile
 
 ## Dependencies
 
@@ -74,6 +77,15 @@ Real-time with pause (RTwP) tactical combat logic.
 6. Actor.TakeDamage() applies damage, emits events
 7. CombatState.CheckMissionEnd() detects victory/defeat
 8. ActorView subscribes to events, updates visuals
+
+## Visibility Flow
+
+1. MissionFactory initializes VisibilitySystem after building map
+2. MissionFactory calculates initial visibility from crew spawn positions
+3. Each tick: CombatState.ProcessTick() calls Visibility.UpdateVisibility()
+4. VisibilitySystem marks old visible tiles as Revealed, calculates new visible tiles from crew LOS
+5. VisibilityChanged event fires → MissionView updates fog overlay
+6. Actor.VisionRadius determines how far each crew member can see
 
 ## Ability Pipeline
 

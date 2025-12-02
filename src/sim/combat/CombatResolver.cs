@@ -109,18 +109,17 @@ public static class CombatResolver
     }
 
     /// <summary>
-    /// Simple line-of-sight check using Bresenham's line algorithm.
-    /// For now, just checks if path is clear of non-walkable tiles.
+    /// Line-of-sight check using Bresenham's line algorithm.
+    /// Checks if path is clear of LOS-blocking tiles (walls, void).
     /// </summary>
     public static bool HasLineOfSight(Vector2I from, Vector2I to, MapState map)
     {
-        // Simple implementation: check tiles along the line
         var points = GetLinePoints(from, to);
 
         // Skip first (attacker) and last (target) points
         for (int i = 1; i < points.Length - 1; i++)
         {
-            if (!map.IsWalkable(points[i]))
+            if (map.BlocksLOS(points[i]))
             {
                 return false;
             }
