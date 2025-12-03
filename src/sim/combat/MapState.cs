@@ -256,8 +256,4 @@ public partial class MapState
     {
         return GetCoverAgainst(targetPos, attackerPos) != CoverHeight.None;
     }
-
-    // Legacy compatibility
-    public int GetCover(Vector2I pos) => (int)GetTileCover(pos);
-    public void SetCover(Vector2I pos, int coverFlags) => SetTileCover(pos, (CoverDirection)coverFlags);
 }

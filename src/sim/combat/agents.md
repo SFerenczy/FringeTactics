@@ -28,6 +28,7 @@ Real-time with pause (RTwP) tactical combat logic.
 - **VisibilityState.cs** - Enum for tile visibility: Unknown, Revealed, Visible
 - **CoverDirection.cs** - CoverHeight enum (None/Low/Half/High/Full), CoverDirection flags enum, and helper methods for direction calculations
 - **CombatBalance.cs** - Centralized combat balance constants, cover height reduction values, and GetCoverReduction() helper
+- **AttackResult.cs** - Struct for attack resolution results: hit/miss, damage, cover height
 
 ### Utilities
 - **ActorTypes.cs** - Constants for actor type strings: Crew, Enemy, Drone

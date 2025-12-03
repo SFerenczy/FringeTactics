@@ -45,8 +45,8 @@ public class M3Tests
 
         var hitChance = CombatResolver.CalculateHitChance(attacker, target, attacker.EquippedWeapon);
 
-        AssertThat(hitChance).IsLessEqual(CombatResolver.MAX_HIT_CHANCE);
-        AssertThat(hitChance).IsGreaterEqual(CombatResolver.MIN_HIT_CHANCE);
+        AssertThat(hitChance).IsLessEqual(CombatBalance.MaxHitChance);
+        AssertThat(hitChance).IsGreaterEqual(CombatBalance.MinHitChance);
     }
 
     [TestCase]

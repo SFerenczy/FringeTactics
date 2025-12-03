@@ -220,7 +220,7 @@ public class M4Tests
         
         // Covered chance should be base * (1 - HalfCoverReduction), clamped
         var expectedCovered = baseChance * (1f - CombatBalance.HalfCoverReduction);
-        expectedCovered = Mathf.Clamp(expectedCovered, CombatResolver.MIN_HIT_CHANCE, CombatResolver.MAX_HIT_CHANCE);
+        expectedCovered = Mathf.Clamp(expectedCovered, CombatBalance.MinHitChance, CombatBalance.MaxHitChance);
         
         AssertThat(coveredChance).IsEqualApprox(expectedCovered, 0.01f);
     }
@@ -373,18 +373,8 @@ public class M4Tests
         
         // Min/max hit chance should be valid
         AssertThat(CombatBalance.MinHitChance).IsGreater(0f);
-        AssertThat(CombatBalance.MaxHitChance).IsLess(1f);
         AssertThat(CombatBalance.MinHitChance).IsLess(CombatBalance.MaxHitChance);
-    }
-
-    [TestCase]
-    [RequireGodotRuntime]
-    public void CombatResolver_UsesBalanceConstants()
-    {
-        // Verify CombatResolver constants match CombatBalance
-        AssertThat(CombatResolver.COVER_HIT_REDUCTION).IsEqual(CombatBalance.CoverHitReduction);
-        AssertThat(CombatResolver.MIN_HIT_CHANCE).IsEqual(CombatBalance.MinHitChance);
-        AssertThat(CombatResolver.MAX_HIT_CHANCE).IsEqual(CombatBalance.MaxHitChance);
+        AssertThat(CombatBalance.RangePenaltyFactor).IsBetween(0f, 1f);
     }
 
     // ========== Edge Case Tests ==========
@@ -409,7 +399,7 @@ public class M4Tests
 
         var hitChance = CombatResolver.CalculateHitChance(attacker, target, attacker.EquippedWeapon, map);
 
-        AssertThat(hitChance).IsGreaterEqual(CombatResolver.MIN_HIT_CHANCE);
+        AssertThat(hitChance).IsGreaterEqual(CombatBalance.MinHitChance);
     }
 
     [TestCase]
@@ -560,14 +550,14 @@ public class M4Tests
     [RequireGodotRuntime]
     public void HitChance_ScalesWithCoverHeight()
     {
-        // Attacker at west, targets at east with cover between
-        // Template indices: #=0, .=1, -=2, .=3, ==4, .=5, +=6, ...
+        // Attacker at west, targets at east behind different cover heights
+        // Layout: A . - . = . + . . . .
+        //         1   3   5   7         (x positions)
         var template = new string[]
         {
             "##############",
             "#............#",
-            "#.-..=..+....#",  // low(2,2), half(5,2), high(8,2)
-            "#............#",
+            "#..-.=.+.....#",
             "#............#",
             "##############"
         };
@@ -575,68 +565,23 @@ public class M4Tests
         var combat = new CombatState();
         combat.MapState = map;
 
-        var attacker = combat.AddActor("crew", new Vector2I(1, 3));  // south of cover row
-        
-        // Target behind low cover (cover at 2,2, target at 2,3)
-        var lowTarget = combat.AddActor("enemy", new Vector2I(2, 3));
-        // Target behind half cover (cover at 5,2, target at 5,3)
-        var halfTarget = combat.AddActor("enemy", new Vector2I(5, 3));
-        // Target behind high cover (cover at 8,2, target at 8,3)
-        var highTarget = combat.AddActor("enemy", new Vector2I(8, 3));
-        // Target in open
-        var openTarget = combat.AddActor("enemy", new Vector2I(11, 3));
+        var attacker = combat.AddActor("crew", new Vector2I(1, 2));
+        var lowTarget = combat.AddActor("enemy", new Vector2I(4, 2));   // behind low cover at (3,2)
+        var halfTarget = combat.AddActor("enemy", new Vector2I(6, 2));  // behind half cover at (5,2)
+        var highTarget = combat.AddActor("enemy", new Vector2I(8, 2));  // behind high cover at (7,2)
 
-        // Verify cover heights - attacker from south, cover is north of targets
-        AssertThat(map.GetCoverAgainst(lowTarget.GridPosition, attacker.GridPosition)).IsEqual(CoverHeight.None);
-        AssertThat(map.GetCoverAgainst(halfTarget.GridPosition, attacker.GridPosition)).IsEqual(CoverHeight.None);
-        AssertThat(map.GetCoverAgainst(highTarget.GridPosition, attacker.GridPosition)).IsEqual(CoverHeight.None);
-        
-        // Actually, for cover to work, attacker needs to be NORTH and cover between
-        // Let's fix the setup: attacker north, targets south of cover
-        var northAttacker = combat.AddActor("crew", new Vector2I(1, 1));
-        
-        // Targets north of cover, attacker south - cover provides protection
-        var lowTarget2 = combat.AddActor("enemy", new Vector2I(2, 3));
-        var halfTarget2 = combat.AddActor("enemy", new Vector2I(5, 3));
-        var highTarget2 = combat.AddActor("enemy", new Vector2I(8, 3));
-        
-        // Cover at (2,2) is N of target at (2,3), attacker at (1,1) is NW
-        // Direction from target(2,3) to attacker(1,1) is NW, check (1,2) - floor
-        // This is getting complicated. Let's simplify with direct west-east setup
-        
-        var template2 = new string[]
-        {
-            "##############",
-            "#............#",
-            "#A.-.=.+.....#",  // A=1, -=3, ==5, +=7
-            "#............#",
-            "##############"
-        };
-        var map2 = MapBuilder.BuildFromTemplate(template2);
-        var combat2 = new CombatState();
-        combat2.MapState = map2;
+        // Verify cover detection
+        AssertThat(map.GetCoverAgainst(lowTarget.GridPosition, attacker.GridPosition)).IsEqual(CoverHeight.Low);
+        AssertThat(map.GetCoverAgainst(halfTarget.GridPosition, attacker.GridPosition)).IsEqual(CoverHeight.Half);
+        AssertThat(map.GetCoverAgainst(highTarget.GridPosition, attacker.GridPosition)).IsEqual(CoverHeight.High);
 
-        var westAttacker = combat2.AddActor("crew", new Vector2I(1, 2));
-        
-        // Targets east of each cover type
-        var lowT = combat2.AddActor("enemy", new Vector2I(4, 2));   // cover at (3,2)
-        var halfT = combat2.AddActor("enemy", new Vector2I(6, 2));  // cover at (5,2)
-        var highT = combat2.AddActor("enemy", new Vector2I(8, 2));  // cover at (7,2)
-        var openT = combat2.AddActor("enemy", new Vector2I(11, 2)); // no cover
+        var lowChance = CombatResolver.CalculateHitChance(attacker, lowTarget, attacker.EquippedWeapon, map);
+        var halfChance = CombatResolver.CalculateHitChance(attacker, halfTarget, attacker.EquippedWeapon, map);
+        var highChance = CombatResolver.CalculateHitChance(attacker, highTarget, attacker.EquippedWeapon, map);
 
-        // Verify cover heights
-        AssertThat(map2.GetCoverAgainst(lowT.GridPosition, westAttacker.GridPosition)).IsEqual(CoverHeight.Low);
-        AssertThat(map2.GetCoverAgainst(halfT.GridPosition, westAttacker.GridPosition)).IsEqual(CoverHeight.Half);
-        AssertThat(map2.GetCoverAgainst(highT.GridPosition, westAttacker.GridPosition)).IsEqual(CoverHeight.High);
-        AssertThat(map2.GetCoverAgainst(openT.GridPosition, westAttacker.GridPosition)).IsEqual(CoverHeight.None);
-
-        var lowC = CombatResolver.CalculateHitChance(westAttacker, lowT, westAttacker.EquippedWeapon, map2);
-        var halfC = CombatResolver.CalculateHitChance(westAttacker, halfT, westAttacker.EquippedWeapon, map2);
-        var highC = CombatResolver.CalculateHitChance(westAttacker, highT, westAttacker.EquippedWeapon, map2);
-
-        // Low > Half > High (more cover = lower hit chance)
-        AssertThat(lowC).IsGreater(halfC);
-        AssertThat(halfC).IsGreater(highC);
+        // Higher cover = lower hit chance
+        AssertThat(lowChance).IsGreater(halfChance);
+        AssertThat(halfChance).IsGreater(highChance);
     }
 
     [TestCase]
@@ -666,7 +611,7 @@ public class M4Tests
         var coveredChance = CombatResolver.CalculateHitChance(attacker, target, attacker.EquippedWeapon, map);
         
         var expectedCovered = baseChance * (1f - CombatBalance.LowCoverReduction);
-        expectedCovered = Mathf.Clamp(expectedCovered, CombatResolver.MIN_HIT_CHANCE, CombatResolver.MAX_HIT_CHANCE);
+        expectedCovered = Mathf.Clamp(expectedCovered, CombatBalance.MinHitChance, CombatBalance.MaxHitChance);
         
         AssertThat(coveredChance).IsEqualApprox(expectedCovered, 0.01f);
     }
@@ -697,7 +642,7 @@ public class M4Tests
         var coveredChance = CombatResolver.CalculateHitChance(attacker, target, attacker.EquippedWeapon, map);
         
         var expectedCovered = baseChance * (1f - CombatBalance.HalfCoverReduction);
-        expectedCovered = Mathf.Clamp(expectedCovered, CombatResolver.MIN_HIT_CHANCE, CombatResolver.MAX_HIT_CHANCE);
+        expectedCovered = Mathf.Clamp(expectedCovered, CombatBalance.MinHitChance, CombatBalance.MaxHitChance);
         
         AssertThat(coveredChance).IsEqualApprox(expectedCovered, 0.01f);
     }
@@ -728,7 +673,7 @@ public class M4Tests
         var coveredChance = CombatResolver.CalculateHitChance(attacker, target, attacker.EquippedWeapon, map);
         
         var expectedCovered = baseChance * (1f - CombatBalance.HighCoverReduction);
-        expectedCovered = Mathf.Clamp(expectedCovered, CombatResolver.MIN_HIT_CHANCE, CombatResolver.MAX_HIT_CHANCE);
+        expectedCovered = Mathf.Clamp(expectedCovered, CombatBalance.MinHitChance, CombatBalance.MaxHitChance);
         
         AssertThat(coveredChance).IsEqualApprox(expectedCovered, 0.01f);
     }

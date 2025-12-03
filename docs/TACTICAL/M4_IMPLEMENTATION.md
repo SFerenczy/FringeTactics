@@ -426,11 +426,7 @@ public static MapState BuildFromTemplate(string[] rows)
 
 **File**: `src/sim/combat/CombatResolver.cs`
 
-**New Constants**:
-```csharp
-// Cover tuning constants
-public const float COVER_HIT_REDUCTION = 0.40f;  // 40% reduction when target in cover
-```
+**Note**: Constants are now in `CombatBalance.cs`. `CombatResolver` uses `CombatBalance.*` directly instead of defining aliases.
 
 **Update `CalculateHitChance()`**:
 ```csharp
@@ -501,7 +497,7 @@ public static AttackResult ResolveAttack(Actor attacker, Actor target, WeaponDat
 
 #### Step 2.2: Add Cover Info to AttackResult
 
-**File**: `src/sim/combat/AttackResult.cs` (or wherever it's defined)
+**File**: `src/sim/combat/AttackResult.cs` (now in its own file)
 
 ```csharp
 public struct AttackResult
@@ -512,7 +508,8 @@ public struct AttackResult
     public bool Hit { get; set; }
     public int Damage { get; set; }
     public float HitChance { get; set; }
-    public bool TargetInCover { get; set; }  // New: for UI feedback
+    public CoverHeight TargetCoverHeight { get; set; }  // Cover height of target
+    public bool TargetInCover => TargetCoverHeight != CoverHeight.None;  // Convenience property
 }
 ```
 
@@ -546,9 +543,8 @@ namespace FringeTactics;
 /// </summary>
 public partial class CoverIndicator : Node2D
 {
-    private const int TileSize = 32;
-    private const float IndicatorSize = 6f;
-    private const float IndicatorOffset = 2f;
+    // Note: Constants now in GridConstants.cs
+    // TileSize, IndicatorSize, IndicatorOffset, and colors are shared
     
     private MapState map;
     private Dictionary<Vector2I, Node2D> tileIndicators = new();
@@ -831,8 +827,11 @@ public static class CombatBalance
     public const float MinHitChance = 0.10f;        // Floor: never below 10%
     public const float MaxHitChance = 0.95f;        // Cap: never above 95%
     
-    // === Cover ===
-    public const float CoverHitReduction = 0.40f;   // 40% hit chance reduction in cover
+    // === Cover Heights ===
+    public const float LowCoverReduction = 0.15f;    // Low cover: 15% reduction
+    public const float HalfCoverReduction = 0.30f;   // Half cover: 30% reduction
+    public const float HighCoverReduction = 0.45f;   // High cover: 45% reduction
+    public const float CoverHitReduction = HalfCoverReduction;  // Legacy compatibility
     
     // === Lethality Targets ===
     // These are design targets, not enforced values:
@@ -1658,3 +1657,10 @@ public const float CoverHitReduction = HalfCoverReduction;
 - `src/core/GameState.cs` - Add `StartM4_1TestMission()` ✅
 - `src/scenes/menu/MainMenu.cs` - Add M4.1 test button ✅
 - `tests/sim/combat/M4Tests.cs` - Add 13 height-specific tests ✅
+
+### Post-M4 Cleanup ✅ COMPLETE
+- `src/scenes/GridConstants.cs` - Shared constants for tiles and indicators ✅
+- `src/sim/combat/AttackResult.cs` - Moved to own file, added cover height ✅
+- Updated all files to use shared constants ✅
+- Removed duplicate constants and legacy methods ✅
+- All 78 tests pass after cleanup ✅

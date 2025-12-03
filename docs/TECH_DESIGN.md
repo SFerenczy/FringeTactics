@@ -366,6 +366,7 @@ Responsibilities:
   * `issue_order(actor_id, order)`
   * `apply_ability(actor_id, ability_id, target)`
   * `get_snapshot()` for UI.
+* `IsComplete` is now a computed property: `Phase == MissionPhase.Complete`
 
 ---
 
@@ -421,6 +422,8 @@ Methods:
 Pattern:
 
 * `Actor` is logic-only; actual sprites and animations are handled by a `MissionActorView` in the scene layer.
+* Dead code `ApplyDamage()` removed - use `Actor.TakeDamage()` directly
+* Event unsubscribe fixed for `ReloadCompleted` to prevent leaks
 
 ---
 
@@ -561,7 +564,38 @@ v0.1 scope is small: basic doors + 1–2 systemic toys.
 
 ## 6. Shared Systems
 
-### 6.1 Crew & Progression
+### 6.1 Constants & Shared Values
+
+**GridConstants.cs** (`src/scenes/`):
+
+- Central location for all grid rendering constants:
+  - `TileSize` - Size of a single tile in pixels
+  - Tile colors (wall, void, floor, cover heights)
+  - Cover indicator colors and dimensions
+- Prevents duplication across scene files
+- Single source of truth for visual consistency
+
+**CombatBalance.cs** (`src/sim/combat/`):
+
+- All combat balance parameters:
+  - Hit chance ranges, range penalties
+  - Cover height reduction values (15%/30%/45%)
+  - `GetCoverReduction()` helper method
+- Used directly by `CombatResolver` (no duplicate aliases)
+
+**ActorTypes.cs** (`src/sim/combat/`):
+
+- Constants for actor type strings:
+  - `Crew = "crew"`, `Enemy = "enemy"`, `Drone = "drone"`
+- Prevents typos and provides compile-time checking
+
+**GridUtils.cs** (`src/sim/combat/`):
+
+- Utility methods for grid calculations:
+  - `GetStepDirection(Vector2I from, Vector2I to)` - Returns normalized direction (-1, 0, or 1)
+- Eliminates duplicate movement logic across files
+
+### 6.2 Crew & Progression
 
 Under `src/sim/campaign/` but used by combat.
 
@@ -583,7 +617,7 @@ Combat uses **snapshots** of crew stats; upon mission completion, it writes back
 
 ---
 
-### 6.2 Item & Inventory
+### 6.3 Item & Inventory
 
 `ItemDefinitions.gd` (data):
 
@@ -608,7 +642,7 @@ Simplify v0.1:
 
 ---
 
-### 6.3 DataStore / Content Loading
+### 6.4 DataStore / Content Loading
 
 `DataStore.gd`:
 
@@ -634,7 +668,7 @@ Simulation systems depend on `DataStore` instead of reading JSON directly.
 
 ---
 
-### 6.4 Save / Load
+### 6.5 Save / Load
 
 `SaveManager.gd` under `src/core/`:
 

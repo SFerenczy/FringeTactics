@@ -2,6 +2,10 @@
 
 Godot scenes and their scripts. This is the "outside" of the hexagonal architecture.
 
+## Files
+
+- **GridConstants.cs** - Shared constants for grid rendering (TileSize, colors for tiles and cover indicators)
+
 ## Subdirectories
 
 - **menu/** - Main menu (game entry point)

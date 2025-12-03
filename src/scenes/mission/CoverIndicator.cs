@@ -9,16 +9,6 @@ namespace FringeTactics;
 /// </summary>
 public partial class CoverIndicator : Node2D
 {
-    private const int TileSize = 32;
-    private const float IndicatorThickness = 4f;
-    private const float IndicatorInset = 2f;
-    
-    // Colors for different cover heights
-    private static readonly Color LowCoverColor = new Color(0.4f, 0.8f, 1.0f, 0.6f);   // Light cyan
-    private static readonly Color HalfCoverColor = new Color(0.2f, 0.6f, 1.0f, 0.7f);  // Blue (original)
-    private static readonly Color HighCoverColor = new Color(0.1f, 0.3f, 0.8f, 0.8f);  // Dark blue/navy
-    private static readonly Color FullCoverColor = new Color(0.5f, 0.5f, 0.5f, 0.7f);  // Gray (walls)
-    
     private MapState map;
     private List<ColorRect> indicators = new();
     
@@ -113,15 +103,15 @@ public partial class CoverIndicator : Node2D
         }
     }
     
-    private Color GetColorForHeight(CoverHeight height)
+    private static Color GetColorForHeight(CoverHeight height)
     {
         return height switch
         {
-            CoverHeight.Low => LowCoverColor,
-            CoverHeight.Half => HalfCoverColor,
-            CoverHeight.High => HighCoverColor,
-            CoverHeight.Full => FullCoverColor,
-            _ => HalfCoverColor
+            CoverHeight.Low => GridConstants.LowCoverIndicatorColor,
+            CoverHeight.Half => GridConstants.HalfCoverIndicatorColor,
+            CoverHeight.High => GridConstants.HighCoverIndicatorColor,
+            CoverHeight.Full => GridConstants.FullCoverIndicatorColor,
+            _ => GridConstants.HalfCoverIndicatorColor
         };
     }
     
@@ -132,58 +122,63 @@ public partial class CoverIndicator : Node2D
         indicator.MouseFilter = Control.MouseFilterEnum.Ignore;
         
         var offset = CoverDirectionHelper.GetOffset(dir);
-        var tileOrigin = new Vector2(tilePos.X * TileSize, tilePos.Y * TileSize);
+        var tileOrigin = new Vector2(tilePos.X * GridConstants.TileSize, tilePos.Y * GridConstants.TileSize);
+        
+        var thickness = GridConstants.IndicatorThickness;
+        var inset = GridConstants.IndicatorInset;
+        var tileSize = GridConstants.TileSize;
+        var diagonalSize = thickness * GridConstants.DiagonalIndicatorScale;
         
         // Position indicator bar on the edge of the tile facing the cover source
         if (offset.X != 0 && offset.Y == 0)
         {
             // East or West - vertical bar on side
-            indicator.Size = new Vector2(IndicatorThickness, TileSize - IndicatorInset * 2);
+            indicator.Size = new Vector2(thickness, tileSize - inset * 2);
             if (offset.X > 0)
             {
                 // Cover from East - bar on right edge
                 indicator.Position = new Vector2(
-                    tileOrigin.X + TileSize - IndicatorThickness - IndicatorInset,
-                    tileOrigin.Y + IndicatorInset
+                    tileOrigin.X + tileSize - thickness - inset,
+                    tileOrigin.Y + inset
                 );
             }
             else
             {
                 // Cover from West - bar on left edge
                 indicator.Position = new Vector2(
-                    tileOrigin.X + IndicatorInset,
-                    tileOrigin.Y + IndicatorInset
+                    tileOrigin.X + inset,
+                    tileOrigin.Y + inset
                 );
             }
         }
         else if (offset.Y != 0 && offset.X == 0)
         {
             // North or South - horizontal bar on top/bottom
-            indicator.Size = new Vector2(TileSize - IndicatorInset * 2, IndicatorThickness);
+            indicator.Size = new Vector2(tileSize - inset * 2, thickness);
             if (offset.Y > 0)
             {
                 // Cover from South - bar on bottom edge
                 indicator.Position = new Vector2(
-                    tileOrigin.X + IndicatorInset,
-                    tileOrigin.Y + TileSize - IndicatorThickness - IndicatorInset
+                    tileOrigin.X + inset,
+                    tileOrigin.Y + tileSize - thickness - inset
                 );
             }
             else
             {
                 // Cover from North - bar on top edge
                 indicator.Position = new Vector2(
-                    tileOrigin.X + IndicatorInset,
-                    tileOrigin.Y + IndicatorInset
+                    tileOrigin.X + inset,
+                    tileOrigin.Y + inset
                 );
             }
         }
         else
         {
             // Diagonal - small corner indicator
-            indicator.Size = new Vector2(IndicatorThickness * 1.5f, IndicatorThickness * 1.5f);
+            indicator.Size = new Vector2(diagonalSize, diagonalSize);
             indicator.Position = new Vector2(
-                tileOrigin.X + (offset.X > 0 ? TileSize - IndicatorThickness * 1.5f - IndicatorInset : IndicatorInset),
-                tileOrigin.Y + (offset.Y > 0 ? TileSize - IndicatorThickness * 1.5f - IndicatorInset : IndicatorInset)
+                tileOrigin.X + (offset.X > 0 ? tileSize - diagonalSize - inset : inset),
+                tileOrigin.Y + (offset.Y > 0 ? tileSize - diagonalSize - inset : inset)
             );
         }
         

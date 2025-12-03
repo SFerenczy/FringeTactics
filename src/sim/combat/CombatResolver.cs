@@ -9,13 +9,6 @@ namespace FringeTactics;
 /// </summary>
 public static class CombatResolver
 {
-    // Hit chance tuning constants (reference CombatBalance for design rationale)
-    public const float RANGE_PENALTY_FACTOR = CombatBalance.RangePenaltyFactor;
-    public const float MIN_HIT_CHANCE = CombatBalance.MinHitChance;
-    public const float MAX_HIT_CHANCE = CombatBalance.MaxHitChance;
-    
-    // Cover tuning constants
-    public const float COVER_HIT_REDUCTION = CombatBalance.CoverHitReduction;
 
     /// <summary>
     /// Check if attacker can attack target with given weapon.
@@ -57,7 +50,7 @@ public static class CombatResolver
         
         // Distance penalty: increases as you approach max range
         var rangeFraction = distance / weapon.Range;
-        var distancePenalty = rangeFraction * RANGE_PENALTY_FACTOR;
+        var distancePenalty = rangeFraction * CombatBalance.RangePenaltyFactor;
         
         // Apply attacker's aim stat bonus (+1% per point)
         var aimBonus = (attacker.Stats.TryGetValue("aim", out var aim) ? aim : 0) * 0.01f;
@@ -77,7 +70,7 @@ public static class CombatResolver
         }
         
         // Clamp to valid range
-        return Mathf.Clamp(hitChance, MIN_HIT_CHANCE, MAX_HIT_CHANCE);
+        return Mathf.Clamp(hitChance, CombatBalance.MinHitChance, CombatBalance.MaxHitChance);
     }
 
     /// <summary>
@@ -204,21 +197,4 @@ public static class CombatResolver
 
         return points.ToArray();
     }
-}
-
-/// <summary>
-/// Result of an attack resolution.
-/// </summary>
-public struct AttackResult
-{
-    public int AttackerId { get; set; }
-    public int TargetId { get; set; }
-    public string WeaponName { get; set; }
-    public bool Hit { get; set; }
-    public int Damage { get; set; }
-    public float HitChance { get; set; }
-    public CoverHeight TargetCoverHeight { get; set; }
-    
-    /// <summary>Convenience property: true if target has any cover.</summary>
-    public bool TargetInCover => TargetCoverHeight != CoverHeight.None;
 }

@@ -5,7 +5,7 @@ namespace FringeTactics;
 
 public partial class MissionView : Node2D
 {
-    public const int TileSize = 32;
+    public const int TileSize = GridConstants.TileSize;
     private const string ActorViewScenePath = "res://src/scenes/mission/ActorView.tscn";
     private const string TimeStateWidgetScenePath = "res://src/scenes/mission/TimeStateWidget.tscn";
 
@@ -317,10 +317,10 @@ public partial class MissionView : Node2D
                 switch (tileType)
                 {
                     case TileType.Wall:
-                        tile.Color = new Color(0.35f, 0.35f, 0.4f);
+                        tile.Color = GridConstants.WallColor;
                         break;
                     case TileType.Void:
-                        tile.Color = new Color(0.05f, 0.05f, 0.08f);
+                        tile.Color = GridConstants.VoidColor;
                         break;
                     case TileType.Floor:
                     default:
@@ -328,26 +328,20 @@ public partial class MissionView : Node2D
                         var coverHeight = map.GetTileCoverHeight(pos);
                         if (coverHeight != CoverHeight.None)
                         {
-                            // Color cover objects by height
                             tile.Color = coverHeight switch
                             {
-                                CoverHeight.Low => new Color(0.3f, 0.5f, 0.4f),   // Greenish - low debris
-                                CoverHeight.Half => new Color(0.4f, 0.45f, 0.35f), // Tan - crates
-                                CoverHeight.High => new Color(0.5f, 0.4f, 0.35f),  // Brown - tall cover
-                                _ => new Color(0.4f, 0.4f, 0.4f)
+                                CoverHeight.Low => GridConstants.LowCoverTileColor,
+                                CoverHeight.Half => GridConstants.HalfCoverTileColor,
+                                CoverHeight.High => GridConstants.HighCoverTileColor,
+                                _ => GridConstants.WallColor
                             };
                         }
                         else
                         {
                             // Checkerboard pattern for floor
-                            if ((x + y) % 2 == 0)
-                            {
-                                tile.Color = new Color(0.15f, 0.15f, 0.2f);
-                            }
-                            else
-                            {
-                                tile.Color = new Color(0.2f, 0.2f, 0.25f);
-                            }
+                            tile.Color = (x + y) % 2 == 0 
+                                ? GridConstants.FloorColorDark 
+                                : GridConstants.FloorColorLight;
                         }
                         break;
                 }

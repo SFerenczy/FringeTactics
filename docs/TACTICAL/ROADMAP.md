@@ -135,6 +135,8 @@ You want a functioning “minimal combat loop” early so tuning and feel can st
 **Natural pause point:**  
 You effectively have a crude RTwP combat prototype. This is a good time to test basic pacing, lethality, and UX around targeting and feedback.
 
+**Status:** ✅ Complete (post-M3 cleanup done)
+
 ---
 
 ## M4 – Directional Cover & Lethality Tuning
@@ -167,6 +169,8 @@ Cover fundamentally changes the feel of combat and unlocks deeper tactical play.
 
 **Natural pause point:**  
 At this milestone, you have a small but legitimate tactics game: move, shoot, take cover, survive. You can pause tactical work here and focus on campaign scaffolding if needed.
+
+**Status:** ✅ Complete (M4.1 cover heights added, post-M4 cleanup done)
 
 ---
 

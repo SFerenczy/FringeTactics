@@ -1448,6 +1448,33 @@ When M3 is complete, you should be able to:
 
 ---
 
+## Post-M3 Cleanup ✅ COMPLETE
+
+### Issues Fixed
+
+| # | Issue | Status |
+|---|-------|--------|
+| 1 | Dead `ApplyDamage()` code in CombatResolver | ✅ Deleted |
+| 2 | Missing `ReloadCompleted` unsubscribe in ActorView | ✅ Fixed |
+| 3 | Actor class size (346 lines) | ⏸️ Deferred (manageable) |
+| 4 | Magic actor type strings | ✅ Created `ActorTypes` constants |
+| 5 | Per-frame UI updates in ActorView | ✅ Added `lastDisplayedMagazine` tracking |
+| 6 | Duplicate direction calculation | ✅ Created `GridUtils.GetStepDirection()` |
+| 7 | Redundant completion state in CombatState | ✅ `IsComplete` now computed property |
+
+### New Files Created
+- `src/sim/combat/ActorTypes.cs` - Constants for actor type strings
+- `src/sim/combat/GridUtils.cs` - Grid utility methods
+
+### Key Changes
+- Removed dead code to prevent confusion
+- Fixed event memory leaks
+- Centralized constants to prevent typos
+- Optimized UI updates to reduce garbage
+- Eliminated code duplication
+
+---
+
 ## Files to Create/Modify
 
 ### Modified Files
