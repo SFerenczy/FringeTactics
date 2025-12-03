@@ -202,6 +202,15 @@ public partial class GameState : Node
         StartSandboxWithConfig(config);
     }
 
+    /// <summary>
+    /// Start the M4.1 test mission for testing cover height mechanics.
+    /// </summary>
+    public void StartM4_1TestMission()
+    {
+        var config = MissionConfig.CreateM4_1TestMission();
+        StartSandboxWithConfig(config);
+    }
+
     public void EndMission(bool victory, CombatState combatState)
     {
         if (Campaign == null)

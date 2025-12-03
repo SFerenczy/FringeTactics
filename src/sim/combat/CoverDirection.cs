@@ -4,6 +4,19 @@ using System;
 namespace FringeTactics;
 
 /// <summary>
+/// Cover height levels. Higher cover provides more hit reduction.
+/// Full cover blocks LOS entirely (handled by wall system).
+/// </summary>
+public enum CoverHeight : byte
+{
+    None = 0,    // 0.00 - No cover, 0% reduction
+    Low = 1,     // 0.25 - Low walls, debris, 15% reduction
+    Half = 2,    // 0.50 - Waist-high walls, crates, 30% reduction
+    High = 3,    // 0.75 - Chest-high walls, doorframes, 45% reduction
+    Full = 4     // 1.00 - Full walls, blocks LOS (not used for hit reduction)
+}
+
+/// <summary>
 /// 8-directional cover flags. A tile can provide cover from multiple directions.
 /// </summary>
 [Flags]

@@ -17,10 +17,33 @@ public static class CombatBalance
     /// <summary>Maximum hit chance cap (95%). Prevents guaranteed hits.</summary>
     public const float MaxHitChance = 0.95f;
     
-    // === Cover ===
+    // === Cover Heights ===
     
-    /// <summary>Hit chance multiplier reduction when target is in cover (40% reduction).</summary>
-    public const float CoverHitReduction = 0.40f;
+    /// <summary>Hit reduction for low cover (0.25 height). 15% reduction.</summary>
+    public const float LowCoverReduction = 0.15f;
+    
+    /// <summary>Hit reduction for half cover (0.50 height). 30% reduction.</summary>
+    public const float HalfCoverReduction = 0.30f;
+    
+    /// <summary>Hit reduction for high cover (0.75 height). 45% reduction.</summary>
+    public const float HighCoverReduction = 0.45f;
+    
+    /// <summary>Legacy constant for backwards compatibility. Maps to half cover.</summary>
+    public const float CoverHitReduction = HalfCoverReduction;
+    
+    /// <summary>
+    /// Get hit reduction for a given cover height.
+    /// </summary>
+    public static float GetCoverReduction(CoverHeight height)
+    {
+        return height switch
+        {
+            CoverHeight.Low => LowCoverReduction,
+            CoverHeight.Half => HalfCoverReduction,
+            CoverHeight.High => HighCoverReduction,
+            _ => 0f
+        };
+    }
     
     // === Actor Stats ===
     

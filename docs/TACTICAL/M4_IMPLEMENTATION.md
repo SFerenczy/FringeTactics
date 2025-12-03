@@ -1367,19 +1367,294 @@ When M4 is complete, you should be able to:
 
 ---
 
+## Addendum: Cover Height System (M4.1)
+
+This section extends M4 to support variable cover heights, providing more tactical depth.
+
+### Overview
+
+Instead of binary cover (has cover / no cover), tiles can provide cover at different heights:
+
+| Height | Name | Hit Reduction | Typical Source |
+|--------|------|---------------|----------------|
+| 0.00 | None | 0% | Open ground |
+| 0.25 | Low | 15% | Low walls, debris, prone position |
+| 0.50 | Half | 30% | Waist-high walls, crates, vehicles |
+| 0.75 | High | 45% | Chest-high walls, doorframes |
+| 1.00 | Full | Blocks LOS | Full walls (existing behavior) |
+
+**Note**: Full cover (1.0) blocks line of sight entirely and is already handled by the wall/LOS system. This addendum focuses on partial cover heights (0.25, 0.50, 0.75).
+
+### Design Rationale
+
+**Why cover heights?**
+- Adds tactical depth: players must evaluate cover quality, not just presence
+- Creates interesting positioning choices: better cover vs better firing angle
+- Enables map design variety: low cover for flanking lanes, high cover for defensive positions
+- Matches player intuition: crouching behind a crate feels different than behind a concrete barrier
+
+**Why these specific values (0.25, 0.50, 0.75)?**
+- Three tiers is enough for meaningful choices without overwhelming complexity
+- Maps cleanly to visual representation (quarter, half, three-quarter height bars)
+- Hit reduction scales linearly: 15%, 30%, 45% (easy to understand)
+
+### Architecture Changes
+
+#### 1. CoverHeight Enum
+
+```csharp
+public enum CoverHeight : byte
+{
+    None = 0,    // 0.00 - No cover
+    Low = 1,     // 0.25 - 15% hit reduction
+    Half = 2,    // 0.50 - 30% hit reduction  
+    High = 3,    // 0.75 - 45% hit reduction
+    Full = 4     // 1.00 - Blocks LOS (walls)
+}
+```
+
+#### 2. MapState Changes
+
+Current: `List<CoverDirection> coverData` - stores which directions have cover (binary)
+
+New approach options:
+
+**Option A: Separate height per direction (most flexible)**
+```csharp
+// Each tile stores 8 heights, one per direction
+private List<byte[]> coverHeights; // byte[8] per tile, indexed by direction
+
+public CoverHeight GetCoverHeight(Vector2I pos, CoverDirection dir) { ... }
+public void SetCoverHeight(Vector2I pos, CoverDirection dir, CoverHeight height) { ... }
+```
+
+**Option B: Single height per tile (simpler)**
+```csharp
+// Each tile has one cover height that applies to all directions it provides cover
+private List<CoverHeight> coverHeights;
+
+public CoverHeight GetTileCoverHeight(Vector2I pos) { ... }
+```
+
+**Decision**: Option B (single height per tile)
+- Simpler to implement and understand
+- Matches real-world intuition (a crate is the same height from all sides)
+- Direction is still tracked separately via existing `CoverDirection` flags
+- Can upgrade to Option A later if needed
+
+#### 3. HasCoverAgainst Changes
+
+Current signature:
+```csharp
+public bool HasCoverAgainst(Vector2I targetPos, Vector2I attackerPos)
+```
+
+New signature:
+```csharp
+public CoverHeight GetCoverAgainst(Vector2I targetPos, Vector2I attackerPos)
+```
+
+Returns `CoverHeight.None` if no cover, otherwise returns the height of the covering tile.
+
+#### 4. CombatResolver Changes
+
+Current:
+```csharp
+public const float COVER_HIT_REDUCTION = 0.40f;
+
+if (map.HasCoverAgainst(target.GridPosition, attacker.GridPosition))
+{
+    hitChance *= (1f - COVER_HIT_REDUCTION);
+}
+```
+
+New:
+```csharp
+public static float GetCoverReduction(CoverHeight height)
+{
+    return height switch
+    {
+        CoverHeight.Low => 0.15f,
+        CoverHeight.Half => 0.30f,
+        CoverHeight.High => 0.45f,
+        _ => 0f
+    };
+}
+
+var coverHeight = map.GetCoverAgainst(target.GridPosition, attacker.GridPosition);
+if (coverHeight != CoverHeight.None)
+{
+    hitChance *= (1f - GetCoverReduction(coverHeight));
+}
+```
+
+#### 5. AttackResult Changes
+
+Current:
+```csharp
+public bool TargetInCover { get; set; }
+```
+
+New:
+```csharp
+public CoverHeight TargetCoverHeight { get; set; }
+public bool TargetInCover => TargetCoverHeight != CoverHeight.None;
+```
+
+#### 6. CoverIndicator Changes
+
+Current: Blue bars for all cover
+
+New: Color-coded by height
+- Low (0.25): Light blue / cyan
+- Half (0.50): Blue (current)
+- High (0.75): Dark blue / navy
+
+Bar thickness or fill level could also indicate height visually.
+
+#### 7. MapBuilder Changes
+
+Current: `GenerateCoverFromWalls()` sets binary cover flags
+
+New: Walls generate `CoverHeight.Full` (which blocks LOS), but we need a way to place partial cover:
+
+**Template characters**:
+```
+# = Wall (Full cover, blocks LOS)
+. = Floor (No cover)
+- = Low cover (0.25)
+= = Half cover (0.50)
++ = High cover (0.75)
+```
+
+Or use a separate cover layer in map definition.
+
+### Implementation Steps
+
+#### Step 1: Add CoverHeight enum
+- Create `CoverHeight` enum in `CoverDirection.cs` (or new file)
+- Add helper methods for height-to-reduction conversion
+
+#### Step 2: Update MapState
+- Add `coverHeights` list alongside existing `coverData`
+- Add `GetTileCoverHeight()` and `SetTileCoverHeight()` methods
+- Update `GetCoverAgainst()` to return `CoverHeight`
+- Keep `HasCoverAgainst()` as convenience wrapper
+
+#### Step 3: Update CombatResolver
+- Add `GetCoverReduction(CoverHeight)` method
+- Update `CalculateHitChance()` to use height-based reduction
+- Update `ResolveAttack()` to set `TargetCoverHeight`
+
+#### Step 4: Update CoverIndicator
+- Add color/visual variation based on cover height
+- Update `ShowCoverFor()` to query and display height
+
+#### Step 5: Update MapBuilder
+- Add template character parsing for partial cover
+- Update `GenerateCoverFromWalls()` to set `CoverHeight.Full` for walls
+
+#### Step 6: Update M4 Test Mission
+- Add partial cover objects to test map
+- Create scenarios testing different cover heights
+
+#### Step 7: Add Automated Tests
+- Test height-based hit reduction calculations
+- Test `GetCoverAgainst()` returns correct heights
+- Test combat resolution with different cover heights
+- Test cover indicator displays correct heights
+
+### Balance Considerations
+
+| Scenario | Base Accuracy | Cover Height | Final Accuracy |
+|----------|---------------|--------------|----------------|
+| Exposed vs Exposed | 70% | None | 70% |
+| Exposed vs Low Cover | 70% | 0.25 | 59.5% |
+| Exposed vs Half Cover | 70% | 0.50 | 49% |
+| Exposed vs High Cover | 70% | 0.75 | 38.5% |
+
+**Design implications**:
+- Low cover is "better than nothing" but still dangerous
+- Half cover is the "standard" defensive position
+- High cover is premium, should be rare and contestable
+- Flanking remains valuable at all cover heights
+
+### CombatBalance.cs Updates
+
+```csharp
+// Cover height hit reduction values
+public const float LowCoverReduction = 0.15f;   // 15% for 0.25 height
+public const float HalfCoverReduction = 0.30f;  // 30% for 0.50 height  
+public const float HighCoverReduction = 0.45f;  // 45% for 0.75 height
+
+// Legacy constant for backwards compatibility
+public const float CoverHitReduction = HalfCoverReduction;
+```
+
+### Test Cases for M4.1
+
+1. **CoverHeight_GetReduction_ReturnsCorrectValues**
+   - Low → 0.15, Half → 0.30, High → 0.45, None → 0.0
+
+2. **MapState_GetCoverAgainst_ReturnsCorrectHeight**
+   - Test with different cover heights placed on map
+
+3. **HitChance_ScalesWithCoverHeight**
+   - Low cover reduces less than half cover
+   - Half cover reduces less than high cover
+
+4. **AttackResult_TargetCoverHeight_SetCorrectly**
+   - Verify height is captured in attack result
+
+5. **CoverIndicator_DisplaysHeightVisually**
+   - Manual test: verify color/visual difference
+
+### Migration Path
+
+1. Existing binary cover becomes `CoverHeight.Half` (maintains current 40% → 30% is close)
+2. Or keep existing as-is and only new cover objects use heights
+3. Walls remain `CoverHeight.Full` (blocks LOS, not partial cover)
+
+### Open Questions for M4.1
+
+1. **Should prone/crouch affect cover height?**
+   - Future consideration: unit stance could add +0.25 to effective cover
+   - Not for M4.1
+
+2. **Should weapons have cover penetration?**
+   - E.g., sniper rifles ignore low cover
+   - Not for M4.1, but architecture supports it
+
+3. **Should cover height affect visibility/stealth?**
+   - High cover might hide you better
+   - Defer to M6 (Stealth)
+
+---
+
 ## Files to Create/Modify
 
-### New Files
-- `src/sim/combat/CoverDirection.cs` - Direction enum and helpers
-- `src/sim/combat/CombatBalance.cs` - Balance constants
-- `src/scenes/mission/CoverIndicator.cs` - Cover visualization
-- `tests/sim/combat/M4Tests.cs` - Automated tests
+### New Files (M4 Base)
+- `src/sim/combat/CoverDirection.cs` - Direction enum and helpers ✅
+- `src/sim/combat/CombatBalance.cs` - Balance constants ✅
+- `src/scenes/mission/CoverIndicator.cs` - Cover visualization ✅
+- `tests/sim/combat/M4Tests.cs` - Automated tests ✅
 
-### Modified Files
-- `src/sim/combat/MapState.cs` - Typed cover, `HasCoverAgainst()`
-- `src/sim/combat/MapBuilder.cs` - Auto-generate cover from walls
-- `src/sim/combat/CombatResolver.cs` - Cover modifier in hit chance
-- `src/sim/combat/AttackResult.cs` - Add `TargetInCover` field
-- `src/scenes/mission/MissionView.cs` - Cover indicator integration
-- `src/sim/data/MissionConfig.cs` - M4 test mission
-- `src/sim/data/Definitions.cs` - Weapon balance tuning
+### Modified Files (M4 Base)
+- `src/sim/combat/MapState.cs` - Typed cover, `HasCoverAgainst()` ✅
+- `src/sim/combat/MapBuilder.cs` - Auto-generate cover from walls ✅
+- `src/sim/combat/CombatResolver.cs` - Cover modifier in hit chance ✅
+- `src/scenes/mission/MissionView.cs` - Cover indicator integration ✅
+- `src/sim/data/MissionConfig.cs` - M4 test mission ✅
+- `src/sim/data/Definitions.cs` - Weapon balance tuning ✅
+
+### Files for M4.1 (Cover Heights) ✅ COMPLETE
+- `src/sim/combat/CoverDirection.cs` - Add `CoverHeight` enum ✅
+- `src/sim/combat/CombatBalance.cs` - Add height-based reduction constants ✅
+- `src/sim/combat/MapState.cs` - Add `coverHeights` list, `GetCoverAgainst()` returns height ✅
+- `src/sim/combat/MapBuilder.cs` - Parse cover height template characters (`-`=low, `=`=half, `+`=high) ✅
+- `src/sim/combat/CombatResolver.cs` - Use `GetCoverReduction(CoverHeight)` ✅
+- `src/scenes/mission/CoverIndicator.cs` - Color-code by height (cyan/blue/navy) ✅
+- `src/sim/data/MissionConfig.cs` - M4.1 test mission with varied cover ✅
+- `src/core/GameState.cs` - Add `StartM4_1TestMission()` ✅
+- `src/scenes/menu/MainMenu.cs` - Add M4.1 test button ✅
+- `tests/sim/combat/M4Tests.cs` - Add 13 height-specific tests ✅

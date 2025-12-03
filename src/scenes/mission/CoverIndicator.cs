@@ -13,7 +13,11 @@ public partial class CoverIndicator : Node2D
     private const float IndicatorThickness = 4f;
     private const float IndicatorInset = 2f;
     
-    private static readonly Color CoverColor = new Color(0.2f, 0.6f, 1.0f, 0.7f);
+    // Colors for different cover heights
+    private static readonly Color LowCoverColor = new Color(0.4f, 0.8f, 1.0f, 0.6f);   // Light cyan
+    private static readonly Color HalfCoverColor = new Color(0.2f, 0.6f, 1.0f, 0.7f);  // Blue (original)
+    private static readonly Color HighCoverColor = new Color(0.1f, 0.3f, 0.8f, 0.8f);  // Dark blue/navy
+    private static readonly Color FullCoverColor = new Color(0.5f, 0.5f, 0.5f, 0.7f);  // Gray (walls)
     
     private MapState map;
     private List<ColorRect> indicators = new();
@@ -44,17 +48,18 @@ public partial class CoverIndicator : Node2D
                 continue;
             }
             
-            var adjacentCover = map.GetTileCover(adjacentPos);
-            if (adjacentCover == CoverDirection.None)
+            // Check for wall cover (full cover)
+            if (map.GetTileType(adjacentPos) == TileType.Wall)
             {
+                CreateCoverIndicator(unitPos, dir, CoverHeight.Full);
                 continue;
             }
             
-            // Check if adjacent tile provides cover facing toward this unit
-            var coverFacing = CoverDirectionHelper.GetOpposite(dir);
-            if ((adjacentCover & coverFacing) != 0)
+            // Check for partial cover objects
+            var coverHeight = map.GetTileCoverHeight(adjacentPos);
+            if (coverHeight != CoverHeight.None)
             {
-                CreateCoverIndicator(unitPos, dir);
+                CreateCoverIndicator(unitPos, dir, coverHeight);
             }
         }
     }
@@ -89,26 +94,41 @@ public partial class CoverIndicator : Node2D
                     continue;
                 }
                 
-                var adjacentCover = map.GetTileCover(adjacentPos);
-                if (adjacentCover == CoverDirection.None)
+                // Check for wall cover (full cover)
+                if (map.GetTileType(adjacentPos) == TileType.Wall)
                 {
+                    CreateCoverIndicator(unitPos, dir, CoverHeight.Full);
+                    processedEdges.Add(edgeKey);
                     continue;
                 }
                 
-                var coverFacing = CoverDirectionHelper.GetOpposite(dir);
-                if ((adjacentCover & coverFacing) != 0)
+                // Check for partial cover objects
+                var coverHeight = map.GetTileCoverHeight(adjacentPos);
+                if (coverHeight != CoverHeight.None)
                 {
-                    CreateCoverIndicator(unitPos, dir);
+                    CreateCoverIndicator(unitPos, dir, coverHeight);
                     processedEdges.Add(edgeKey);
                 }
             }
         }
     }
     
-    private void CreateCoverIndicator(Vector2I tilePos, CoverDirection dir)
+    private Color GetColorForHeight(CoverHeight height)
+    {
+        return height switch
+        {
+            CoverHeight.Low => LowCoverColor,
+            CoverHeight.Half => HalfCoverColor,
+            CoverHeight.High => HighCoverColor,
+            CoverHeight.Full => FullCoverColor,
+            _ => HalfCoverColor
+        };
+    }
+    
+    private void CreateCoverIndicator(Vector2I tilePos, CoverDirection dir, CoverHeight height)
     {
         var indicator = new ColorRect();
-        indicator.Color = CoverColor;
+        indicator.Color = GetColorForHeight(height);
         indicator.MouseFilter = Control.MouseFilterEnum.Ignore;
         
         var offset = CoverDirectionHelper.GetOffset(dir);

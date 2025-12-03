@@ -27,6 +27,9 @@ public partial class MapState
     // Cover directions provided by each tile (8-directional)
     private List<CoverDirection> coverData = new();
     
+    // Cover height for each tile (None/Low/Half/High/Full)
+    private List<CoverHeight> coverHeights = new();
+    
     // Interactables on the map
     public Dictionary<Vector2I, string> Interactables { get; set; } = new();
     
@@ -65,11 +68,13 @@ public partial class MapState
         var totalTiles = size.X * size.Y;
         tiles = new List<TileType>(totalTiles);
         coverData = new List<CoverDirection>(totalTiles);
+        coverHeights = new List<CoverHeight>(totalTiles);
         
         for (int i = 0; i < totalTiles; i++)
         {
             tiles.Add(TileType.Floor);
             coverData.Add(CoverDirection.None);
+            coverHeights.Add(CoverHeight.None);
         }
     }
 
@@ -126,11 +131,19 @@ public partial class MapState
     }
 
     /// <summary>
-    /// Check if a tile is walkable (Floor tiles only).
+    /// Check if a tile is walkable (Floor tiles without cover objects).
+    /// Cover objects block movement.
     /// </summary>
     public bool IsWalkable(Vector2I pos)
     {
-        return GetTileType(pos) == TileType.Floor;
+        if (GetTileType(pos) != TileType.Floor)
+        {
+            return false;
+        }
+        
+        // Cover objects block movement
+        var coverHeight = GetTileCoverHeight(pos);
+        return coverHeight == CoverHeight.None;
     }
 
     /// <summary>
@@ -176,32 +189,72 @@ public partial class MapState
     }
 
     /// <summary>
-    /// Check if a unit at targetPos has cover against an attack from attackerPos.
-    /// Cover is provided by an adjacent wall that is in the direction of the attacker.
+    /// Get the cover height of a tile (for partial cover objects).
     /// </summary>
-    public bool HasCoverAgainst(Vector2I targetPos, Vector2I attackerPos)
+    public CoverHeight GetTileCoverHeight(Vector2I pos)
+    {
+        if (!IsInBounds(pos))
+        {
+            return CoverHeight.None;
+        }
+        return coverHeights[GetIndex(pos)];
+    }
+
+    /// <summary>
+    /// Set the cover height of a tile.
+    /// </summary>
+    public void SetTileCoverHeight(Vector2I pos, CoverHeight height)
+    {
+        if (!IsInBounds(pos))
+        {
+            return;
+        }
+        coverHeights[GetIndex(pos)] = height;
+    }
+
+    /// <summary>
+    /// Get the cover height a unit at targetPos has against an attack from attackerPos.
+    /// Returns CoverHeight.None if no cover, otherwise the height of the covering tile.
+    /// </summary>
+    public CoverHeight GetCoverAgainst(Vector2I targetPos, Vector2I attackerPos)
     {
         // Direction from target toward attacker (where cover needs to be)
         var dirToAttacker = CoverDirectionHelper.GetDirection(targetPos, attackerPos);
         if (dirToAttacker == CoverDirection.None)
         {
-            return false;
+            return CoverHeight.None;
         }
         
         // Check the tile in the direction of the attacker
         var coverPos = targetPos + CoverDirectionHelper.GetOffset(dirToAttacker);
         if (!IsInBounds(coverPos))
         {
-            return false;
+            return CoverHeight.None;
         }
         
-        // If that tile is a wall, it provides cover
+        // Walls provide full cover (but this blocks LOS, so shouldn't reach here normally)
         if (GetTileType(coverPos) == TileType.Wall)
         {
-            return true;
+            return CoverHeight.Full;
         }
         
-        return false;
+        // Check for partial cover objects
+        var height = GetTileCoverHeight(coverPos);
+        if (height != CoverHeight.None)
+        {
+            return height;
+        }
+        
+        return CoverHeight.None;
+    }
+
+    /// <summary>
+    /// Check if a unit at targetPos has cover against an attack from attackerPos.
+    /// Convenience wrapper around GetCoverAgainst.
+    /// </summary>
+    public bool HasCoverAgainst(Vector2I targetPos, Vector2I attackerPos)
+    {
+        return GetCoverAgainst(targetPos, attackerPos) != CoverHeight.None;
     }
 
     // Legacy compatibility

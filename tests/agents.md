@@ -11,7 +11,7 @@ tests/
         ├── M0Tests.cs    # M0 milestone tests (map, movement, time)
         ├── M1Tests.cs    # M1 milestone tests (formation, collision, group movement)
         ├── M3Tests.cs    # M3 milestone tests (hit chance, ammo, auto-defend, combat)
-        └── M4Tests.cs    # M4 milestone tests (directional cover, flanking, balance)
+        └── M4Tests.cs    # M4 milestone tests (directional cover, cover heights, flanking, balance)
 ```
 
 ## Running Tests
@@ -54,7 +54,9 @@ or from project folder (adjust to your local setup)
 - `CombatResolver` - Hit chance calculation, attack resolution, cover modifiers
 - `AIController` - Target prioritization, behavior decisions
 - `CoverDirection` - Direction helpers, opposite directions
-- `MapState.HasCoverAgainst` - Directional cover detection
+- `CoverHeight` - Height-based cover reduction values
+- `MapState.GetCoverAgainst` - Directional cover detection with height
+- `CombatBalance` - Balance constants and cover reduction helpers
 
 **Not ideal for unit tests:**
 - Scene rendering (use manual testing)

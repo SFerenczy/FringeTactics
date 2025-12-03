@@ -47,14 +47,17 @@ public static class MapBuilder
     /// - '#' = Wall
     /// - 'E' = Entry zone (floor tile marked as entry)
     /// - ' ' = Void (outside map)
+    /// - '-' = Low cover (0.25 height, 15% hit reduction)
+    /// - '=' = Half cover (0.50 height, 30% hit reduction)
+    /// - '+' = High cover (0.75 height, 45% hit reduction)
     /// 
     /// Example:
     /// var template = new string[] {
     ///     "##########",
     ///     "#........#",
-    ///     "#..EE....#",
-    ///     "#..EE....#",
-    ///     "#........#",
+    ///     "#..EE.-..#",  // Low cover
+    ///     "#..EE.=..#",  // Half cover
+    ///     "#.....+..#",  // High cover
     ///     "##########"
     /// };
     /// </summary>
@@ -98,6 +101,18 @@ public static class MapBuilder
                     case 'E':
                         map.SetTile(pos, TileType.Floor);
                         map.EntryZone.Add(pos);
+                        break;
+                    case '-':
+                        map.SetTile(pos, TileType.Floor);
+                        map.SetTileCoverHeight(pos, CoverHeight.Low);
+                        break;
+                    case '=':
+                        map.SetTile(pos, TileType.Floor);
+                        map.SetTileCoverHeight(pos, CoverHeight.Half);
+                        break;
+                    case '+':
+                        map.SetTile(pos, TileType.Floor);
+                        map.SetTileCoverHeight(pos, CoverHeight.High);
                         break;
                     case ' ':
                     default:

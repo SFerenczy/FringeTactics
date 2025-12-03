@@ -65,10 +65,15 @@ public static class CombatResolver
         // Base hit chance before cover
         var hitChance = baseAccuracy * (1f - distancePenalty) + aimBonus;
         
-        // Apply cover penalty
-        if (map != null && map.HasCoverAgainst(target.GridPosition, attacker.GridPosition))
+        // Apply cover penalty based on cover height
+        if (map != null)
         {
-            hitChance *= (1f - COVER_HIT_REDUCTION);
+            var coverHeight = map.GetCoverAgainst(target.GridPosition, attacker.GridPosition);
+            if (coverHeight != CoverHeight.None && coverHeight != CoverHeight.Full)
+            {
+                var reduction = CombatBalance.GetCoverReduction(coverHeight);
+                hitChance *= (1f - reduction);
+            }
         }
         
         // Clamp to valid range
@@ -104,9 +109,9 @@ public static class CombatResolver
             return result;
         }
 
-        // Check if target has cover
-        var inCover = map != null && map.HasCoverAgainst(target.GridPosition, attacker.GridPosition);
-        result.TargetInCover = inCover;
+        // Check target's cover height
+        var coverHeight = map != null ? map.GetCoverAgainst(target.GridPosition, attacker.GridPosition) : CoverHeight.None;
+        result.TargetCoverHeight = coverHeight;
         
         // Calculate hit chance based on distance, accuracy, and cover
         var hitChance = CalculateHitChance(attacker, target, weapon, map);
@@ -212,5 +217,8 @@ public struct AttackResult
     public bool Hit { get; set; }
     public int Damage { get; set; }
     public float HitChance { get; set; }
-    public bool TargetInCover { get; set; }
+    public CoverHeight TargetCoverHeight { get; set; }
+    
+    /// <summary>Convenience property: true if target has any cover.</summary>
+    public bool TargetInCover => TargetCoverHeight != CoverHeight.None;
 }

@@ -315,6 +315,63 @@ public class MissionConfig
     }
 
     /// <summary>
+    /// M4.1 test mission - cover height testing.
+    /// Map has low (-), half (=), and high (+) cover objects.
+    /// Tests different cover heights and their hit reduction effects.
+    /// </summary>
+    public static MissionConfig CreateM4_1TestMission()
+    {
+        return new MissionConfig
+        {
+            Id = "m4_1_test",
+            Name = "M4.1 Test - Cover Heights",
+            GridSize = new Vector2I(24, 18),
+            MapTemplate = new string[]
+            {
+                "########################",
+                "#......................#",
+                "#.EE..................E#",
+                "#.EE..................E#",
+                "#......................#",
+                "#....-.....=.....+.....#",  // Low, Half, High cover in a row
+                "#......................#",
+                "#......................#",
+                "#..---...===...+++.....#",  // Clusters of each type
+                "#..---...===...+++.....#",
+                "#......................#",
+                "#......................#",
+                "#.....-=+..............#",  // Mixed cover
+                "#......................#",
+                "#......................#",
+                "#......................#",
+                "#......................#",
+                "########################"
+            },
+            CrewWeaponId = "rifle",
+            CrewSpawnPositions = new List<Vector2I>
+            {
+                new Vector2I(2, 2),
+                new Vector2I(3, 2),
+                new Vector2I(2, 3),
+                new Vector2I(3, 3)
+            },
+            EnemySpawns = new List<EnemySpawn>
+            {
+                // Enemy behind low cover (15% reduction)
+                new EnemySpawn("grunt", new Vector2I(6, 5)),
+                // Enemy behind half cover (30% reduction)
+                new EnemySpawn("grunt", new Vector2I(12, 5)),
+                // Enemy behind high cover (45% reduction)
+                new EnemySpawn("grunt", new Vector2I(18, 5)),
+                // Enemy in open (no cover)
+                new EnemySpawn("gunner", new Vector2I(22, 3)),
+                // Enemy behind mixed cover cluster
+                new EnemySpawn("grunt", new Vector2I(8, 12))
+            }
+        };
+    }
+
+    /// <summary>
     /// Harder mission with more enemies and interior walls.
     /// </summary>
     public static MissionConfig CreateHardMission()

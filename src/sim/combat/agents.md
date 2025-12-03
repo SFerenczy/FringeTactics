@@ -26,8 +26,8 @@ Real-time with pause (RTwP) tactical combat logic.
 - **AbilityData.cs** - Ability definitions: targeting type, range, cooldown, delay, radius, damage, effects
 - **CombatRng.cs** - Seeded RNG wrapper for deterministic simulation
 - **VisibilityState.cs** - Enum for tile visibility: Unknown, Revealed, Visible
-- **CoverDirection.cs** - 8-directional cover flags enum and helper methods for direction calculations
-- **CombatBalance.cs** - Centralized combat balance constants and tuning documentation
+- **CoverDirection.cs** - CoverHeight enum (None/Low/Half/High/Full), CoverDirection flags enum, and helper methods for direction calculations
+- **CombatBalance.cs** - Centralized combat balance constants, cover height reduction values, and GetCoverReduction() helper
 
 ### Utilities
 - **ActorTypes.cs** - Constants for actor type strings: Crew, Enemy, Drone
@@ -69,7 +69,7 @@ Real-time with pause (RTwP) tactical combat logic.
 
 ## Map Building
 
-- **MapBuilder.BuildFromTemplate()** - Parse string[] template with '#'=wall, '.'=floor, 'E'=entry
+- **MapBuilder.BuildFromTemplate()** - Parse string[] template with '#'=wall, '.'=floor, 'E'=entry, '-'=low cover, '='=half cover, '+'=high cover
 - **MapBuilder.BuildFromConfig()** - Use MissionConfig.MapTemplate if present, else create basic map
 - **MapBuilder.BuildTestMap()** - Create simple walled room with default entry zone
 

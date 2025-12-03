@@ -324,14 +324,30 @@ public partial class MissionView : Node2D
                         break;
                     case TileType.Floor:
                     default:
-                        // Checkerboard pattern for floor
-                        if ((x + y) % 2 == 0)
+                        // Check for cover objects first
+                        var coverHeight = map.GetTileCoverHeight(pos);
+                        if (coverHeight != CoverHeight.None)
                         {
-                            tile.Color = new Color(0.15f, 0.15f, 0.2f);
+                            // Color cover objects by height
+                            tile.Color = coverHeight switch
+                            {
+                                CoverHeight.Low => new Color(0.3f, 0.5f, 0.4f),   // Greenish - low debris
+                                CoverHeight.Half => new Color(0.4f, 0.45f, 0.35f), // Tan - crates
+                                CoverHeight.High => new Color(0.5f, 0.4f, 0.35f),  // Brown - tall cover
+                                _ => new Color(0.4f, 0.4f, 0.4f)
+                            };
                         }
                         else
                         {
-                            tile.Color = new Color(0.2f, 0.2f, 0.25f);
+                            // Checkerboard pattern for floor
+                            if ((x + y) % 2 == 0)
+                            {
+                                tile.Color = new Color(0.15f, 0.15f, 0.2f);
+                            }
+                            else
+                            {
+                                tile.Color = new Color(0.2f, 0.2f, 0.25f);
+                            }
                         }
                         break;
                 }

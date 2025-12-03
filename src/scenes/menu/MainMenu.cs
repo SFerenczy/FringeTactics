@@ -11,6 +11,7 @@ public partial class MainMenu : Control
     private Button startM2TestButton;
     private Button startM3TestButton;
     private Button startM4TestButton;
+    private Button startM4_1TestButton;
     private Button quitButton;
     private Label titleLabel;
 
@@ -124,6 +125,18 @@ public partial class MainMenu : Control
         spacer8.CustomMinimumSize = new Vector2(0, 10);
         vbox.AddChild(spacer8);
 
+        // M4.1 Test Mission button (cover heights)
+        startM4_1TestButton = new Button();
+        startM4_1TestButton.Text = "M4.1 Test (Cover Heights)";
+        startM4_1TestButton.CustomMinimumSize = new Vector2(250, 50);
+        startM4_1TestButton.Pressed += OnStartM4_1TestPressed;
+        vbox.AddChild(startM4_1TestButton);
+
+        // Spacer
+        var spacer9 = new Control();
+        spacer9.CustomMinimumSize = new Vector2(0, 10);
+        vbox.AddChild(spacer9);
+
         // Quit button
         quitButton = new Button();
         quitButton.Text = "Quit";
@@ -172,6 +185,12 @@ public partial class MainMenu : Control
     {
         GD.Print("[MainMenu] Starting M4 test mission (cover combat)...");
         GameState.Instance.StartM4TestMission();
+    }
+
+    private void OnStartM4_1TestPressed()
+    {
+        GD.Print("[MainMenu] Starting M4.1 test mission (cover heights)...");
+        GameState.Instance.StartM4_1TestMission();
     }
 
     private void OnQuitPressed()

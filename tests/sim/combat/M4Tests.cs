@@ -164,13 +164,13 @@ public class M4Tests
     [RequireGodotRuntime]
     public void HitChance_ReducedWhenTargetInCover()
     {
-        // Create map with cover position - larger to avoid boundary walls
+        // Create map with half cover position
         var template = new string[]
         {
             "##############",
             "#............#",
             "#............#",
-            "#....#.......#",  // wall at (5,3)
+            "#....=.......#",  // half cover at (5,3)
             "#............#",
             "#............#",
             "##############"
@@ -179,9 +179,9 @@ public class M4Tests
         var combat = new CombatState();
         combat.MapState = map;
 
-        // Attacker to the west, covered target behind wall, exposed target in open
+        // Attacker to the west, covered target behind half cover, exposed target in open
         var attacker = combat.AddActor("crew", new Vector2I(3, 3));
-        var coveredTarget = combat.AddActor("enemy", new Vector2I(6, 3));  // wall at (5,3) to west
+        var coveredTarget = combat.AddActor("enemy", new Vector2I(6, 3));  // half cover at (5,3) to west
         var exposedTarget = combat.AddActor("enemy", new Vector2I(9, 3));  // no cover from west
 
         var coveredChance = CombatResolver.CalculateHitChance(attacker, coveredTarget, attacker.EquippedWeapon, map);
@@ -195,12 +195,12 @@ public class M4Tests
     [RequireGodotRuntime]
     public void HitChance_CoverReductionMatchesConstant()
     {
-        // Larger map to avoid boundary wall interference
+        // Larger map with half cover
         var template = new string[]
         {
             "##########",
             "#........#",
-            "#..#.....#",  // wall at (3,2), target at (4,2)
+            "#..=.....#",  // half cover at (3,2), target at (4,2)
             "#........#",
             "##########"
         };
@@ -211,15 +211,15 @@ public class M4Tests
         var attacker = combat.AddActor("crew", new Vector2I(1, 2));
         var target = combat.AddActor("enemy", new Vector2I(4, 2));
 
-        // Verify target actually has cover
-        AssertThat(map.HasCoverAgainst(target.GridPosition, attacker.GridPosition)).IsTrue();
+        // Verify target actually has half cover
+        AssertThat(map.GetCoverAgainst(target.GridPosition, attacker.GridPosition)).IsEqual(CoverHeight.Half);
 
         // Calculate expected reduction
         var baseChance = CombatResolver.CalculateHitChance(attacker, target, attacker.EquippedWeapon, null);
         var coveredChance = CombatResolver.CalculateHitChance(attacker, target, attacker.EquippedWeapon, map);
         
-        // Covered chance should be base * (1 - COVER_HIT_REDUCTION), clamped
-        var expectedCovered = baseChance * (1f - CombatResolver.COVER_HIT_REDUCTION);
+        // Covered chance should be base * (1 - HalfCoverReduction), clamped
+        var expectedCovered = baseChance * (1f - CombatBalance.HalfCoverReduction);
         expectedCovered = Mathf.Clamp(expectedCovered, CombatResolver.MIN_HIT_CHANCE, CombatResolver.MAX_HIT_CHANCE);
         
         AssertThat(coveredChance).IsEqualApprox(expectedCovered, 0.01f);
@@ -287,13 +287,12 @@ public class M4Tests
     [RequireGodotRuntime]
     public void Flanking_BypassesCover()
     {
-        // Wall to the west of target, attacker from east (flanking)
-        // Larger map to avoid boundary wall interference
+        // Half cover to the west of target, attacker from east (flanking)
         var template = new string[]
         {
             "###########",
             "#.........#",
-            "#..#......#",  // wall at (3,2), target at (4,2)
+            "#..=......#",  // half cover at (3,2), target at (4,2)
             "#.........#",
             "###########"
         };
@@ -303,11 +302,11 @@ public class M4Tests
 
         var westAttacker = combat.AddActor("crew", new Vector2I(1, 2));
         var eastAttacker = combat.AddActor("crew", new Vector2I(7, 2));  // flanking from east
-        var target = combat.AddActor("enemy", new Vector2I(4, 2));       // wall at (3,2) to west
+        var target = combat.AddActor("enemy", new Vector2I(4, 2));       // half cover at (3,2) to west
 
         // Verify west attacker sees cover, east attacker does not
-        AssertThat(map.HasCoverAgainst(target.GridPosition, westAttacker.GridPosition)).IsTrue();
-        AssertThat(map.HasCoverAgainst(target.GridPosition, eastAttacker.GridPosition)).IsFalse();
+        AssertThat(map.GetCoverAgainst(target.GridPosition, westAttacker.GridPosition)).IsEqual(CoverHeight.Half);
+        AssertThat(map.GetCoverAgainst(target.GridPosition, eastAttacker.GridPosition)).IsEqual(CoverHeight.None);
 
         var westChance = CombatResolver.CalculateHitChance(westAttacker, target, westAttacker.EquippedWeapon, map);
         var eastChance = CombatResolver.CalculateHitChance(eastAttacker, target, eastAttacker.EquippedWeapon, map);
@@ -461,5 +460,362 @@ public class M4Tests
         // It should provide cover from NW attacks
         AssertThat(map.HasCoverAgainst(targetPos, attackerFromNW)).IsTrue();
         AssertThat(map.HasCoverAgainst(targetPos, attackerFromSE)).IsFalse();
+    }
+
+    // ========== M4.1 Cover Height Tests ==========
+
+    [TestCase]
+    [RequireGodotRuntime]
+    public void CoverHeight_GetReduction_ReturnsCorrectValues()
+    {
+        AssertThat(CombatBalance.GetCoverReduction(CoverHeight.None)).IsEqual(0f);
+        AssertThat(CombatBalance.GetCoverReduction(CoverHeight.Low)).IsEqual(0.15f);
+        AssertThat(CombatBalance.GetCoverReduction(CoverHeight.Half)).IsEqual(0.30f);
+        AssertThat(CombatBalance.GetCoverReduction(CoverHeight.High)).IsEqual(0.45f);
+        AssertThat(CombatBalance.GetCoverReduction(CoverHeight.Full)).IsEqual(0f);
+    }
+
+    [TestCase]
+    [RequireGodotRuntime]
+    public void MapBuilder_ParsesLowCover()
+    {
+        var template = new string[]
+        {
+            "#####",
+            "#...#",
+            "#.-.#",  // low cover at (2,2)
+            "#...#",
+            "#####"
+        };
+        var map = MapBuilder.BuildFromTemplate(template);
+
+        AssertThat(map.GetTileCoverHeight(new Vector2I(2, 2))).IsEqual(CoverHeight.Low);
+        AssertThat(map.GetTileType(new Vector2I(2, 2))).IsEqual(TileType.Floor);
+    }
+
+    [TestCase]
+    [RequireGodotRuntime]
+    public void MapBuilder_ParsesHalfCover()
+    {
+        var template = new string[]
+        {
+            "#####",
+            "#...#",
+            "#.=.#",  // half cover at (2,2)
+            "#...#",
+            "#####"
+        };
+        var map = MapBuilder.BuildFromTemplate(template);
+
+        AssertThat(map.GetTileCoverHeight(new Vector2I(2, 2))).IsEqual(CoverHeight.Half);
+        AssertThat(map.GetTileType(new Vector2I(2, 2))).IsEqual(TileType.Floor);
+    }
+
+    [TestCase]
+    [RequireGodotRuntime]
+    public void MapBuilder_ParsesHighCover()
+    {
+        var template = new string[]
+        {
+            "#####",
+            "#...#",
+            "#.+.#",  // high cover at (2,2)
+            "#...#",
+            "#####"
+        };
+        var map = MapBuilder.BuildFromTemplate(template);
+
+        AssertThat(map.GetTileCoverHeight(new Vector2I(2, 2))).IsEqual(CoverHeight.High);
+        AssertThat(map.GetTileType(new Vector2I(2, 2))).IsEqual(TileType.Floor);
+    }
+
+    [TestCase]
+    [RequireGodotRuntime]
+    public void MapState_GetCoverAgainst_ReturnsCorrectHeight()
+    {
+        var template = new string[]
+        {
+            "#########",
+            "#.......#",
+            "#.-.=.+.#",  // low at (2,2), half at (4,2), high at (6,2)
+            "#.......#",  // targets at (3,3), (5,3), (7,3)
+            "#.......#",
+            "#########"
+        };
+        var map = MapBuilder.BuildFromTemplate(template);
+
+        // Target at (3,3), attacker from north - low cover at (2,2) is NW, not N
+        // Let's use direct north positions
+        // Low cover at (2,2), target at (2,3), attacker from (2,1)
+        AssertThat(map.GetCoverAgainst(new Vector2I(2, 3), new Vector2I(2, 1))).IsEqual(CoverHeight.Low);
+        
+        // Half cover at (4,2), target at (4,3), attacker from (4,1)
+        AssertThat(map.GetCoverAgainst(new Vector2I(4, 3), new Vector2I(4, 1))).IsEqual(CoverHeight.Half);
+        
+        // High cover at (6,2), target at (6,3), attacker from (6,1)
+        AssertThat(map.GetCoverAgainst(new Vector2I(6, 3), new Vector2I(6, 1))).IsEqual(CoverHeight.High);
+    }
+
+    [TestCase]
+    [RequireGodotRuntime]
+    public void HitChance_ScalesWithCoverHeight()
+    {
+        // Attacker at west, targets at east with cover between
+        // Template indices: #=0, .=1, -=2, .=3, ==4, .=5, +=6, ...
+        var template = new string[]
+        {
+            "##############",
+            "#............#",
+            "#.-..=..+....#",  // low(2,2), half(5,2), high(8,2)
+            "#............#",
+            "#............#",
+            "##############"
+        };
+        var map = MapBuilder.BuildFromTemplate(template);
+        var combat = new CombatState();
+        combat.MapState = map;
+
+        var attacker = combat.AddActor("crew", new Vector2I(1, 3));  // south of cover row
+        
+        // Target behind low cover (cover at 2,2, target at 2,3)
+        var lowTarget = combat.AddActor("enemy", new Vector2I(2, 3));
+        // Target behind half cover (cover at 5,2, target at 5,3)
+        var halfTarget = combat.AddActor("enemy", new Vector2I(5, 3));
+        // Target behind high cover (cover at 8,2, target at 8,3)
+        var highTarget = combat.AddActor("enemy", new Vector2I(8, 3));
+        // Target in open
+        var openTarget = combat.AddActor("enemy", new Vector2I(11, 3));
+
+        // Verify cover heights - attacker from south, cover is north of targets
+        AssertThat(map.GetCoverAgainst(lowTarget.GridPosition, attacker.GridPosition)).IsEqual(CoverHeight.None);
+        AssertThat(map.GetCoverAgainst(halfTarget.GridPosition, attacker.GridPosition)).IsEqual(CoverHeight.None);
+        AssertThat(map.GetCoverAgainst(highTarget.GridPosition, attacker.GridPosition)).IsEqual(CoverHeight.None);
+        
+        // Actually, for cover to work, attacker needs to be NORTH and cover between
+        // Let's fix the setup: attacker north, targets south of cover
+        var northAttacker = combat.AddActor("crew", new Vector2I(1, 1));
+        
+        // Targets north of cover, attacker south - cover provides protection
+        var lowTarget2 = combat.AddActor("enemy", new Vector2I(2, 3));
+        var halfTarget2 = combat.AddActor("enemy", new Vector2I(5, 3));
+        var highTarget2 = combat.AddActor("enemy", new Vector2I(8, 3));
+        
+        // Cover at (2,2) is N of target at (2,3), attacker at (1,1) is NW
+        // Direction from target(2,3) to attacker(1,1) is NW, check (1,2) - floor
+        // This is getting complicated. Let's simplify with direct west-east setup
+        
+        var template2 = new string[]
+        {
+            "##############",
+            "#............#",
+            "#A.-.=.+.....#",  // A=1, -=3, ==5, +=7
+            "#............#",
+            "##############"
+        };
+        var map2 = MapBuilder.BuildFromTemplate(template2);
+        var combat2 = new CombatState();
+        combat2.MapState = map2;
+
+        var westAttacker = combat2.AddActor("crew", new Vector2I(1, 2));
+        
+        // Targets east of each cover type
+        var lowT = combat2.AddActor("enemy", new Vector2I(4, 2));   // cover at (3,2)
+        var halfT = combat2.AddActor("enemy", new Vector2I(6, 2));  // cover at (5,2)
+        var highT = combat2.AddActor("enemy", new Vector2I(8, 2));  // cover at (7,2)
+        var openT = combat2.AddActor("enemy", new Vector2I(11, 2)); // no cover
+
+        // Verify cover heights
+        AssertThat(map2.GetCoverAgainst(lowT.GridPosition, westAttacker.GridPosition)).IsEqual(CoverHeight.Low);
+        AssertThat(map2.GetCoverAgainst(halfT.GridPosition, westAttacker.GridPosition)).IsEqual(CoverHeight.Half);
+        AssertThat(map2.GetCoverAgainst(highT.GridPosition, westAttacker.GridPosition)).IsEqual(CoverHeight.High);
+        AssertThat(map2.GetCoverAgainst(openT.GridPosition, westAttacker.GridPosition)).IsEqual(CoverHeight.None);
+
+        var lowC = CombatResolver.CalculateHitChance(westAttacker, lowT, westAttacker.EquippedWeapon, map2);
+        var halfC = CombatResolver.CalculateHitChance(westAttacker, halfT, westAttacker.EquippedWeapon, map2);
+        var highC = CombatResolver.CalculateHitChance(westAttacker, highT, westAttacker.EquippedWeapon, map2);
+
+        // Low > Half > High (more cover = lower hit chance)
+        AssertThat(lowC).IsGreater(halfC);
+        AssertThat(halfC).IsGreater(highC);
+    }
+
+    [TestCase]
+    [RequireGodotRuntime]
+    public void HitChance_LowCover_ReducesBy15Percent()
+    {
+        var template = new string[]
+        {
+            "##########",
+            "#........#",
+            "#.-......#",  // low cover at (2,2)
+            "#........#",  // target at (3,3)
+            "#........#",
+            "##########"
+        };
+        var map = MapBuilder.BuildFromTemplate(template);
+        var combat = new CombatState();
+        combat.MapState = map;
+
+        var attacker = combat.AddActor("crew", new Vector2I(1, 2));
+        var target = combat.AddActor("enemy", new Vector2I(3, 2));
+
+        // Verify target has low cover
+        AssertThat(map.GetCoverAgainst(target.GridPosition, attacker.GridPosition)).IsEqual(CoverHeight.Low);
+
+        var baseChance = CombatResolver.CalculateHitChance(attacker, target, attacker.EquippedWeapon, null);
+        var coveredChance = CombatResolver.CalculateHitChance(attacker, target, attacker.EquippedWeapon, map);
+        
+        var expectedCovered = baseChance * (1f - CombatBalance.LowCoverReduction);
+        expectedCovered = Mathf.Clamp(expectedCovered, CombatResolver.MIN_HIT_CHANCE, CombatResolver.MAX_HIT_CHANCE);
+        
+        AssertThat(coveredChance).IsEqualApprox(expectedCovered, 0.01f);
+    }
+
+    [TestCase]
+    [RequireGodotRuntime]
+    public void HitChance_HalfCover_ReducesBy30Percent()
+    {
+        var template = new string[]
+        {
+            "##########",
+            "#........#",
+            "#.=......#",  // half cover at (2,2)
+            "#........#",
+            "#........#",
+            "##########"
+        };
+        var map = MapBuilder.BuildFromTemplate(template);
+        var combat = new CombatState();
+        combat.MapState = map;
+
+        var attacker = combat.AddActor("crew", new Vector2I(1, 2));
+        var target = combat.AddActor("enemy", new Vector2I(3, 2));
+
+        AssertThat(map.GetCoverAgainst(target.GridPosition, attacker.GridPosition)).IsEqual(CoverHeight.Half);
+
+        var baseChance = CombatResolver.CalculateHitChance(attacker, target, attacker.EquippedWeapon, null);
+        var coveredChance = CombatResolver.CalculateHitChance(attacker, target, attacker.EquippedWeapon, map);
+        
+        var expectedCovered = baseChance * (1f - CombatBalance.HalfCoverReduction);
+        expectedCovered = Mathf.Clamp(expectedCovered, CombatResolver.MIN_HIT_CHANCE, CombatResolver.MAX_HIT_CHANCE);
+        
+        AssertThat(coveredChance).IsEqualApprox(expectedCovered, 0.01f);
+    }
+
+    [TestCase]
+    [RequireGodotRuntime]
+    public void HitChance_HighCover_ReducesBy45Percent()
+    {
+        var template = new string[]
+        {
+            "##########",
+            "#........#",
+            "#.+......#",  // high cover at (2,2)
+            "#........#",
+            "#........#",
+            "##########"
+        };
+        var map = MapBuilder.BuildFromTemplate(template);
+        var combat = new CombatState();
+        combat.MapState = map;
+
+        var attacker = combat.AddActor("crew", new Vector2I(1, 2));
+        var target = combat.AddActor("enemy", new Vector2I(3, 2));
+
+        AssertThat(map.GetCoverAgainst(target.GridPosition, attacker.GridPosition)).IsEqual(CoverHeight.High);
+
+        var baseChance = CombatResolver.CalculateHitChance(attacker, target, attacker.EquippedWeapon, null);
+        var coveredChance = CombatResolver.CalculateHitChance(attacker, target, attacker.EquippedWeapon, map);
+        
+        var expectedCovered = baseChance * (1f - CombatBalance.HighCoverReduction);
+        expectedCovered = Mathf.Clamp(expectedCovered, CombatResolver.MIN_HIT_CHANCE, CombatResolver.MAX_HIT_CHANCE);
+        
+        AssertThat(coveredChance).IsEqualApprox(expectedCovered, 0.01f);
+    }
+
+    [TestCase]
+    [RequireGodotRuntime]
+    public void AttackResult_TargetCoverHeight_SetCorrectly()
+    {
+        // Attacker at (2,2), half cover at (4,2), target at (5,2)
+        // Target looks west toward attacker, cover is at (4,2)
+        var template = new string[]
+        {
+            "##########",
+            "#........#",
+            "#...=....#",  // half cover at (4,2)
+            "#........#",
+            "##########"
+        };
+        var map = MapBuilder.BuildFromTemplate(template);
+        var combat = new CombatState(12345);
+        combat.MapState = map;
+
+        var attacker = combat.AddActor("crew", new Vector2I(2, 2));
+        var target = combat.AddActor("enemy", new Vector2I(5, 2));
+
+        // Verify cover height - target at (5,2), attacker at (2,2)
+        // Direction from target to attacker is W, so check tile (4,2) = half cover
+        AssertThat(map.GetCoverAgainst(target.GridPosition, attacker.GridPosition)).IsEqual(CoverHeight.Half);
+
+        var result = CombatResolver.ResolveAttack(attacker, target, attacker.EquippedWeapon, map, combat.Rng.GetRandom());
+
+        AssertThat(result.TargetCoverHeight).IsEqual(CoverHeight.Half);
+        AssertThat(result.TargetInCover).IsTrue();
+    }
+
+    [TestCase]
+    [RequireGodotRuntime]
+    public void CoverHeight_WallsReturnFull()
+    {
+        // Wall at (4,2), target at (5,2), attacker at (2,2)
+        // Note: This tests the raw GetCoverAgainst, even though LOS would be blocked
+        var template = new string[]
+        {
+            "#########",
+            "#.......#",
+            "#..#....#",  // wall at (3,2)
+            "#.......#",
+            "#########"
+        };
+        var map = MapBuilder.BuildFromTemplate(template);
+
+        // Target at (4,2), attacker at (2,2) - wall at (3,2) is between
+        // Direction from target to attacker is W, check tile (3,2) = wall
+        AssertThat(map.GetCoverAgainst(new Vector2I(4, 2), new Vector2I(2, 2))).IsEqual(CoverHeight.Full);
+    }
+
+    [TestCase]
+    [RequireGodotRuntime]
+    public void CoverHeight_FlankingBypassesPartialCover()
+    {
+        var template = new string[]
+        {
+            "###########",
+            "#.........#",
+            "#..=......#",  // half cover at (3,2)
+            "#.........#",  // target at (4,3)
+            "#.........#",
+            "###########"
+        };
+        var map = MapBuilder.BuildFromTemplate(template);
+        var combat = new CombatState();
+        combat.MapState = map;
+
+        var westAttacker = combat.AddActor("crew", new Vector2I(1, 2));
+        var eastAttacker = combat.AddActor("crew", new Vector2I(8, 3));
+        var target = combat.AddActor("enemy", new Vector2I(4, 2));
+
+        // West attacker sees half cover
+        AssertThat(map.GetCoverAgainst(target.GridPosition, westAttacker.GridPosition)).IsEqual(CoverHeight.Half);
+        
+        // East attacker (flanking) sees no cover
+        AssertThat(map.GetCoverAgainst(target.GridPosition, eastAttacker.GridPosition)).IsEqual(CoverHeight.None);
+
+        var westChance = CombatResolver.CalculateHitChance(westAttacker, target, westAttacker.EquippedWeapon, map);
+        var eastChance = CombatResolver.CalculateHitChance(eastAttacker, target, eastAttacker.EquippedWeapon, map);
+
+        // Flanking attacker has higher hit chance
+        AssertThat(eastChance).IsGreater(westChance);
     }
 }

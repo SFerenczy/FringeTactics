@@ -258,7 +258,6 @@ public partial class CombatState
                 if (attacker.NeedsReload())
                 {
                     attacker.StartReload();
-                    SimLog.Log($"[Combat] {attacker.Type}#{attacker.Id} auto-reloading (empty magazine)");
                 }
                 continue;
             }
@@ -309,7 +308,6 @@ public partial class CombatState
                 if (defender.NeedsReload())
                 {
                     defender.StartReload();
-                    SimLog.Log($"[Combat] {defender.Type}#{defender.Id} auto-reloading (auto-defend)");
                 }
                 continue;
             }
@@ -338,7 +336,14 @@ public partial class CombatState
 
         var attackType = isAutoDefend ? "auto-defend" : "attack";
 
-        var coverTag = result.TargetInCover ? " [COVER]" : "";
+        var coverTag = result.TargetCoverHeight switch
+        {
+            CoverHeight.Low => " [LOW COVER]",
+            CoverHeight.Half => " [HALF COVER]",
+            CoverHeight.High => " [HIGH COVER]",
+            CoverHeight.Full => " [FULL COVER]",
+            _ => ""
+        };
         
         if (result.Hit)
         {

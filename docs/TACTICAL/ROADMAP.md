@@ -146,11 +146,13 @@ Introduce the cover game so combat matches the intended “lethal but positional
 
 - Cover data on map tiles/entities:
   - 8-direction cover values (per cell or per object).
+  - Cover heights (low/half/high) with scaled hit reduction.
 - Combat resolution extended to consider cover:
   - Determine if the target is in cover relative to shooter direction.
-  - Apply hit/damage modifiers for cover.
+  - Apply hit modifiers based on cover height (15%/30%/45% reduction).
 - Very basic cover feedback in UI:
-  - Enough to understand “this tile gives cover vs that direction”.
+  - Enough to understand "this tile gives cover vs that direction".
+  - Visual distinction between cover heights (color-coded).
 - Balance pass:
   - Exposed units die quickly,
   - Units in strong mutual cover have long standoffs.
