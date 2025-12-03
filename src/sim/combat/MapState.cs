@@ -177,43 +177,28 @@ public partial class MapState
 
     /// <summary>
     /// Check if a unit at targetPos has cover against an attack from attackerPos.
-    /// Checks adjacent tiles for cover that blocks the attack direction.
+    /// Cover is provided by an adjacent wall that is in the direction of the attacker.
     /// </summary>
     public bool HasCoverAgainst(Vector2I targetPos, Vector2I attackerPos)
     {
-        // Direction from attacker to target
-        var attackDir = CoverDirectionHelper.GetDirection(attackerPos, targetPos);
-        if (attackDir == CoverDirection.None)
+        // Direction from target toward attacker (where cover needs to be)
+        var dirToAttacker = CoverDirectionHelper.GetDirection(targetPos, attackerPos);
+        if (dirToAttacker == CoverDirection.None)
         {
             return false;
         }
         
-        // Cover needs to block from the direction the attack is coming from
-        var coverNeeded = CoverDirectionHelper.GetOpposite(attackDir);
-        
-        // Check adjacent tiles for cover
-        foreach (var dir in CoverDirectionHelper.AllDirections)
+        // Check the tile in the direction of the attacker
+        var coverPos = targetPos + CoverDirectionHelper.GetOffset(dirToAttacker);
+        if (!IsInBounds(coverPos))
         {
-            var adjacentPos = targetPos + CoverDirectionHelper.GetOffset(dir);
-            if (!IsInBounds(adjacentPos))
-            {
-                continue;
-            }
-            
-            var adjacentCover = GetTileCover(adjacentPos);
-            if (adjacentCover == CoverDirection.None)
-            {
-                continue;
-            }
-            
-            // Adjacent tile provides cover if:
-            // 1. It has cover facing toward the target (opposite of dir)
-            // 2. That cover direction matches where the attack is coming from
-            var coverFacing = CoverDirectionHelper.GetOpposite(dir);
-            if ((adjacentCover & coverFacing) != 0 && coverFacing == coverNeeded)
-            {
-                return true;
-            }
+            return false;
+        }
+        
+        // If that tile is a wall, it provides cover
+        if (GetTileType(coverPos) == TileType.Wall)
+        {
+            return true;
         }
         
         return false;

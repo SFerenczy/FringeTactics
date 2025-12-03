@@ -2,3 +2,6 @@
 .godot/
 /android/
 reports/
+
+# Windsurf local rules
+.windsurf/rules/local-rules.md
