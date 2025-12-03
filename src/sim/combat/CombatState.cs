@@ -340,8 +340,17 @@ public partial class CombatState
 
         if (result.Hit)
         {
-            target.TakeDamage(result.Damage);
-            SimLog.Log($"[Combat] {attacker.Type}#{attacker.Id} hit {target.Type}#{target.Id} ({attackType}) for {result.Damage} damage ({result.HitChance:P0} chance). HP: {target.Hp}/{target.MaxHp}");
+            // Check god mode before applying damage
+            var isGodMode = (target.Type == ActorTypes.Crew && DevTools.CrewGodMode) ||
+                           (target.Type == ActorTypes.Enemy && DevTools.EnemyGodMode);
+            
+            if (!isGodMode)
+            {
+                target.TakeDamage(result.Damage);
+            }
+            
+            var godModeTag = isGodMode ? " [GOD MODE]" : "";
+            SimLog.Log($"[Combat] {attacker.Type}#{attacker.Id} hit {target.Type}#{target.Id} ({attackType}) for {result.Damage} damage ({result.HitChance:P0} chance). HP: {target.Hp}/{target.MaxHp}{godModeTag}");
 
             // Set auto-defend target on the victim (they'll return fire)
             if (target.State == ActorState.Alive)

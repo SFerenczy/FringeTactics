@@ -9,6 +9,10 @@ public partial class DevTools : Node
 {
     public static DevTools Instance { get; private set; }
 
+    // God mode flags (static so sim layer can check without dependency)
+    public static bool CrewGodMode { get; private set; } = false;
+    public static bool EnemyGodMode { get; private set; } = false;
+
     // Cheat amounts
     private const int MONEY_CHEAT = 1000;
     private const int FUEL_CHEAT = 100;
@@ -19,7 +23,8 @@ public partial class DevTools : Node
     public override void _Ready()
     {
         Instance = this;
-        GD.Print("[DevTools] Initialized. Shift+Alt+M=Money, F=Fuel, A=Ammo, P=Parts, H=Meds, T=Teleport to job target");
+        GD.Print("[DevTools] Initialized. Shift+Alt: M=Money, F=Fuel, A=Ammo, P=Parts, H=Meds, T=Teleport");
+        GD.Print("[DevTools] Combat cheats: Shift+Alt+G=Crew God Mode, Shift+Alt+E=Enemy God Mode");
     }
 
     public override void _UnhandledInput(InputEvent @event)
@@ -28,6 +33,21 @@ public partial class DevTools : Node
         if (!keyEvent.Pressed) return;
         if (!keyEvent.ShiftPressed || !keyEvent.AltPressed) return;
 
+        // Combat cheats (work without campaign)
+        switch (keyEvent.Keycode)
+        {
+            case Key.G: // Crew God Mode toggle
+                CrewGodMode = !CrewGodMode;
+                GD.Print($"[DevTools] Crew God Mode: {(CrewGodMode ? "ON" : "OFF")}");
+                return;
+
+            case Key.E: // Enemy God Mode toggle
+                EnemyGodMode = !EnemyGodMode;
+                GD.Print($"[DevTools] Enemy God Mode: {(EnemyGodMode ? "ON" : "OFF")}");
+                return;
+        }
+
+        // Campaign cheats (require active campaign)
         var campaign = GameState.Instance?.Campaign;
         if (campaign == null) return;
 
