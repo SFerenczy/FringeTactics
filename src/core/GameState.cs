@@ -193,6 +193,15 @@ public partial class GameState : Node
         StartSandboxWithConfig(config);
     }
 
+    /// <summary>
+    /// Start the M4 test mission for testing directional cover mechanics.
+    /// </summary>
+    public void StartM4TestMission()
+    {
+        var config = MissionConfig.CreateM4TestMission();
+        StartSandboxWithConfig(config);
+    }
+
     public void EndMission(bool victory, CombatState combatState)
     {
         if (Campaign == null)

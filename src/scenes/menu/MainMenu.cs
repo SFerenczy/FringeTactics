@@ -10,6 +10,7 @@ public partial class MainMenu : Control
     private Button startM1TestButton;
     private Button startM2TestButton;
     private Button startM3TestButton;
+    private Button startM4TestButton;
     private Button quitButton;
     private Label titleLabel;
 
@@ -111,6 +112,18 @@ public partial class MainMenu : Control
         spacer7.CustomMinimumSize = new Vector2(0, 10);
         vbox.AddChild(spacer7);
 
+        // M4 Test Mission button (cover combat)
+        startM4TestButton = new Button();
+        startM4TestButton.Text = "M4 Test (Cover Combat)";
+        startM4TestButton.CustomMinimumSize = new Vector2(250, 50);
+        startM4TestButton.Pressed += OnStartM4TestPressed;
+        vbox.AddChild(startM4TestButton);
+
+        // Spacer
+        var spacer8 = new Control();
+        spacer8.CustomMinimumSize = new Vector2(0, 10);
+        vbox.AddChild(spacer8);
+
         // Quit button
         quitButton = new Button();
         quitButton.Text = "Quit";
@@ -153,6 +166,12 @@ public partial class MainMenu : Control
     {
         GD.Print("[MainMenu] Starting M3 test mission (basic combat)...");
         GameState.Instance.StartM3TestMission();
+    }
+
+    private void OnStartM4TestPressed()
+    {
+        GD.Print("[MainMenu] Starting M4 test mission (cover combat)...");
+        GameState.Instance.StartM4TestMission();
     }
 
     private void OnQuitPressed()

@@ -262,6 +262,59 @@ public class MissionConfig
     }
 
     /// <summary>
+    /// M4 test mission - directional cover testing.
+    /// Map has walls creating cover positions from specific directions.
+    /// Enemies placed both in cover and exposed to test cover mechanics.
+    /// </summary>
+    public static MissionConfig CreateM4TestMission()
+    {
+        return new MissionConfig
+        {
+            Id = "m4_test",
+            Name = "M4 Test - Cover Combat",
+            GridSize = new Vector2I(20, 16),
+            MapTemplate = new string[]
+            {
+                "####################",
+                "#..................#",
+                "#.EE..##....##.....#",
+                "#.EE..##....##..E..#",
+                "#.....##....##.....#",
+                "#..................#",
+                "#......####........#",
+                "#......####........#",
+                "#..................#",
+                "#..##..........##..#",
+                "#..##..........##..#",
+                "#..................#",
+                "#..................#",
+                "#..................#",
+                "#..................#",
+                "####################"
+            },
+            CrewWeaponId = "rifle",
+            CrewSpawnPositions = new List<Vector2I>
+            {
+                new Vector2I(2, 2),
+                new Vector2I(3, 2),
+                new Vector2I(2, 3),
+                new Vector2I(3, 3)
+            },
+            EnemySpawns = new List<EnemySpawn>
+            {
+                // Enemy behind vertical wall (wall to their west) - has cover from west
+                new EnemySpawn("grunt", new Vector2I(8, 3)),
+                // Enemy in open (no cover)
+                new EnemySpawn("grunt", new Vector2I(14, 5)),
+                // Enemy behind central cover block
+                new EnemySpawn("grunt", new Vector2I(11, 7)),
+                // Enemy behind vertical wall (wall to their east) - has cover from east
+                new EnemySpawn("gunner", new Vector2I(16, 3))
+            }
+        };
+    }
+
+    /// <summary>
     /// Harder mission with more enemies and interior walls.
     /// </summary>
     public static MissionConfig CreateHardMission()
