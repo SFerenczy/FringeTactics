@@ -50,6 +50,10 @@ public partial class MissionView : Node2D
     // Cover indicators
     private CoverIndicator coverIndicator;
 
+    // Interactable views
+    private Dictionary<int, InteractableView> interactableViews = new();
+    private Node2D interactablesContainer;
+
     // Double-click detection
     private float lastClickTime = 0f;
     private int lastClickedActorId = -1;
@@ -94,6 +98,7 @@ public partial class MissionView : Node2D
         SetupCamera();
         DrawGrid();
         CreateFogLayer();
+        CreateInteractablesLayer();
         CreateCoverIndicator();
         SpawnActorViews();
     }
@@ -444,6 +449,61 @@ public partial class MissionView : Node2D
         coverIndicator.Initialize(CombatState.MapState);
     }
 
+    private void CreateInteractablesLayer()
+    {
+        interactablesContainer = new Node2D();
+        interactablesContainer.Name = "Interactables";
+        interactablesContainer.ZIndex = 2; // Above grid, below cover indicators
+        gridDisplay.AddChild(interactablesContainer);
+        
+        // Subscribe to interaction system events
+        CombatState.Interactions.InteractableAdded += OnInteractableAdded;
+        CombatState.Interactions.InteractableRemoved += OnInteractableRemoved;
+        CombatState.Interactions.InteractableStateChanged += OnInteractableStateChanged;
+        
+        // Create views for existing interactables
+        foreach (var interactable in CombatState.Interactions.GetAllInteractables())
+        {
+            CreateInteractableView(interactable);
+        }
+        
+        GD.Print($"[MissionView] Created {interactableViews.Count} interactable views");
+    }
+    
+    private void OnInteractableAdded(Interactable interactable)
+    {
+        CreateInteractableView(interactable);
+    }
+    
+    private void OnInteractableRemoved(Interactable interactable)
+    {
+        if (interactableViews.TryGetValue(interactable.Id, out var view))
+        {
+            view.Cleanup();
+            view.QueueFree();
+            interactableViews.Remove(interactable.Id);
+        }
+    }
+    
+    private void OnInteractableStateChanged(Interactable interactable, InteractableState newState)
+    {
+        // Update fog/visibility when doors change
+        if (interactable.IsDoor)
+        {
+            CombatState.Visibility.UpdateVisibility(CombatState.Actors);
+            fogDirty = true;
+        }
+    }
+    
+    private void CreateInteractableView(Interactable interactable)
+    {
+        var view = new InteractableView();
+        view.Name = $"Interactable_{interactable.Id}";
+        interactablesContainer.AddChild(view);
+        view.Setup(interactable);
+        interactableViews[interactable.Id] = view;
+    }
+
     private void UpdateCoverIndicators()
     {
         if (coverIndicator == null)
@@ -656,7 +716,17 @@ public partial class MissionView : Node2D
             CombatState.MissionEnded -= OnMissionEnded;
             CombatState.AbilitySystem.AbilityDetonated -= OnAbilityDetonated;
             CombatState.Visibility.VisibilityChanged -= OnVisibilityChanged;
+            CombatState.Interactions.InteractableAdded -= OnInteractableAdded;
+            CombatState.Interactions.InteractableRemoved -= OnInteractableRemoved;
+            CombatState.Interactions.InteractableStateChanged -= OnInteractableStateChanged;
         }
+        
+        // Cleanup interactable views
+        foreach (var view in interactableViews.Values)
+        {
+            view.Cleanup();
+        }
+        interactableViews.Clear();
     }
 
     public override void _Process(double delta)
@@ -684,10 +754,42 @@ public partial class MissionView : Node2D
         // Update cover indicators if selected units are moving
         UpdateCoverIndicatorsIfMoving();
         
+        // Update interactable channel progress displays
+        UpdateInteractableChannelProgress();
+        
         // Update box selection if mouse is held (check for drag start or update existing drag)
         if (Input.IsMouseButtonPressed(MouseButton.Left) && pendingAbility == null)
         {
             UpdateBoxSelectionVisual();
+        }
+    }
+    
+    private void UpdateInteractableChannelProgress()
+    {
+        // Track which interactables are being channeled
+        var channelingTargets = new HashSet<int>();
+        
+        foreach (var actor in CombatState.Actors)
+        {
+            if (actor.IsChanneling && actor.CurrentChannel != null)
+            {
+                var targetId = actor.CurrentChannel.TargetInteractableId;
+                channelingTargets.Add(targetId);
+                
+                if (interactableViews.TryGetValue(targetId, out var view))
+                {
+                    view.ShowChannelProgress(actor.CurrentChannel.Progress);
+                }
+            }
+        }
+        
+        // Hide progress for non-channeling interactables
+        foreach (var kvp in interactableViews)
+        {
+            if (!channelingTargets.Contains(kvp.Key))
+            {
+                kvp.Value.HideChannelProgress();
+            }
         }
     }
     
@@ -1120,6 +1222,16 @@ public partial class MissionView : Node2D
     {
         GD.Print($"HandleRightClick: gridPos={gridPos}, selectedCount={selectedActorIds.Count}");
 
+        // Check if clicking on an interactable
+        var interactable = CombatState.Interactions.GetInteractableAt(gridPos);
+        if (interactable != null)
+        {
+            if (TryInteractWith(interactable))
+            {
+                return;
+            }
+        }
+
         // Check if clicking on an enemy actor
         var targetActor = CombatState.GetActorAtPosition(gridPos);
         if (targetActor != null && targetActor.State == ActorState.Alive)
@@ -1157,6 +1269,53 @@ public partial class MissionView : Node2D
 
         // Otherwise, issue move order with formation
         IssueGroupMoveOrder(gridPos);
+    }
+    
+    private bool TryInteractWith(Interactable interactable)
+    {
+        if (selectedActorIds.Count == 0)
+        {
+            return false;
+        }
+        
+        // Find the best actor to interact (closest that can interact)
+        Actor bestActor = null;
+        float bestDistance = float.MaxValue;
+        
+        foreach (var actorId in selectedActorIds)
+        {
+            var actor = CombatState.GetActorById(actorId);
+            if (actor == null || actor.State != ActorState.Alive)
+            {
+                continue;
+            }
+            
+            if (!CombatState.Interactions.CanInteract(actor, interactable))
+            {
+                continue;
+            }
+            
+            var distance = CombatResolver.GetDistance(actor.GridPosition, interactable.Position);
+            if (distance < bestDistance)
+            {
+                bestDistance = distance;
+                bestActor = actor;
+            }
+        }
+        
+        if (bestActor == null)
+        {
+            GD.Print($"[Interaction] No selected actor can interact with {interactable.Type}#{interactable.Id}");
+            return false;
+        }
+        
+        // Issue interaction order
+        var success = CombatState.IssueInteractionOrder(bestActor.Id, interactable.Id);
+        if (success)
+        {
+            GD.Print($"[Interaction] {bestActor.Type}#{bestActor.Id} interacting with {interactable.Type}#{interactable.Id}");
+        }
+        return success;
     }
 
     private void IssueGroupMoveOrder(Vector2I targetPos)

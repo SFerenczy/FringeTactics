@@ -11,7 +11,8 @@ tests/
         ├── M0Tests.cs    # M0 milestone tests (map, movement, time)
         ├── M1Tests.cs    # M1 milestone tests (formation, collision, group movement)
         ├── M3Tests.cs    # M3 milestone tests (hit chance, ammo, auto-defend, combat)
-        └── M4Tests.cs    # M4 milestone tests (directional cover, cover heights, flanking, balance)
+        ├── M4Tests.cs    # M4 milestone tests (directional cover, cover heights, flanking, balance)
+        └── M5Tests.cs    # M5 milestone tests (interactables, channeled actions, doors, terminals, hazards)
 ```
 
 ## Running Tests
@@ -57,6 +58,9 @@ or from project folder (adjust to your local setup)
 - `CoverHeight` - Height-based cover reduction values
 - `MapState.GetCoverAgainst` - Directional cover detection with height
 - `CombatBalance` - Balance constants and cover reduction helpers
+- `Interactable` - State transitions, property helpers
+- `ChanneledAction` - Progress tracking, completion
+- `InteractionSystem` - Interaction execution, door/terminal/hazard logic
 
 **Not ideal for unit tests:**
 - Scene rendering (use manual testing)

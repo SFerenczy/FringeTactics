@@ -19,6 +19,36 @@ public class EnemySpawn
 }
 
 /// <summary>
+/// Spawn entry for an interactable in a mission.
+/// Used for interactables not defined in the map template.
+/// </summary>
+public class InteractableSpawn
+{
+    public string Type { get; set; }
+    public Vector2I Position { get; set; }
+    public Dictionary<string, object> Properties { get; set; } = new();
+    public InteractableState? InitialState { get; set; } = null;
+
+    public InteractableSpawn(string type, Vector2I position)
+    {
+        Type = type;
+        Position = position;
+    }
+    
+    public InteractableSpawn WithProperty(string key, object value)
+    {
+        Properties[key] = value;
+        return this;
+    }
+    
+    public InteractableSpawn WithState(InteractableState state)
+    {
+        InitialState = state;
+        return this;
+    }
+}
+
+/// <summary>
 /// Configuration for a mission. Data-driven mission setup.
 /// </summary>
 public class MissionConfig
@@ -39,6 +69,9 @@ public class MissionConfig
     // Spawn positions
     public List<Vector2I> CrewSpawnPositions { get; set; } = new();
     public List<EnemySpawn> EnemySpawns { get; set; } = new();
+    
+    // Interactable spawns (for interactables not in map template)
+    public List<InteractableSpawn> InteractableSpawns { get; set; } = new();
 
     // Crew weapon (default for sandbox)
     public string CrewWeaponId { get; set; } = "rifle";
@@ -367,6 +400,56 @@ public class MissionConfig
                 new EnemySpawn("gunner", new Vector2I(22, 3)),
                 // Enemy behind mixed cover cluster
                 new EnemySpawn("grunt", new Vector2I(8, 12))
+            }
+        };
+    }
+
+    /// <summary>
+    /// M5 test mission - interactables and channeled hacking.
+    /// Features doors (open/closed/locked), terminals, and hazards.
+    /// </summary>
+    public static MissionConfig CreateM5TestMission()
+    {
+        return new MissionConfig
+        {
+            Id = "m5_test",
+            Name = "M5 Test - Interactables",
+            GridSize = new Vector2I(22, 16),
+            MapTemplate = new string[]
+            {
+                "######################",
+                "#EE..................#",
+                "#EE.....#D#..........#",
+                "#.......#.#..........#",
+                "#.......#.#....T.....#",
+                "#.......###..........#",
+                "#....................#",
+                "#....X...............#",
+                "#....................#",
+                "#.........###L###....#",
+                "#.........#.....#....#",
+                "#.........#..T..#....#",
+                "#.........#.....#....#",
+                "#.........#######....#",
+                "#....................#",
+                "######################"
+            },
+            CrewWeaponId = "rifle",
+            CrewSpawnPositions = new List<Vector2I>
+            {
+                new Vector2I(1, 1),
+                new Vector2I(2, 1),
+                new Vector2I(1, 2),
+                new Vector2I(2, 2)
+            },
+            EnemySpawns = new List<EnemySpawn>
+            {
+                // Guard near first door
+                new EnemySpawn("grunt", new Vector2I(12, 3)),
+                // Guard in locked room
+                new EnemySpawn("grunt", new Vector2I(13, 11)),
+                // Patrol in corridor
+                new EnemySpawn("grunt", new Vector2I(17, 7))
             }
         };
     }

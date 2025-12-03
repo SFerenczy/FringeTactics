@@ -44,6 +44,9 @@ public partial class CombatState
     // Visibility system (fog of war)
     public VisibilitySystem Visibility { get; private set; }
 
+    // Interaction system (doors, terminals, hazards)
+    public InteractionSystem Interactions { get; private set; }
+
     // C# Events
     public event Action<Actor> ActorAdded;
     public event Action<Actor> ActorRemoved;
@@ -67,6 +70,7 @@ public partial class CombatState
         aiController = new AIController(this);
         AbilitySystem = new AbilitySystem(this);
         Visibility = new VisibilitySystem(MapState);
+        Interactions = new InteractionSystem(this);
 
         SimLog.Log($"[CombatState] Initialized with seed {seed}");
     }
@@ -78,7 +82,8 @@ public partial class CombatState
     public void InitializeVisibility()
     {
         Visibility = new VisibilitySystem(MapState);
-        SimLog.Log("[CombatState] Visibility system initialized");
+        MapState.SetInteractionSystem(Interactions);
+        SimLog.Log("[CombatState] Visibility and interaction systems initialized");
     }
 
     public void Update(float dt)
@@ -102,6 +107,9 @@ public partial class CombatState
 
         // Process abilities (delayed effects like grenades)
         AbilitySystem.Tick();
+
+        // Process interactions
+        Interactions.Tick();
 
         // Process attacks first
         ProcessAttacks();
@@ -505,6 +513,33 @@ public partial class CombatState
     public bool IssueAbilityOrder(int actorId, AbilityData ability, Vector2I targetTile)
     {
         return AbilitySystem.UseAbility(actorId, ability, targetTile);
+    }
+
+    /// <summary>
+    /// Order an actor to interact with an interactable.
+    /// </summary>
+    public bool IssueInteractionOrder(int actorId, int interactableId, string action = null)
+    {
+        var actor = GetActorById(actorId);
+        var interactable = Interactions.GetInteractable(interactableId);
+        
+        if (actor == null || interactable == null)
+        {
+            return false;
+        }
+        
+        // If no action specified, use first available
+        if (string.IsNullOrEmpty(action))
+        {
+            var available = Interactions.GetAvailableInteractions(actor, interactable);
+            if (available.Count == 0)
+            {
+                return false;
+            }
+            action = available[0];
+        }
+        
+        return Interactions.ExecuteInteraction(actor, interactable, action);
     }
 
     /// <summary>

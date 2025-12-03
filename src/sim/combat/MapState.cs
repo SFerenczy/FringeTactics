@@ -42,6 +42,9 @@ public partial class MapState
     
     // Entry zone - tiles where crew can spawn and retreat to
     public List<Vector2I> EntryZone { get; set; } = new();
+    
+    // Reference to interaction system for door checks
+    private InteractionSystem interactions;
 
     /// <summary>
     /// Create an empty map state. Use MapBuilder to populate.
@@ -89,6 +92,15 @@ public partial class MapState
         SpawnPoints["crew"].Clear();
         SpawnPoints["enemy"].Clear();
     }
+    
+    /// <summary>
+    /// Set the interaction system reference for door checks.
+    /// Called by CombatState.InitializeVisibility().
+    /// </summary>
+    public void SetInteractionSystem(InteractionSystem system)
+    {
+        interactions = system;
+    }
 
     /// <summary>
     /// Check if a position is within map bounds.
@@ -131,8 +143,7 @@ public partial class MapState
     }
 
     /// <summary>
-    /// Check if a tile is walkable (Floor tiles without cover objects).
-    /// Cover objects block movement.
+    /// Check if a tile is walkable (Floor tiles without cover objects or blocking doors).
     /// </summary>
     public bool IsWalkable(Vector2I pos)
     {
@@ -143,7 +154,18 @@ public partial class MapState
         
         // Cover objects block movement
         var coverHeight = GetTileCoverHeight(pos);
-        return coverHeight == CoverHeight.None;
+        if (coverHeight != CoverHeight.None)
+        {
+            return false;
+        }
+        
+        // Closed/locked doors block movement
+        if (interactions != null && interactions.IsDoorBlocking(pos))
+        {
+            return false;
+        }
+        
+        return true;
     }
 
     /// <summary>
@@ -152,7 +174,18 @@ public partial class MapState
     public bool BlocksLOS(Vector2I pos)
     {
         var type = GetTileType(pos);
-        return type == TileType.Wall || type == TileType.Void;
+        if (type == TileType.Wall || type == TileType.Void)
+        {
+            return true;
+        }
+        
+        // Closed/locked doors block LOS
+        if (interactions != null && interactions.IsDoorBlockingLOS(pos))
+        {
+            return true;
+        }
+        
+        return false;
     }
 
     /// <summary>

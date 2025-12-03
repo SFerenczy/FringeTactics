@@ -10,8 +10,9 @@ Visual representation of tactical combat. Renders CombatState and handles player
 - **TimeStateWidget.tscn** - Pause/time display widget
 
 ### Scripts
-- **MissionView.cs** - Main controller: spawns actors, handles input, issues orders to CombatState, renders fog of war, manages cover indicators
+- **MissionView.cs** - Main controller: spawns actors, handles input, issues orders to CombatState, renders fog of war, manages cover indicators, manages interactable views
 - **ActorView.cs** - Actor visual: position sync, HP bar, hit flash, death state
+- **InteractableView.cs** - Interactable visual: color-coded by type/state, channel progress bar (M5)
 - **TimeStateWidget.cs** - Displays pause state and current time
 - **TacticalCamera.cs** - Camera controller: pan (WASD/edge), zoom (scroll), follow selected unit
 - **CoverIndicator.cs** - Displays directional cover indicators for selected units

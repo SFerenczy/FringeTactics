@@ -28,10 +28,13 @@ public static class MissionFactory
         var combat = new CombatState(seed ?? System.Environment.TickCount);
         result.CombatState = combat;
 
-        // Build map from config using MapBuilder
-        combat.MapState = MapBuilder.BuildFromConfig(config);
+        // Build map from config using MapBuilder (pass InteractionSystem for template parsing)
+        combat.MapState = MapBuilder.BuildFromConfig(config, combat.Interactions);
         combat.MissionConfig = config;
         combat.InitializeVisibility();
+        
+        // Spawn additional interactables from config
+        SpawnInteractables(combat, config);
 
         // Spawn crew from campaign with configured weapon
         var crewWeapon = WeaponData.FromId(config.CrewWeaponId);
@@ -66,10 +69,13 @@ public static class MissionFactory
     {
         var combat = new CombatState(seed ?? System.Environment.TickCount);
 
-        // Build map from config using MapBuilder
-        combat.MapState = MapBuilder.BuildFromConfig(config);
+        // Build map from config using MapBuilder (pass InteractionSystem for template parsing)
+        combat.MapState = MapBuilder.BuildFromConfig(config, combat.Interactions);
         combat.MissionConfig = config;
         combat.InitializeVisibility();
+        
+        // Spawn additional interactables from config
+        SpawnInteractables(combat, config);
 
         // Spawn sandbox crew with configured weapon
         var crewWeapon = WeaponData.FromId(config.CrewWeaponId);
@@ -107,6 +113,21 @@ public static class MissionFactory
             actor.EquippedWeapon = weaponData;
 
             SimLog.Log($"[MissionFactory] Spawned {enemyDef.Name} (Actor#{actor.Id}) at {spawn.Position} with {weaponData.Name}, HP:{enemyDef.Hp}");
+        }
+    }
+    
+    private static void SpawnInteractables(CombatState combat, MissionConfig config)
+    {
+        foreach (var spawn in config.InteractableSpawns)
+        {
+            var interactable = combat.Interactions.AddInteractable(spawn.Type, spawn.Position, spawn.Properties);
+            
+            if (spawn.InitialState.HasValue)
+            {
+                interactable.SetState(spawn.InitialState.Value);
+            }
+            
+            SimLog.Log($"[MissionFactory] Spawned {spawn.Type}#{interactable.Id} at {spawn.Position}");
         }
     }
 }

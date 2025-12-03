@@ -211,6 +211,15 @@ public partial class GameState : Node
         StartSandboxWithConfig(config);
     }
 
+    /// <summary>
+    /// Start the M5 test mission for testing interactables and channeled hacking.
+    /// </summary>
+    public void StartM5TestMission()
+    {
+        var config = MissionConfig.CreateM5TestMission();
+        StartSandboxWithConfig(config);
+    }
+
     public void EndMission(bool victory, CombatState combatState)
     {
         if (Campaign == null)

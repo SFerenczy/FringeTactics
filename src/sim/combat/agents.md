@@ -16,6 +16,7 @@ Real-time with pause (RTwP) tactical combat logic.
 - **AIController.cs** - Simple enemy AI: every N ticks, pick closest visible player, move toward range, attack if able
 - **AbilitySystem.cs** - Ability execution: cooldowns, delayed effects, AoE damage, status effects
 - **VisibilitySystem.cs** - Fog of war: tracks per-tile visibility (Unknown/Revealed/Visible), LOS from crew positions
+- **InteractionSystem.cs** - Interactable management: doors, terminals, hazards; channeled actions (M5)
 - **MissionFactory.cs** - Builds CombatState from MissionConfig + CampaignState
 - **CombatSimulator.cs** - Headless battle simulator for testing/balancing
 - **FormationCalculator.cs** - Stateless utility for group movement: calculates spread destinations maintaining relative formation
@@ -29,6 +30,8 @@ Real-time with pause (RTwP) tactical combat logic.
 - **CoverDirection.cs** - CoverHeight enum (None/Low/Half/High/Full), CoverDirection flags enum, and helper methods for direction calculations
 - **CombatBalance.cs** - Centralized combat balance constants, cover height reduction values, and GetCoverReduction() helper
 - **AttackResult.cs** - Struct for attack resolution results: hit/miss, damage, cover height
+- **Interactable.cs** - Interactable entity: doors, terminals, hazards with state machine (M5)
+- **ChanneledAction.cs** - Channeled action data: type, target, duration, progress tracking (M5)
 
 ### Utilities
 - **ActorTypes.cs** - Constants for actor type strings: Crew, Enemy, Drone

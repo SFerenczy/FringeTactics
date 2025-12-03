@@ -44,6 +44,15 @@ public partial class Actor
     // Event for reload completion
     public event Action<Actor> ReloadCompleted;
 
+    // Channeled action state
+    public bool IsChanneling { get; private set; } = false;
+    public ChanneledAction CurrentChannel { get; private set; } = null;
+    
+    // Events for channeled actions
+    public event Action<Actor, ChanneledAction> ChannelStarted;
+    public event Action<Actor, ChanneledAction> ChannelCompleted;
+    public event Action<Actor, ChanneledAction> ChannelInterrupted;
+
     // Movement
     public Vector2I TargetPosition { get; private set; } = Vector2I.Zero;
     public bool IsMoving { get; private set; } = false;
@@ -79,11 +88,17 @@ public partial class Actor
 
     public void SetTarget(Vector2I target)
     {
+        // Interrupt channeling when given movement order
+        if (IsChanneling)
+        {
+            CancelChannel();
+        }
+        
         TargetPosition = target;
         if (TargetPosition != GridPosition)
         {
             IsMoving = true;
-            MoveProgress = 0f; // Reset progress when changing target to prevent tile jumps
+            MoveProgress = 0f;
         }
     }
 
@@ -110,6 +125,17 @@ public partial class Actor
                 CompleteReload();
             }
             return; // Can't move while reloading
+        }
+        
+        // Handle channeled action progress
+        if (IsChanneling && CurrentChannel != null)
+        {
+            CurrentChannel.Tick();
+            if (CurrentChannel.IsComplete)
+            {
+                CompleteChannel();
+            }
+            return; // Can't move while channeling
         }
 
         // Handle movement
@@ -240,12 +266,19 @@ public partial class Actor
 
         Hp -= damage;
         DamageTaken?.Invoke(this, damage);
+        
+        // Interrupt channeling when taking damage
+        if (IsChanneling && CurrentChannel != null && CurrentChannel.CanBeInterrupted)
+        {
+            CancelChannel();
+        }
 
         if (Hp <= 0)
         {
             Hp = 0;
             State = ActorState.Dead;
             ClearOrders();
+            CancelChannel();
             Died?.Invoke(this);
         }
     }
@@ -255,7 +288,8 @@ public partial class Actor
         return State == ActorState.Alive 
             && AttackCooldown <= 0 
             && CurrentMagazine > 0 
-            && !IsReloading;
+            && !IsReloading
+            && !IsChanneling;
     }
 
     /// <summary>
@@ -342,5 +376,64 @@ public partial class Actor
             return basePos + offset;
         }
         return basePos;
+    }
+    
+    // === Channeled Action Methods ===
+    
+    /// <summary>
+    /// Start a channeled action.
+    /// </summary>
+    public bool StartChannel(ChanneledAction channel)
+    {
+        if (State != ActorState.Alive)
+        {
+            return false;
+        }
+        
+        // Cancel any existing actions
+        CancelChannel();
+        CancelReload();
+        ClearOrders();
+        
+        IsChanneling = true;
+        CurrentChannel = channel;
+        ChannelStarted?.Invoke(this, channel);
+        
+        SimLog.Log($"[Actor] {Type}#{Id} started channeling {channel.ActionType} ({channel.TotalTicks} ticks)");
+        return true;
+    }
+    
+    /// <summary>
+    /// Cancel the current channeled action.
+    /// </summary>
+    public void CancelChannel()
+    {
+        if (!IsChanneling || CurrentChannel == null)
+        {
+            return;
+        }
+        
+        var channel = CurrentChannel;
+        IsChanneling = false;
+        CurrentChannel = null;
+        ChannelInterrupted?.Invoke(this, channel);
+        SimLog.Log($"[Actor] {Type}#{Id} channel interrupted");
+    }
+    
+    /// <summary>
+    /// Complete the current channeled action.
+    /// </summary>
+    private void CompleteChannel()
+    {
+        if (!IsChanneling || CurrentChannel == null)
+        {
+            return;
+        }
+        
+        var channel = CurrentChannel;
+        IsChanneling = false;
+        CurrentChannel = null;
+        ChannelCompleted?.Invoke(this, channel);
+        SimLog.Log($"[Actor] {Type}#{Id} completed {channel.ActionType}");
     }
 }

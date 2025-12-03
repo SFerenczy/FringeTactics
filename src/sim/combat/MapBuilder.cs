@@ -50,6 +50,10 @@ public static class MapBuilder
     /// - '-' = Low cover (0.25 height, 15% hit reduction)
     /// - '=' = Half cover (0.50 height, 30% hit reduction)
     /// - '+' = High cover (0.75 height, 45% hit reduction)
+    /// - 'D' = Door (closed)
+    /// - 'L' = Locked door
+    /// - 'T' = Terminal
+    /// - 'X' = Explosive hazard
     /// 
     /// Example:
     /// var template = new string[] {
@@ -61,7 +65,7 @@ public static class MapBuilder
     ///     "##########"
     /// };
     /// </summary>
-    public static MapState BuildFromTemplate(string[] rows)
+    public static MapState BuildFromTemplate(string[] rows, InteractionSystem interactions = null)
     {
         if (rows == null || rows.Length == 0)
         {
@@ -114,6 +118,48 @@ public static class MapBuilder
                         map.SetTile(pos, TileType.Floor);
                         map.SetTileCoverHeight(pos, CoverHeight.High);
                         break;
+                    case 'D':
+                        // Door (closed) - floor tile with interactable
+                        map.SetTile(pos, TileType.Floor);
+                        if (interactions != null)
+                        {
+                            interactions.AddInteractable(InteractableTypes.Door, pos);
+                        }
+                        break;
+                    case 'L':
+                        // Locked door - floor tile with locked door interactable
+                        map.SetTile(pos, TileType.Floor);
+                        if (interactions != null)
+                        {
+                            var lockedDoor = interactions.AddInteractable(InteractableTypes.Door, pos,
+                                new Dictionary<string, object> { { "hackDifficulty", 40 } });
+                            lockedDoor.SetState(InteractableState.DoorLocked);
+                        }
+                        break;
+                    case 'T':
+                        // Terminal - floor tile with terminal interactable
+                        map.SetTile(pos, TileType.Floor);
+                        if (interactions != null)
+                        {
+                            interactions.AddInteractable(InteractableTypes.Terminal, pos,
+                                new Dictionary<string, object> { { "hackDifficulty", 60 } });
+                        }
+                        break;
+                    case 'X':
+                        // Explosive hazard - floor tile with hazard interactable
+                        map.SetTile(pos, TileType.Floor);
+                        if (interactions != null)
+                        {
+                            interactions.AddInteractable(InteractableTypes.Hazard, pos,
+                                new Dictionary<string, object>
+                                {
+                                    { "hazardType", "explosive" },
+                                    { "damage", 50 },
+                                    { "radius", 2 },
+                                    { "disableDifficulty", 30 }
+                                });
+                        }
+                        break;
                     case ' ':
                     default:
                         map.SetTile(pos, TileType.Void);
@@ -130,13 +176,13 @@ public static class MapBuilder
     /// Build a map from a MissionConfig.
     /// Uses template if provided, otherwise creates a basic test map.
     /// </summary>
-    public static MapState BuildFromConfig(MissionConfig config)
+    public static MapState BuildFromConfig(MissionConfig config, InteractionSystem interactions = null)
     {
         MapState map;
 
         if (config.MapTemplate != null && config.MapTemplate.Length > 0)
         {
-            map = BuildFromTemplate(config.MapTemplate);
+            map = BuildFromTemplate(config.MapTemplate, interactions);
         }
         else
         {
