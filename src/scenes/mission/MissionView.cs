@@ -47,6 +47,9 @@ public partial class MissionView : Node2D
     private Dictionary<Vector2I, ColorRect> debugTiles = new();
     private bool showVisibilityDebug = false;
 
+    // Cover indicators
+    private CoverIndicator coverIndicator;
+
     // Double-click detection
     private float lastClickTime = 0f;
     private int lastClickedActorId = -1;
@@ -91,6 +94,7 @@ public partial class MissionView : Node2D
         SetupCamera();
         DrawGrid();
         CreateFogLayer();
+        CreateCoverIndicator();
         SpawnActorViews();
     }
     
@@ -421,6 +425,41 @@ public partial class MissionView : Node2D
         fogDirty = true;
     }
 
+    private void CreateCoverIndicator()
+    {
+        coverIndicator = new CoverIndicator();
+        coverIndicator.Name = "CoverIndicator";
+        coverIndicator.ZIndex = 3; // Above grid, below fog and actors
+        gridDisplay.AddChild(coverIndicator);
+        coverIndicator.Initialize(CombatState.MapState);
+    }
+
+    private void UpdateCoverIndicators()
+    {
+        if (coverIndicator == null)
+        {
+            return;
+        }
+
+        if (selectedActorIds.Count == 0)
+        {
+            coverIndicator.Hide();
+            return;
+        }
+
+        var positions = new List<Vector2I>();
+        foreach (var actorId in selectedActorIds)
+        {
+            var actor = CombatState.GetActorById(actorId);
+            if (actor != null && actor.State == ActorState.Alive)
+            {
+                positions.Add(actor.GridPosition);
+            }
+        }
+
+        coverIndicator.ShowCoverForMultiple(positions);
+    }
+
     private void UpdateFogVisuals()
     {
         if (!fogDirty)
@@ -632,6 +671,9 @@ public partial class MissionView : Node2D
         // Clean up completed movement targets
         CleanupCompletedMoveTargets();
         
+        // Update cover indicators if selected units are moving
+        UpdateCoverIndicatorsIfMoving();
+        
         // Update box selection if mouse is held (check for drag start or update existing drag)
         if (Input.IsMouseButtonPressed(MouseButton.Left) && pendingAbility == null)
         {
@@ -653,6 +695,38 @@ public partial class MissionView : Node2D
         foreach (var id in toRemove)
         {
             actorMoveTargets.Remove(id);
+        }
+    }
+
+    // Track last known positions for cover update optimization
+    private Dictionary<int, Vector2I> lastKnownPositions = new();
+
+    private void UpdateCoverIndicatorsIfMoving()
+    {
+        if (selectedActorIds.Count == 0)
+        {
+            return;
+        }
+
+        bool needsUpdate = false;
+        foreach (var actorId in selectedActorIds)
+        {
+            var actor = CombatState.GetActorById(actorId);
+            if (actor == null)
+            {
+                continue;
+            }
+
+            if (!lastKnownPositions.TryGetValue(actorId, out var lastPos) || lastPos != actor.GridPosition)
+            {
+                lastKnownPositions[actorId] = actor.GridPosition;
+                needsUpdate = true;
+            }
+        }
+
+        if (needsUpdate)
+        {
+            UpdateCoverIndicators();
         }
     }
 
@@ -770,10 +844,15 @@ public partial class MissionView : Node2D
             var actor = CombatState.GetActorById(actorId);
             if (actor != null && actor.State == ActorState.Alive)
             {
-                AddToSelection(actorId);
+                selectedActorIds.Add(actorId);
+                if (actorViews.ContainsKey(actorId))
+                {
+                    actorViews[actorId].SetSelected(true);
+                }
             }
         }
         GD.Print($"[ControlGroup] Recalled group {groupNum}: {selectedActorIds.Count} units");
+        UpdateCoverIndicators();
     }
 
     private void SelectAllCrew()
@@ -789,6 +868,7 @@ public partial class MissionView : Node2D
             }
         }
         GD.Print($"[Selection] Selected all {selectedActorIds.Count} crew");
+        UpdateCoverIndicators();
     }
 
     private void AddToSelection(int actorId)
@@ -805,6 +885,7 @@ public partial class MissionView : Node2D
 
         selectedActorIds.Add(actorId);
         actorViews[actorId].SetSelected(true);
+        UpdateCoverIndicators();
     }
 
     private void RemoveFromSelection(int actorId)
@@ -812,6 +893,7 @@ public partial class MissionView : Node2D
         if (selectedActorIds.Remove(actorId) && actorViews.ContainsKey(actorId))
         {
             actorViews[actorId].SetSelected(false);
+            UpdateCoverIndicators();
         }
     }
 
@@ -830,6 +912,7 @@ public partial class MissionView : Node2D
             
             GD.Print($"Actor {actorId} selected, selectedActorIds.Count={selectedActorIds.Count}");
         }
+        UpdateCoverIndicators();
     }
 
     private void ClearSelection()
@@ -846,6 +929,9 @@ public partial class MissionView : Node2D
         
         // Clear camera follow target
         tacticalCamera.ClearFollowTarget();
+        
+        // Hide cover indicators
+        coverIndicator?.Hide();
     }
 
     private void HandleMouseClick(InputEventMouseButton @event)
@@ -972,6 +1058,7 @@ public partial class MissionView : Node2D
         if (addedCount > 0)
         {
             GD.Print($"[Selection] Box selected {addedCount} units, total: {selectedActorIds.Count}");
+            UpdateCoverIndicators();
         }
     }
 
