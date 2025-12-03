@@ -9,7 +9,8 @@ tests/
 └── sim/
     └── combat/
         ├── M0Tests.cs    # M0 milestone tests (map, movement, time)
-        └── M1Tests.cs    # M1 milestone tests (formation, collision, group movement)
+        ├── M1Tests.cs    # M1 milestone tests (formation, collision, group movement)
+        └── M3Tests.cs    # M3 milestone tests (hit chance, ammo, auto-defend, combat)
 ```
 
 ## Running Tests
@@ -46,9 +47,11 @@ or from project folder (adjust to your local setup)
 - `MapBuilder` - Template parsing, map generation
 - `MapState` - Walkability, LOS blocking, entry zones
 - `CombatState` - Win/lose conditions, phase transitions, collision avoidance
-- `Actor` - Movement, damage, state changes, wall collision
+- `Actor` - Movement, damage, state changes, wall collision, ammo, reload
 - `TimeSystem` - Pause/resume, tick accumulation
 - `FormationCalculator` - Group destinations, formation maintenance
+- `CombatResolver` - Hit chance calculation, attack resolution
+- `AIController` - Target prioritization, behavior decisions
 
 **Not ideal for unit tests:**
 - Scene rendering (use manual testing)

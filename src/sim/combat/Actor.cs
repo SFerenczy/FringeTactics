@@ -126,11 +126,7 @@ public partial class Actor
         }
 
         // Calculate direction to target
-        var diff = TargetPosition - GridPosition;
-        MoveDirection = new Vector2I(
-            Mathf.Clamp(diff.X, -1, 1),
-            Mathf.Clamp(diff.Y, -1, 1)
-        );
+        MoveDirection = GridUtils.GetStepDirection(GridPosition, TargetPosition);
 
         // Check if next tile is walkable
         var nextTile = GridPosition + MoveDirection;

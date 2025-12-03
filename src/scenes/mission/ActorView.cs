@@ -21,6 +21,7 @@ public partial class ActorView : Node2D
 
     private float hitFlashTimer = 0f;
     private bool isFlashing = false;
+    private int lastDisplayedMagazine = -1; // Track to avoid per-frame updates
 
     public override void _Ready()
     {
@@ -74,16 +75,19 @@ public partial class ActorView : Node2D
         {
             actor.DamageTaken -= OnDamageTaken;
             actor.Died -= OnDied;
+            actor.ReloadCompleted -= OnReloadCompleted;
         }
 
         actor = actorData;
         baseColor = color;
+        lastDisplayedMagazine = -1; // Force update on next frame
 
         if (sprite != null)
         {
             sprite.Color = color;
             Position = actor.GetVisualPosition(TileSize);
             UpdateHpBar();
+            UpdateAmmoDisplay();
             SubscribeToActorEvents();
         }
     }
@@ -143,14 +147,21 @@ public partial class ActorView : Node2D
         }
 
         // Only show ammo for player units
-        if (actor.Type != "crew")
+        if (actor.Type != ActorTypes.Crew)
         {
             ammoLabel.Visible = false;
             return;
         }
 
+        // Skip update if ammo hasn't changed
+        if (actor.CurrentMagazine == lastDisplayedMagazine)
+        {
+            return;
+        }
+        lastDisplayedMagazine = actor.CurrentMagazine;
+
         ammoLabel.Visible = true;
-        ammoLabel.Text = $"{actor.CurrentMagazine}";
+        ammoLabel.Text = actor.CurrentMagazine.ToString();
 
         // Color based on ammo state
         if (actor.CurrentMagazine == 0)
@@ -174,7 +185,7 @@ public partial class ActorView : Node2D
             return;
         }
 
-        if (actor.IsReloading && actor.Type == "crew")
+        if (actor.IsReloading && actor.Type == ActorTypes.Crew)
         {
             reloadIndicator.Visible = true;
             

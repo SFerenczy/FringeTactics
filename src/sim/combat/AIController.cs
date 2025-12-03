@@ -35,7 +35,7 @@ public class AIController
     {
         foreach (var actor in combatState.Actors)
         {
-            if (actor.Type != "enemy" || actor.State != ActorState.Alive)
+            if (actor.Type != ActorTypes.Enemy || actor.State != ActorState.Alive)
             {
                 continue;
             }
@@ -112,7 +112,7 @@ public class AIController
 
         foreach (var actor in combatState.Actors)
         {
-            if (actor.Type == "enemy" || actor.State != ActorState.Alive)
+            if (actor.Type == ActorTypes.Enemy || actor.State != ActorState.Alive)
             {
                 continue;
             }
@@ -181,12 +181,7 @@ public class AIController
     private Vector2I GetMoveTowardTarget(Actor enemy, Actor target)
     {
         // Simple: move one step toward target
-        var diff = target.GridPosition - enemy.GridPosition;
-        var step = new Vector2I(
-            Mathf.Clamp(diff.X, -1, 1),
-            Mathf.Clamp(diff.Y, -1, 1)
-        );
-
+        var step = GridUtils.GetStepDirection(enemy.GridPosition, target.GridPosition);
         var newPos = enemy.GridPosition + step;
 
         // Check if walkable and not occupied

@@ -21,7 +21,7 @@ public partial class CombatState
     public MapState MapState { get; set; }
     public TimeSystem TimeSystem { get; set; }
     public Dictionary<string, object> Objectives { get; set; } = new();
-    public bool IsComplete { get; set; } = false;
+    public bool IsComplete => Phase == MissionPhase.Complete;
     public bool Victory { get; set; } = false;
     private int nextActorId = 0;
     private AIController aiController;
@@ -133,11 +133,7 @@ public partial class CombatState
                 continue;
 
             // Calculate the tile this actor is about to enter
-            var diff = actor.TargetPosition - actor.GridPosition;
-            var moveDir = new Vector2I(
-                Mathf.Clamp(diff.X, -1, 1),
-                Mathf.Clamp(diff.Y, -1, 1)
-            );
+            var moveDir = GridUtils.GetStepDirection(actor.GridPosition, actor.TargetPosition);
             var nextTile = actor.GridPosition + moveDir;
 
             if (!destinations.ContainsKey(nextTile))
@@ -193,11 +189,11 @@ public partial class CombatState
                 continue;
             }
 
-            if (actor.Type == "crew")
+            if (actor.Type == ActorTypes.Crew)
             {
                 aliveCrewCount++;
             }
-            else if (actor.Type == "enemy")
+            else if (actor.Type == ActorTypes.Enemy)
             {
                 aliveEnemyCount++;
             }
@@ -224,7 +220,6 @@ public partial class CombatState
     /// </summary>
     private void EndMission(bool victory)
     {
-        IsComplete = true;
         Victory = victory;
         Phase = MissionPhase.Complete;
         TimeSystem.Pause();
@@ -370,7 +365,7 @@ public partial class CombatState
         AttackResolved?.Invoke(attacker, target, result);
 
         // Track stats
-        if (attacker.Type == "crew")
+        if (attacker.Type == ActorTypes.Crew)
         {
             Stats.PlayerShotsFired++;
             if (result.Hit)

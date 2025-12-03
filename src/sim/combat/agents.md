@@ -21,11 +21,15 @@ Real-time with pause (RTwP) tactical combat logic.
 - **FormationCalculator.cs** - Stateless utility for group movement: calculates spread destinations maintaining relative formation
 
 ### Data
-- **WeaponData.cs** - Weapon stats: range, damage, cooldown ticks
+- **WeaponData.cs** - Weapon stats: range, damage, cooldown ticks, magazine size, reload time
 - **CombatStats.cs** - Combat statistics: shots fired, hits, misses for player and enemy
 - **AbilityData.cs** - Ability definitions: targeting type, range, cooldown, delay, radius, damage, effects
 - **CombatRng.cs** - Seeded RNG wrapper for deterministic simulation
 - **VisibilityState.cs** - Enum for tile visibility: Unknown, Revealed, Visible
+
+### Utilities
+- **ActorTypes.cs** - Constants for actor type strings: Crew, Enemy, Drone
+- **GridUtils.cs** - Grid utility methods: GetStepDirection()
 
 ## Responsibilities
 

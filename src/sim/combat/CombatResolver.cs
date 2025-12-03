@@ -106,28 +106,6 @@ public static class CombatResolver
         return result;
     }
 
-    /// <summary>
-    /// Apply damage to target. Returns true if target died.
-    /// </summary>
-    public static bool ApplyDamage(Actor target, int damage)
-    {
-        if (target == null || target.State != ActorState.Alive)
-        {
-            return false;
-        }
-
-        target.Hp -= damage;
-
-        if (target.Hp <= 0)
-        {
-            target.Hp = 0;
-            target.State = ActorState.Dead;
-            return true;
-        }
-
-        return false;
-    }
-
     public static bool IsInRange(Vector2I from, Vector2I to, int range)
     {
         var distance = GetDistance(from, to);

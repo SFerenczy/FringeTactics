@@ -1424,22 +1424,27 @@ When M3 is complete, you should be able to:
 
 ---
 
-## Open Questions
+## Open Questions (Resolved)
 
 1. **Partial Reload**: Should reloading a half-empty magazine waste the remaining rounds?
-   - *Recommendation*: No, keep it simple. Rounds transfer to reserve.
+   - *Decision*: No. Remaining rounds stay in magazine, reload only adds what's needed.
+   - *Implementation*: `CompleteReload()` calculates `ammoNeeded = MagazineSize - CurrentMagazine`.
 
 2. **Reload Interrupt**: Should taking damage cancel reload?
-   - *Recommendation*: Yes for M3, creates tactical tension.
+   - *Decision*: No. Reload continues through damage for simpler, less frustrating gameplay.
+   - *Implementation*: `TakeDamage()` does not call `CancelReload()`.
 
 3. **Auto-Defend Priority**: Should auto-defend override manual attack orders?
-   - *Recommendation*: No, manual orders take precedence.
+   - *Decision*: No. Manual orders take precedence.
+   - *Implementation*: `ProcessAutoDefend()` skips units with `AttackTargetId.HasValue`.
 
 4. **Ammo Pickup**: Should there be ammo pickups on the map?
-   - *Recommendation*: Not for M3. Consider for M5 (interactables).
+   - *Decision*: Not for M3. Consider for M5 (interactables).
+   - *Implementation*: Deferred.
 
 5. **Out of Ammo Behavior**: What happens when completely out of ammo?
-   - *Recommendation*: Unit can't attack, must rely on teammates. Consider melee in [PLUS].
+   - *Decision*: Unit can't attack, must rely on teammates.
+   - *Implementation*: `IsOutOfAmmo()` returns true, `CanFire()` returns false.
 
 ---
 
