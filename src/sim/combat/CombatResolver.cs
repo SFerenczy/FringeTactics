@@ -9,13 +9,13 @@ namespace FringeTactics;
 /// </summary>
 public static class CombatResolver
 {
-    // Hit chance tuning constants
-    public const float RANGE_PENALTY_FACTOR = 0.3f;  // At max range, 30% penalty
-    public const float MIN_HIT_CHANCE = 0.10f;       // Floor to prevent impossible shots
-    public const float MAX_HIT_CHANCE = 0.95f;       // Cap to prevent guaranteed hits
+    // Hit chance tuning constants (reference CombatBalance for design rationale)
+    public const float RANGE_PENALTY_FACTOR = CombatBalance.RangePenaltyFactor;
+    public const float MIN_HIT_CHANCE = CombatBalance.MinHitChance;
+    public const float MAX_HIT_CHANCE = CombatBalance.MaxHitChance;
     
     // Cover tuning constants
-    public const float COVER_HIT_REDUCTION = 0.40f;  // 40% hit chance reduction when target in cover
+    public const float COVER_HIT_REDUCTION = CombatBalance.CoverHitReduction;
 
     /// <summary>
     /// Check if attacker can attack target with given weapon.

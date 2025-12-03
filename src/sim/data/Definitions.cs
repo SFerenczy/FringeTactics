@@ -31,51 +31,60 @@ public class WeaponDef
 
 public class WeaponDefinitions
 {
+    // Weapon balance tuned for cover gameplay. See CombatBalance.cs for design rationale.
     private readonly Dictionary<string, WeaponDef> weapons = new()
     {
+        // Rifle: Balanced all-rounder
+        // 4 hits to kill (100 HP), reliable at medium range
         ["rifle"] = new WeaponDef
         {
             Id = "rifle",
             Name = "Assault Rifle",
             Damage = 25,
             Range = 8,
-            CooldownTicks = 10,
-            Accuracy = 0.70f,
+            CooldownTicks = 10,    // 0.5s between shots
+            Accuracy = 0.70f,      // 70% base, ~42% vs cover
             MagazineSize = 30,
-            ReloadTicks = 40  // 2 sec
+            ReloadTicks = 40       // 2 sec
         },
+        // Pistol: Backup weapon, accurate but weak
+        // 6 hits to kill, good for finishing wounded targets
         ["pistol"] = new WeaponDef
         {
             Id = "pistol",
             Name = "Pistol",
-            Damage = 15,
+            Damage = 18,
             Range = 5,
-            CooldownTicks = 6,
-            Accuracy = 0.75f,
+            CooldownTicks = 6,     // 0.3s between shots
+            Accuracy = 0.75f,      // More accurate at short range
             MagazineSize = 12,
-            ReloadTicks = 20  // 1 sec
+            ReloadTicks = 20       // 1 sec
         },
+        // SMG: Spray and pray, volume of fire
+        // 7 hits to kill, but very fast fire rate
         ["smg"] = new WeaponDef
         {
             Id = "smg",
             Name = "SMG",
-            Damage = 18,
+            Damage = 15,
             Range = 6,
-            CooldownTicks = 5,
-            Accuracy = 0.55f,
+            CooldownTicks = 4,     // 0.2s between shots (very fast)
+            Accuracy = 0.55f,      // Less accurate, relies on volume
             MagazineSize = 25,
-            ReloadTicks = 30  // 1.5 sec
+            ReloadTicks = 30       // 1.5 sec
         },
+        // Shotgun: High risk/reward, devastating up close
+        // 2 hits to kill! But must close distance
         ["shotgun"] = new WeaponDef
         {
             Id = "shotgun",
             Name = "Shotgun",
-            Damage = 45,
-            Range = 4,
-            CooldownTicks = 18,
-            Accuracy = 0.85f,
+            Damage = 50,
+            Range = 4,             // Very short range
+            CooldownTicks = 18,    // 0.9s between shots (slow)
+            Accuracy = 0.85f,      // Very accurate when in range
             MagazineSize = 6,
-            ReloadTicks = 60  // 3 sec
+            ReloadTicks = 60       // 3 sec
         }
     };
 
