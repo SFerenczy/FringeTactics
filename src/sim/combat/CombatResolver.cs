@@ -13,6 +13,9 @@ public static class CombatResolver
     public const float RANGE_PENALTY_FACTOR = 0.3f;  // At max range, 30% penalty
     public const float MIN_HIT_CHANCE = 0.10f;       // Floor to prevent impossible shots
     public const float MAX_HIT_CHANCE = 0.95f;       // Cap to prevent guaranteed hits
+    
+    // Cover tuning constants
+    public const float COVER_HIT_REDUCTION = 0.40f;  // 40% hit chance reduction when target in cover
 
     /// <summary>
     /// Check if attacker can attack target with given weapon.
@@ -43,9 +46,9 @@ public static class CombatResolver
     }
 
     /// <summary>
-    /// Calculate hit chance based on distance, weapon accuracy, and attacker stats.
+    /// Calculate hit chance based on distance, weapon accuracy, attacker stats, and cover.
     /// </summary>
-    public static float CalculateHitChance(Actor attacker, Actor target, WeaponData weapon)
+    public static float CalculateHitChance(Actor attacker, Actor target, WeaponData weapon, MapState map)
     {
         var distance = GetDistance(attacker.GridPosition, target.GridPosition);
         
@@ -59,11 +62,25 @@ public static class CombatResolver
         // Apply attacker's aim stat bonus (+1% per point)
         var aimBonus = (attacker.Stats.TryGetValue("aim", out var aim) ? aim : 0) * 0.01f;
         
-        // Final calculation
+        // Base hit chance before cover
         var hitChance = baseAccuracy * (1f - distancePenalty) + aimBonus;
+        
+        // Apply cover penalty
+        if (map != null && map.HasCoverAgainst(target.GridPosition, attacker.GridPosition))
+        {
+            hitChance *= (1f - COVER_HIT_REDUCTION);
+        }
         
         // Clamp to valid range
         return Mathf.Clamp(hitChance, MIN_HIT_CHANCE, MAX_HIT_CHANCE);
+    }
+
+    /// <summary>
+    /// Calculate hit chance without map (legacy, for tests without cover).
+    /// </summary>
+    public static float CalculateHitChance(Actor attacker, Actor target, WeaponData weapon)
+    {
+        return CalculateHitChance(attacker, target, weapon, null);
     }
 
     /// <summary>
@@ -87,8 +104,12 @@ public static class CombatResolver
             return result;
         }
 
-        // Calculate hit chance based on distance and accuracy
-        var hitChance = CalculateHitChance(attacker, target, weapon);
+        // Check if target has cover
+        var inCover = map != null && map.HasCoverAgainst(target.GridPosition, attacker.GridPosition);
+        result.TargetInCover = inCover;
+        
+        // Calculate hit chance based on distance, accuracy, and cover
+        var hitChance = CalculateHitChance(attacker, target, weapon, map);
         result.HitChance = hitChance;
         
         var roll = (float)rng.NextDouble();
@@ -190,5 +211,6 @@ public struct AttackResult
     public string WeaponName { get; set; }
     public bool Hit { get; set; }
     public int Damage { get; set; }
-    public float HitChance { get; set; }  // For UI feedback
+    public float HitChance { get; set; }
+    public bool TargetInCover { get; set; }
 }

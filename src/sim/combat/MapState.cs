@@ -24,8 +24,8 @@ public partial class MapState
     // Tile data
     private List<TileType> tiles = new();
     
-    // Cover flags per tile (8-directional, for future use)
-    public List<int> CoverFlags { get; set; } = new();
+    // Cover directions provided by each tile (8-directional)
+    private List<CoverDirection> coverData = new();
     
     // Interactables on the map
     public Dictionary<Vector2I, string> Interactables { get; set; } = new();
@@ -64,12 +64,12 @@ public partial class MapState
         GridSize = size;
         var totalTiles = size.X * size.Y;
         tiles = new List<TileType>(totalTiles);
-        CoverFlags = new List<int>(totalTiles);
+        coverData = new List<CoverDirection>(totalTiles);
         
         for (int i = 0; i < totalTiles; i++)
         {
             tiles.Add(TileType.Floor);
-            CoverFlags.Add(0);
+            coverData.Add(CoverDirection.None);
         }
     }
 
@@ -151,26 +151,75 @@ public partial class MapState
     }
 
     /// <summary>
-    /// Get cover value at a position.
+    /// Get cover directions provided by a tile.
+    /// This is the cover the tile PROVIDES, not the cover a unit ON this tile receives.
     /// </summary>
-    public int GetCover(Vector2I pos)
+    public CoverDirection GetTileCover(Vector2I pos)
     {
         if (!IsInBounds(pos))
         {
-            return 0;
+            return CoverDirection.None;
         }
-        return CoverFlags[GetIndex(pos)];
+        return coverData[GetIndex(pos)];
     }
 
     /// <summary>
-    /// Set cover value at a position.
+    /// Set cover directions provided by a tile.
     /// </summary>
-    public void SetCover(Vector2I pos, int coverFlags)
+    public void SetTileCover(Vector2I pos, CoverDirection cover)
     {
         if (!IsInBounds(pos))
         {
             return;
         }
-        CoverFlags[GetIndex(pos)] = coverFlags;
+        coverData[GetIndex(pos)] = cover;
     }
+
+    /// <summary>
+    /// Check if a unit at targetPos has cover against an attack from attackerPos.
+    /// Checks adjacent tiles for cover that blocks the attack direction.
+    /// </summary>
+    public bool HasCoverAgainst(Vector2I targetPos, Vector2I attackerPos)
+    {
+        // Direction from attacker to target
+        var attackDir = CoverDirectionHelper.GetDirection(attackerPos, targetPos);
+        if (attackDir == CoverDirection.None)
+        {
+            return false;
+        }
+        
+        // Cover needs to block from the direction the attack is coming from
+        var coverNeeded = CoverDirectionHelper.GetOpposite(attackDir);
+        
+        // Check adjacent tiles for cover
+        foreach (var dir in CoverDirectionHelper.AllDirections)
+        {
+            var adjacentPos = targetPos + CoverDirectionHelper.GetOffset(dir);
+            if (!IsInBounds(adjacentPos))
+            {
+                continue;
+            }
+            
+            var adjacentCover = GetTileCover(adjacentPos);
+            if (adjacentCover == CoverDirection.None)
+            {
+                continue;
+            }
+            
+            // Adjacent tile provides cover if:
+            // 1. It has cover facing toward the target (opposite of dir)
+            // 2. That cover direction matches where the attack is coming from
+            var coverFacing = CoverDirectionHelper.GetOpposite(dir);
+            if ((adjacentCover & coverFacing) != 0 && coverFacing == coverNeeded)
+            {
+                return true;
+            }
+        }
+        
+        return false;
+    }
+
+    // Legacy compatibility
+    public int GetCover(Vector2I pos) => (int)GetTileCover(pos);
+    public void SetCover(Vector2I pos, int coverFlags) => SetTileCover(pos, (CoverDirection)coverFlags);
 }

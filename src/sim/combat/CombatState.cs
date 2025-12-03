@@ -338,6 +338,8 @@ public partial class CombatState
 
         var attackType = isAutoDefend ? "auto-defend" : "attack";
 
+        var coverTag = result.TargetInCover ? " [COVER]" : "";
+        
         if (result.Hit)
         {
             // Check god mode before applying damage
@@ -350,7 +352,7 @@ public partial class CombatState
             }
             
             var godModeTag = isGodMode ? " [GOD MODE]" : "";
-            SimLog.Log($"[Combat] {attacker.Type}#{attacker.Id} hit {target.Type}#{target.Id} ({attackType}) for {result.Damage} damage ({result.HitChance:P0} chance). HP: {target.Hp}/{target.MaxHp}{godModeTag}");
+            SimLog.Log($"[Combat] {attacker.Type}#{attacker.Id} hit {target.Type}#{target.Id} ({attackType}) for {result.Damage} damage ({result.HitChance:P0} chance){coverTag}. HP: {target.Hp}/{target.MaxHp}{godModeTag}");
 
             // Set auto-defend target on the victim (they'll return fire)
             if (target.State == ActorState.Alive)
@@ -365,7 +367,7 @@ public partial class CombatState
         }
         else
         {
-            SimLog.Log($"[Combat] {attacker.Type}#{attacker.Id} missed {target.Type}#{target.Id} ({attackType}) ({result.HitChance:P0} chance)");
+            SimLog.Log($"[Combat] {attacker.Type}#{attacker.Id} missed {target.Type}#{target.Id} ({attackType}) ({result.HitChance:P0} chance){coverTag}");
             
             // Even a miss triggers auto-defend (they know they're being shot at)
             target.SetAutoDefendTarget(attacker.Id);

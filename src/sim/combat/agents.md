@@ -26,6 +26,7 @@ Real-time with pause (RTwP) tactical combat logic.
 - **AbilityData.cs** - Ability definitions: targeting type, range, cooldown, delay, radius, damage, effects
 - **CombatRng.cs** - Seeded RNG wrapper for deterministic simulation
 - **VisibilityState.cs** - Enum for tile visibility: Unknown, Revealed, Visible
+- **CoverDirection.cs** - 8-directional cover flags enum and helper methods for direction calculations
 
 ### Utilities
 - **ActorTypes.cs** - Constants for actor type strings: Crew, Enemy, Drone

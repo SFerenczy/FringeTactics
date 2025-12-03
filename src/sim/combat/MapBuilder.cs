@@ -35,6 +35,7 @@ public static class MapBuilder
         map.EntryZone.Add(new Vector2I(1, 2));
         map.EntryZone.Add(new Vector2I(2, 2));
         
+        GenerateCoverFromWalls(map);
         return map;
     }
 
@@ -106,6 +107,7 @@ public static class MapBuilder
             }
         }
 
+        GenerateCoverFromWalls(map);
         return map;
     }
 
@@ -190,5 +192,39 @@ public static class MapBuilder
     public static void AddDoorway(MapState map, Vector2I pos)
     {
         map.SetTile(pos, TileType.Floor);
+    }
+
+    /// <summary>
+    /// Generate cover data based on wall placement.
+    /// Walls provide cover to adjacent floor tiles.
+    /// </summary>
+    public static void GenerateCoverFromWalls(MapState map)
+    {
+        for (int y = 0; y < map.GridSize.Y; y++)
+        {
+            for (int x = 0; x < map.GridSize.X; x++)
+            {
+                var pos = new Vector2I(x, y);
+                
+                if (map.GetTileType(pos) != TileType.Wall)
+                {
+                    continue;
+                }
+                
+                // Wall provides cover facing each adjacent floor tile
+                var coverDirs = CoverDirection.None;
+                
+                foreach (var dir in CoverDirectionHelper.AllDirections)
+                {
+                    var adjacentPos = pos + CoverDirectionHelper.GetOffset(dir);
+                    if (map.IsInBounds(adjacentPos) && map.GetTileType(adjacentPos) == TileType.Floor)
+                    {
+                        coverDirs |= dir;
+                    }
+                }
+                
+                map.SetTileCover(pos, coverDirs);
+            }
+        }
     }
 }
