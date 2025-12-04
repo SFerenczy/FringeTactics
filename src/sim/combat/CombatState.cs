@@ -32,6 +32,12 @@ public partial class CombatState
     
     // Track if mission was spawned with enemies (for win condition logic)
     private bool hasEnemyObjective = false;
+    
+    // Retreat state (M7)
+    public bool IsRetreating { get; private set; } = false;
+    
+    // Mission outcome for detailed result tracking (M7)
+    public MissionOutcome? FinalOutcome { get; private set; } = null;
 
     // Seeded RNG for deterministic simulation
     public CombatRng Rng { get; private set; }
@@ -58,6 +64,9 @@ public partial class CombatState
     public event Action<Actor> ActorDied;
     public event Action<bool> MissionEnded; // true = victory, false = defeat
     public event Action<MissionPhase> PhaseChanged;
+    public event Action RetreatInitiated;
+    public event Action RetreatCancelled;
+    public event Action<MissionOutcome> MissionCompleted; // M7: detailed outcome
 
     public CombatState() : this(System.Environment.TickCount)
     {
@@ -175,6 +184,14 @@ public partial class CombatState
         {
             return;
         }
+        
+        // Check retreat completion first
+        if (IsRetreating && AreAllCrewInEntryZone())
+        {
+            EndMission(MissionOutcome.Retreat);
+            SimLog.Log("[Combat] RETREAT COMPLETE! All crew extracted.");
+            return;
+        }
 
         var aliveCrewCount = 0;
         var aliveEnemyCount = 0;
@@ -186,11 +203,11 @@ public partial class CombatState
                 continue;
             }
 
-            if (actor.Type == ActorTypes.Crew)
+            if (actor.Type == ActorType.Crew)
             {
                 aliveCrewCount++;
             }
-            else if (actor.Type == ActorTypes.Enemy)
+            else if (actor.Type == ActorType.Enemy)
             {
                 aliveEnemyCount++;
             }
@@ -201,27 +218,109 @@ public partial class CombatState
         if (hasEnemyObjective && aliveEnemyCount == 0)
         {
             // Victory - all enemies dead
-            EndMission(victory: true);
+            EndMission(MissionOutcome.Victory);
             SimLog.Log("[Combat] VICTORY! All enemies eliminated.");
         }
         else if (aliveCrewCount == 0)
         {
             // Defeat - all crew dead
-            EndMission(victory: false);
+            EndMission(MissionOutcome.Defeat);
             SimLog.Log("[Combat] DEFEAT! All crew eliminated.");
         }
     }
     
     /// <summary>
-    /// End the mission with the given result.
+    /// End the mission with the given outcome.
     /// </summary>
-    private void EndMission(bool victory)
+    private void EndMission(MissionOutcome outcome)
     {
-        Victory = victory;
+        FinalOutcome = outcome;
+        Victory = (outcome == MissionOutcome.Victory);
         Phase = MissionPhase.Complete;
         TimeSystem.Pause();
         PhaseChanged?.Invoke(Phase);
-        MissionEnded?.Invoke(victory);
+        MissionEnded?.Invoke(Victory); // Legacy event for backward compatibility
+        MissionCompleted?.Invoke(outcome);
+    }
+    
+    /// <summary>
+    /// Initiate retreat. Crew must reach entry zone to complete extraction.
+    /// </summary>
+    public void InitiateRetreat()
+    {
+        if (IsRetreating || IsComplete)
+        {
+            return;
+        }
+        
+        IsRetreating = true;
+        RetreatInitiated?.Invoke();
+        SimLog.Log("[CombatState] Retreat initiated! Get all crew to the entry zone.");
+    }
+    
+    /// <summary>
+    /// Cancel retreat (if player changes mind before extraction).
+    /// </summary>
+    public void CancelRetreat()
+    {
+        if (!IsRetreating || IsComplete)
+        {
+            return;
+        }
+        
+        IsRetreating = false;
+        RetreatCancelled?.Invoke();
+        SimLog.Log("[CombatState] Retreat cancelled.");
+    }
+    
+    /// <summary>
+    /// Check if all surviving crew are in the entry zone.
+    /// </summary>
+    public bool AreAllCrewInEntryZone()
+    {
+        var hasAliveCrew = false;
+        
+        foreach (var actor in Actors)
+        {
+            if (actor.Type != ActorType.Crew || actor.State != ActorState.Alive)
+            {
+                continue;
+            }
+            
+            hasAliveCrew = true;
+            
+            if (!MapState.IsInEntryZone(actor.GridPosition))
+            {
+                return false;
+            }
+        }
+        
+        return hasAliveCrew;
+    }
+    
+    /// <summary>
+    /// Get count of crew in entry zone vs total alive.
+    /// </summary>
+    public (int inZone, int total) GetCrewExtractionStatus()
+    {
+        int inZone = 0;
+        int total = 0;
+        
+        foreach (var actor in Actors)
+        {
+            if (actor.Type != ActorType.Crew || actor.State != ActorState.Alive)
+            {
+                continue;
+            }
+            
+            total++;
+            if (MapState.IsInEntryZone(actor.GridPosition))
+            {
+                inZone++;
+            }
+        }
+        
+        return (inZone, total);
     }
     
     /// <summary>
@@ -234,9 +333,8 @@ public partial class CombatState
         SimLog.Log($"[CombatState] Enemy objective set: {hasEnemies}");
     }
 
-    public Actor AddActor(string actorType, Vector2I position)
+    public Actor AddActor(ActorType actorType, Vector2I position)
     {
-        // Create and add a new actor to the combat.
         var actor = new Actor(nextActorId, actorType);
         actor.GridPosition = position;
         actor.SetTarget(position);
@@ -412,7 +510,7 @@ public partial class CombatState
         return alive;
     }
 
-    public List<Actor> GetActorsByType(string type)
+    public List<Actor> GetActorsByType(ActorType type)
     {
         var result = new List<Actor>();
         foreach (var actor in Actors)

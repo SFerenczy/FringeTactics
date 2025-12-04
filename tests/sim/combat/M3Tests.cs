@@ -21,9 +21,9 @@ public class M3Tests
         var combat = new CombatState();
         combat.MapState = map;
 
-        var attacker = combat.AddActor("crew", new Vector2I(5, 5));
-        var closeTarget = combat.AddActor("enemy", new Vector2I(7, 5)); // 2 tiles
-        var farTarget = combat.AddActor("enemy", new Vector2I(12, 5));  // 7 tiles
+        var attacker = combat.AddActor(ActorType.Crew, new Vector2I(5, 5));
+        var closeTarget = combat.AddActor(ActorType.Enemy, new Vector2I(7, 5)); // 2 tiles
+        var farTarget = combat.AddActor(ActorType.Enemy, new Vector2I(12, 5));  // 7 tiles
 
         var closeChance = CombatResolver.CalculateHitChance(attacker, closeTarget, attacker.EquippedWeapon);
         var farChance = CombatResolver.CalculateHitChance(attacker, farTarget, attacker.EquippedWeapon);
@@ -39,9 +39,9 @@ public class M3Tests
         var combat = new CombatState();
         combat.MapState = map;
 
-        var attacker = combat.AddActor("crew", new Vector2I(5, 5));
+        var attacker = combat.AddActor(ActorType.Crew, new Vector2I(5, 5));
         attacker.Stats["aim"] = 100; // Absurdly high aim
-        var target = combat.AddActor("enemy", new Vector2I(6, 5));
+        var target = combat.AddActor(ActorType.Enemy, new Vector2I(6, 5));
 
         var hitChance = CombatResolver.CalculateHitChance(attacker, target, attacker.EquippedWeapon);
 
@@ -57,11 +57,11 @@ public class M3Tests
         var combat = new CombatState();
         combat.MapState = map;
 
-        var normalAttacker = combat.AddActor("crew", new Vector2I(5, 5));
-        var skilledAttacker = combat.AddActor("crew", new Vector2I(5, 6));
+        var normalAttacker = combat.AddActor(ActorType.Crew, new Vector2I(5, 5));
+        var skilledAttacker = combat.AddActor(ActorType.Crew, new Vector2I(5, 6));
         skilledAttacker.Stats["aim"] = 10; // +10% bonus
 
-        var target = combat.AddActor("enemy", new Vector2I(10, 5));
+        var target = combat.AddActor(ActorType.Enemy, new Vector2I(10, 5));
 
         var normalChance = CombatResolver.CalculateHitChance(normalAttacker, target, normalAttacker.EquippedWeapon);
         var skilledChance = CombatResolver.CalculateHitChance(skilledAttacker, target, skilledAttacker.EquippedWeapon);
@@ -76,7 +76,7 @@ public class M3Tests
     public void Actor_StartsWithFullMagazine()
     {
         var combat = new CombatState();
-        var actor = combat.AddActor("crew", new Vector2I(5, 5));
+        var actor = combat.AddActor(ActorType.Crew, new Vector2I(5, 5));
 
         AssertThat(actor.CurrentMagazine).IsEqual(actor.EquippedWeapon.MagazineSize);
     }
@@ -86,7 +86,7 @@ public class M3Tests
     public void Actor_ConsumeAmmo_DecreasesMagazine()
     {
         var combat = new CombatState();
-        var actor = combat.AddActor("crew", new Vector2I(5, 5));
+        var actor = combat.AddActor(ActorType.Crew, new Vector2I(5, 5));
         var initialAmmo = actor.CurrentMagazine;
 
         actor.ConsumeAmmo();
@@ -99,7 +99,7 @@ public class M3Tests
     public void Actor_CannotFire_WhenMagazineEmpty()
     {
         var combat = new CombatState();
-        var actor = combat.AddActor("crew", new Vector2I(5, 5));
+        var actor = combat.AddActor(ActorType.Crew, new Vector2I(5, 5));
         actor.CurrentMagazine = 0;
 
         AssertThat(actor.CanFire()).IsFalse();
@@ -110,7 +110,7 @@ public class M3Tests
     public void Actor_NeedsReload_WhenEmptyWithReserve()
     {
         var combat = new CombatState();
-        var actor = combat.AddActor("crew", new Vector2I(5, 5));
+        var actor = combat.AddActor(ActorType.Crew, new Vector2I(5, 5));
         actor.CurrentMagazine = 0;
         actor.ReserveAmmo = 30;
 
@@ -122,7 +122,7 @@ public class M3Tests
     public void Actor_Reload_FillsMagazineFromReserve()
     {
         var combat = new CombatState();
-        var actor = combat.AddActor("crew", new Vector2I(5, 5));
+        var actor = combat.AddActor(ActorType.Crew, new Vector2I(5, 5));
         actor.CurrentMagazine = 0;
         actor.ReserveAmmo = 60;
 
@@ -144,7 +144,7 @@ public class M3Tests
     public void Actor_CannotFire_WhileReloading()
     {
         var combat = new CombatState();
-        var actor = combat.AddActor("crew", new Vector2I(5, 5));
+        var actor = combat.AddActor(ActorType.Crew, new Vector2I(5, 5));
         actor.CurrentMagazine = 5; // Partial magazine
         actor.StartReload();
 
@@ -156,7 +156,7 @@ public class M3Tests
     public void Actor_IsOutOfAmmo_WhenNoMagazineAndNoReserve()
     {
         var combat = new CombatState();
-        var actor = combat.AddActor("crew", new Vector2I(5, 5));
+        var actor = combat.AddActor(ActorType.Crew, new Vector2I(5, 5));
         actor.CurrentMagazine = 0;
         actor.ReserveAmmo = 0;
 
@@ -171,8 +171,8 @@ public class M3Tests
     public void AutoDefend_SetAutoDefendTarget_SetsTargetId()
     {
         var combat = new CombatState();
-        var defender = combat.AddActor("crew", new Vector2I(5, 5));
-        var attacker = combat.AddActor("enemy", new Vector2I(8, 5));
+        var defender = combat.AddActor(ActorType.Crew, new Vector2I(5, 5));
+        var attacker = combat.AddActor(ActorType.Enemy, new Vector2I(8, 5));
 
         defender.SetAutoDefendTarget(attacker.Id);
 
@@ -185,9 +185,9 @@ public class M3Tests
     public void AutoDefend_DisabledUnit_DoesNotSetTarget()
     {
         var combat = new CombatState();
-        var defender = combat.AddActor("crew", new Vector2I(5, 5));
+        var defender = combat.AddActor(ActorType.Crew, new Vector2I(5, 5));
         defender.AutoDefendEnabled = false;
-        var attacker = combat.AddActor("enemy", new Vector2I(8, 5));
+        var attacker = combat.AddActor(ActorType.Enemy, new Vector2I(8, 5));
 
         defender.SetAutoDefendTarget(attacker.Id);
 
@@ -202,9 +202,9 @@ public class M3Tests
         var combat = new CombatState();
         combat.MapState = map;
 
-        var crew = combat.AddActor("crew", new Vector2I(5, 5));
-        var enemy1 = combat.AddActor("enemy", new Vector2I(8, 5));
-        var enemy2 = combat.AddActor("enemy", new Vector2I(10, 5));
+        var crew = combat.AddActor(ActorType.Crew, new Vector2I(5, 5));
+        var enemy1 = combat.AddActor(ActorType.Enemy, new Vector2I(8, 5));
+        var enemy2 = combat.AddActor(ActorType.Enemy, new Vector2I(10, 5));
 
         // Set auto-defend target
         crew.SetAutoDefendTarget(enemy1.Id);
@@ -222,8 +222,8 @@ public class M3Tests
     public void AutoDefend_ClearOrders_ClearsAutoDefendTarget()
     {
         var combat = new CombatState();
-        var defender = combat.AddActor("crew", new Vector2I(5, 5));
-        var attacker = combat.AddActor("enemy", new Vector2I(8, 5));
+        var defender = combat.AddActor(ActorType.Crew, new Vector2I(5, 5));
+        var attacker = combat.AddActor(ActorType.Enemy, new Vector2I(8, 5));
 
         defender.SetAutoDefendTarget(attacker.Id);
         defender.ClearOrders();
@@ -243,8 +243,8 @@ public class M3Tests
         combat.InitializeVisibility();
         combat.SetHasEnemyObjective(true);
 
-        var attacker = combat.AddActor("crew", new Vector2I(5, 5));
-        var target = combat.AddActor("enemy", new Vector2I(8, 5));
+        var attacker = combat.AddActor(ActorType.Crew, new Vector2I(5, 5));
+        var target = combat.AddActor(ActorType.Enemy, new Vector2I(8, 5));
         var initialAmmo = attacker.CurrentMagazine;
 
         combat.IssueAttackOrder(attacker.Id, target.Id);
@@ -268,7 +268,7 @@ public class M3Tests
     public void Actor_Dies_AtZeroHp()
     {
         var combat = new CombatState();
-        var actor = combat.AddActor("crew", new Vector2I(5, 5));
+        var actor = combat.AddActor(ActorType.Crew, new Vector2I(5, 5));
 
         actor.TakeDamage(actor.MaxHp);
 
@@ -281,7 +281,7 @@ public class M3Tests
     public void Actor_TakeDamage_ReducesHp()
     {
         var combat = new CombatState();
-        var actor = combat.AddActor("crew", new Vector2I(5, 5));
+        var actor = combat.AddActor(ActorType.Crew, new Vector2I(5, 5));
         var initialHp = actor.Hp;
 
         actor.TakeDamage(25);
@@ -300,8 +300,8 @@ public class M3Tests
         combat.InitializeVisibility();
         combat.SetHasEnemyObjective(true);
 
-        var crew = combat.AddActor("crew", new Vector2I(5, 5));
-        var enemy = combat.AddActor("enemy", new Vector2I(8, 5));
+        var crew = combat.AddActor(ActorType.Crew, new Vector2I(5, 5));
+        var enemy = combat.AddActor(ActorType.Enemy, new Vector2I(8, 5));
 
         // Kill the enemy
         enemy.TakeDamage(enemy.MaxHp);
@@ -322,8 +322,8 @@ public class M3Tests
         combat.InitializeVisibility();
         combat.SetHasEnemyObjective(true);
 
-        var crew = combat.AddActor("crew", new Vector2I(5, 5));
-        var enemy = combat.AddActor("enemy", new Vector2I(8, 5));
+        var crew = combat.AddActor(ActorType.Crew, new Vector2I(5, 5));
+        var enemy = combat.AddActor(ActorType.Enemy, new Vector2I(8, 5));
 
         // Kill the crew
         crew.TakeDamage(crew.MaxHp);
@@ -344,9 +344,9 @@ public class M3Tests
         var combat = new CombatState();
         combat.MapState = map;
 
-        var enemy = combat.AddActor("enemy", new Vector2I(5, 5));
-        var closeTarget = combat.AddActor("crew", new Vector2I(7, 5)); // 2 tiles
-        var farTarget = combat.AddActor("crew", new Vector2I(12, 5));  // 7 tiles
+        var enemy = combat.AddActor(ActorType.Enemy, new Vector2I(5, 5));
+        var closeTarget = combat.AddActor(ActorType.Crew, new Vector2I(7, 5)); // 2 tiles
+        var farTarget = combat.AddActor(ActorType.Crew, new Vector2I(12, 5));  // 7 tiles
 
         // Both targets have same HP, so closer should score higher
         // We can't directly test AIController.ScoreTarget (private), but we can verify behavior
@@ -374,10 +374,10 @@ public class M3Tests
         var combat = new CombatState();
         combat.MapState = map;
 
-        var enemy = combat.AddActor("enemy", new Vector2I(5, 5));
+        var enemy = combat.AddActor(ActorType.Enemy, new Vector2I(5, 5));
         // Both at same distance
-        var healthyTarget = combat.AddActor("crew", new Vector2I(8, 5));
-        var woundedTarget = combat.AddActor("crew", new Vector2I(8, 6));
+        var healthyTarget = combat.AddActor(ActorType.Crew, new Vector2I(8, 5));
+        var woundedTarget = combat.AddActor(ActorType.Crew, new Vector2I(8, 6));
         woundedTarget.TakeDamage(woundedTarget.MaxHp - 10); // Nearly dead
 
         combat.InitializeVisibility();

@@ -102,7 +102,7 @@ public class M6Tests
     public void PerceptionSystem_InitializesEnemyPerceptions()
     {
         var combat = CreateTestCombat();
-        var enemy = combat.AddActor(ActorTypes.Enemy, new Vector2I(5, 5));
+        var enemy = combat.AddActor(ActorType.Enemy, new Vector2I(5, 5));
         combat.Perception.Initialize();
         
         var perception = combat.Perception.GetPerception(enemy.Id);
@@ -116,8 +116,8 @@ public class M6Tests
     public void PerceptionSystem_DetectsCrewInLOS()
     {
         var combat = CreateTestCombat();
-        var enemy = combat.AddActor(ActorTypes.Enemy, new Vector2I(5, 5));
-        var crew = combat.AddActor(ActorTypes.Crew, new Vector2I(5, 3));
+        var enemy = combat.AddActor(ActorType.Enemy, new Vector2I(5, 5));
+        var crew = combat.AddActor(ActorType.Crew, new Vector2I(5, 3));
         combat.Perception.Initialize();
         
         combat.Perception.Tick();
@@ -143,8 +143,8 @@ public class M6Tests
         combat.MapState = map;
         combat.InitializeVisibility();
         
-        var enemy = combat.AddActor(ActorTypes.Enemy, new Vector2I(2, 2));
-        var crew = combat.AddActor(ActorTypes.Crew, new Vector2I(4, 2));
+        var enemy = combat.AddActor(ActorType.Enemy, new Vector2I(2, 2));
+        var crew = combat.AddActor(ActorType.Crew, new Vector2I(4, 2));
         combat.Perception.Initialize();
         
         combat.Perception.Tick();
@@ -158,8 +158,8 @@ public class M6Tests
     public void PerceptionSystem_DoesNotDetectCrewOutOfRange()
     {
         var combat = CreateTestCombat();
-        var enemy = combat.AddActor(ActorTypes.Enemy, new Vector2I(5, 5));
-        var crew = combat.AddActor(ActorTypes.Crew, new Vector2I(5, 18));
+        var enemy = combat.AddActor(ActorType.Enemy, new Vector2I(5, 5));
+        var crew = combat.AddActor(ActorType.Crew, new Vector2I(5, 18));
         combat.Perception.Initialize();
         
         combat.Perception.Tick();
@@ -173,8 +173,8 @@ public class M6Tests
     public void PerceptionSystem_UpdatesLastKnownOnDetection()
     {
         var combat = CreateTestCombat();
-        var enemy = combat.AddActor(ActorTypes.Enemy, new Vector2I(5, 5));
-        var crew = combat.AddActor(ActorTypes.Crew, new Vector2I(5, 3));
+        var enemy = combat.AddActor(ActorType.Enemy, new Vector2I(5, 5));
+        var crew = combat.AddActor(ActorType.Crew, new Vector2I(5, 3));
         combat.Perception.Initialize();
         
         combat.Perception.Tick();
@@ -188,8 +188,8 @@ public class M6Tests
     public void PerceptionSystem_FiresDetectionEvent()
     {
         var combat = CreateTestCombat();
-        var enemy = combat.AddActor(ActorTypes.Enemy, new Vector2I(5, 5));
-        var crew = combat.AddActor(ActorTypes.Crew, new Vector2I(5, 3));
+        var enemy = combat.AddActor(ActorType.Enemy, new Vector2I(5, 5));
+        var crew = combat.AddActor(ActorType.Crew, new Vector2I(5, 3));
         combat.Perception.Initialize();
         
         Actor detectedEnemy = null;
@@ -209,8 +209,8 @@ public class M6Tests
     public void AlarmState_BecomesAlertedOnDetection()
     {
         var combat = CreateTestCombat();
-        var enemy = combat.AddActor(ActorTypes.Enemy, new Vector2I(5, 5));
-        var crew = combat.AddActor(ActorTypes.Crew, new Vector2I(5, 3));
+        var enemy = combat.AddActor(ActorType.Enemy, new Vector2I(5, 5));
+        var crew = combat.AddActor(ActorType.Crew, new Vector2I(5, 3));
         combat.Perception.Initialize();
         
         AlarmState? newAlarmState = null;
@@ -227,9 +227,9 @@ public class M6Tests
     public void AlarmState_OnlyFiresOnceForMultipleDetections()
     {
         var combat = CreateTestCombat();
-        var enemy1 = combat.AddActor(ActorTypes.Enemy, new Vector2I(5, 5));
-        var enemy2 = combat.AddActor(ActorTypes.Enemy, new Vector2I(7, 5));
-        var crew = combat.AddActor(ActorTypes.Crew, new Vector2I(6, 5));
+        var enemy1 = combat.AddActor(ActorType.Enemy, new Vector2I(5, 5));
+        var enemy2 = combat.AddActor(ActorType.Enemy, new Vector2I(7, 5));
+        var crew = combat.AddActor(ActorType.Crew, new Vector2I(6, 5));
         combat.Perception.Initialize();
         
         int alarmChanges = 0;
@@ -245,8 +245,8 @@ public class M6Tests
     public void AlarmState_StaysQuietWithNoDetection()
     {
         var combat = CreateTestCombat();
-        var enemy = combat.AddActor(ActorTypes.Enemy, new Vector2I(5, 5));
-        var crew = combat.AddActor(ActorTypes.Crew, new Vector2I(15, 15));
+        var enemy = combat.AddActor(ActorType.Enemy, new Vector2I(5, 5));
+        var crew = combat.AddActor(ActorType.Crew, new Vector2I(15, 15));
         combat.Perception.Initialize();
         
         combat.Perception.Tick();
@@ -261,7 +261,7 @@ public class M6Tests
     public void AlertEnemy_ManuallyAlertsSpecificEnemy()
     {
         var combat = CreateTestCombat();
-        var enemy = combat.AddActor(ActorTypes.Enemy, new Vector2I(5, 5));
+        var enemy = combat.AddActor(ActorType.Enemy, new Vector2I(5, 5));
         combat.Perception.Initialize();
         
         AssertThat(combat.Perception.GetDetectionState(enemy.Id)).IsEqual(DetectionState.Idle);
@@ -276,7 +276,7 @@ public class M6Tests
     public void AlertEnemy_TriggersAlarmState()
     {
         var combat = CreateTestCombat();
-        var enemy = combat.AddActor(ActorTypes.Enemy, new Vector2I(5, 5));
+        var enemy = combat.AddActor(ActorType.Enemy, new Vector2I(5, 5));
         combat.Perception.Initialize();
         
         combat.Perception.AlertEnemy(enemy.Id);
@@ -289,8 +289,8 @@ public class M6Tests
     public void AlertAllEnemies_AlertsEveryEnemy()
     {
         var combat = CreateTestCombat();
-        var enemy1 = combat.AddActor(ActorTypes.Enemy, new Vector2I(5, 5));
-        var enemy2 = combat.AddActor(ActorTypes.Enemy, new Vector2I(10, 10));
+        var enemy1 = combat.AddActor(ActorType.Enemy, new Vector2I(5, 5));
+        var enemy2 = combat.AddActor(ActorType.Enemy, new Vector2I(10, 10));
         combat.Perception.Initialize();
         
         combat.Perception.AlertAllEnemies();
@@ -304,7 +304,7 @@ public class M6Tests
     public void IsEnemyAlerted_ReturnsCorrectState()
     {
         var combat = CreateTestCombat();
-        var enemy = combat.AddActor(ActorTypes.Enemy, new Vector2I(5, 5));
+        var enemy = combat.AddActor(ActorType.Enemy, new Vector2I(5, 5));
         combat.Perception.Initialize();
         
         AssertThat(combat.Perception.IsEnemyAlerted(enemy.Id)).IsFalse();
@@ -319,7 +319,7 @@ public class M6Tests
     public void RemoveEnemy_CleansUpPerception()
     {
         var combat = CreateTestCombat();
-        var enemy = combat.AddActor(ActorTypes.Enemy, new Vector2I(5, 5));
+        var enemy = combat.AddActor(ActorType.Enemy, new Vector2I(5, 5));
         combat.Perception.Initialize();
         combat.Perception.AlertEnemy(enemy.Id);
         
@@ -335,8 +335,8 @@ public class M6Tests
     public void IdleEnemy_DoesNotAttack()
     {
         var combat = CreateTestCombat();
-        var enemy = combat.AddActor(ActorTypes.Enemy, new Vector2I(5, 5));
-        var crew = combat.AddActor(ActorTypes.Crew, new Vector2I(15, 15));
+        var enemy = combat.AddActor(ActorType.Enemy, new Vector2I(5, 5));
+        var crew = combat.AddActor(ActorType.Crew, new Vector2I(15, 15));
         combat.InitializePerception();
         combat.TimeSystem.Resume();
         
@@ -358,8 +358,8 @@ public class M6Tests
     {
         var combat = CreateTestCombat();
         var enemyPos = new Vector2I(5, 5);
-        var enemy = combat.AddActor(ActorTypes.Enemy, enemyPos);
-        var crew = combat.AddActor(ActorTypes.Crew, new Vector2I(15, 15));
+        var enemy = combat.AddActor(ActorType.Enemy, enemyPos);
+        var crew = combat.AddActor(ActorType.Crew, new Vector2I(15, 15));
         combat.InitializePerception();
         combat.TimeSystem.Resume();
         
@@ -382,8 +382,8 @@ public class M6Tests
     public void AlertedEnemy_AttacksVisibleCrew()
     {
         var combat = CreateTestCombat();
-        var enemy = combat.AddActor(ActorTypes.Enemy, new Vector2I(5, 5));
-        var crew = combat.AddActor(ActorTypes.Crew, new Vector2I(5, 3));
+        var enemy = combat.AddActor(ActorType.Enemy, new Vector2I(5, 5));
+        var crew = combat.AddActor(ActorType.Crew, new Vector2I(5, 3));
         combat.InitializePerception();
         combat.TimeSystem.Resume();
         
@@ -409,11 +409,11 @@ public class M6Tests
         combat.InitializeVisibility();
         
         var enemyPos = new Vector2I(15, 15);
-        var enemy = combat.AddActor(ActorTypes.Enemy, enemyPos);
+        var enemy = combat.AddActor(ActorType.Enemy, enemyPos);
         // Give enemy a short-range weapon so crew is out of range
         enemy.EquippedWeapon = new WeaponData { Range = 3, Damage = 25, CooldownTicks = 10 };
         // Place crew visible but out of weapon range (distance = 10)
-        var crew = combat.AddActor(ActorTypes.Crew, new Vector2I(15, 5));
+        var crew = combat.AddActor(ActorType.Crew, new Vector2I(15, 5));
         combat.InitializePerception();
         combat.TimeSystem.Resume();
         
@@ -435,8 +435,8 @@ public class M6Tests
     public void PerceptionTicksInCombatLoop()
     {
         var combat = CreateTestCombat();
-        var enemy = combat.AddActor(ActorTypes.Enemy, new Vector2I(5, 5));
-        var crew = combat.AddActor(ActorTypes.Crew, new Vector2I(5, 3));
+        var enemy = combat.AddActor(ActorType.Enemy, new Vector2I(5, 5));
+        var crew = combat.AddActor(ActorType.Crew, new Vector2I(5, 3));
         combat.InitializePerception();
         combat.TimeSystem.Resume();
         
@@ -469,9 +469,9 @@ public class M6Tests
         combat.InitializeVisibility();
         
         // Enemy on left side of door
-        var enemy = combat.AddActor(ActorTypes.Enemy, new Vector2I(3, 1));
+        var enemy = combat.AddActor(ActorType.Enemy, new Vector2I(3, 1));
         // Crew on right side of door
-        var crew = combat.AddActor(ActorTypes.Crew, new Vector2I(7, 1));
+        var crew = combat.AddActor(ActorType.Crew, new Vector2I(7, 1));
         combat.InitializePerception();
         
         // Run perception tick
@@ -503,9 +503,9 @@ public class M6Tests
         door.SetState(InteractableState.DoorOpen);
         
         // Enemy on left side of door
-        var enemy = combat.AddActor(ActorTypes.Enemy, new Vector2I(3, 1));
+        var enemy = combat.AddActor(ActorType.Enemy, new Vector2I(3, 1));
         // Crew on right side of door (within vision range)
-        var crew = combat.AddActor(ActorTypes.Crew, new Vector2I(7, 1));
+        var crew = combat.AddActor(ActorType.Crew, new Vector2I(7, 1));
         combat.InitializePerception();
         
         // Run perception tick
@@ -531,8 +531,8 @@ public class M6Tests
         combat.MapState = MapBuilder.BuildFromTemplate(template, combat.Interactions);
         combat.InitializeVisibility();
         
-        var enemy = combat.AddActor(ActorTypes.Enemy, new Vector2I(3, 1));
-        var crew = combat.AddActor(ActorTypes.Crew, new Vector2I(7, 1));
+        var enemy = combat.AddActor(ActorType.Enemy, new Vector2I(3, 1));
+        var crew = combat.AddActor(ActorType.Crew, new Vector2I(7, 1));
         combat.InitializePerception();
         combat.TimeSystem.Resume();
         
@@ -567,7 +567,7 @@ public class M6Tests
         // All enemies should have perception tracking
         foreach (var actor in combat.Actors)
         {
-            if (actor.Type == ActorTypes.Enemy)
+            if (actor.Type == ActorType.Enemy)
             {
                 var state = combat.Perception.GetDetectionState(actor.Id);
                 AssertThat(state).IsEqual(DetectionState.Idle);
@@ -586,7 +586,7 @@ public class M6Tests
         int enemyCount = 0;
         foreach (var actor in combat.Actors)
         {
-            if (actor.Type == ActorTypes.Enemy)
+            if (actor.Type == ActorType.Enemy)
             {
                 enemyCount++;
                 AssertThat(combat.Perception.GetDetectionState(actor.Id)).IsEqual(DetectionState.Idle);
@@ -614,8 +614,8 @@ public class M6Tests
     public void DeadEnemy_NotTrackedByPerception()
     {
         var combat = CreateTestCombat();
-        var enemy = combat.AddActor(ActorTypes.Enemy, new Vector2I(5, 5));
-        var crew = combat.AddActor(ActorTypes.Crew, new Vector2I(5, 3));
+        var enemy = combat.AddActor(ActorType.Enemy, new Vector2I(5, 5));
+        var crew = combat.AddActor(ActorType.Crew, new Vector2I(5, 3));
         combat.InitializePerception();
         
         // Kill the enemy
@@ -636,8 +636,8 @@ public class M6Tests
     public void DeadCrew_NotDetected()
     {
         var combat = CreateTestCombat();
-        var enemy = combat.AddActor(ActorTypes.Enemy, new Vector2I(5, 5));
-        var crew = combat.AddActor(ActorTypes.Crew, new Vector2I(5, 3));
+        var enemy = combat.AddActor(ActorType.Enemy, new Vector2I(5, 5));
+        var crew = combat.AddActor(ActorType.Crew, new Vector2I(5, 3));
         combat.InitializePerception();
         
         // Kill the crew
@@ -658,7 +658,7 @@ public class M6Tests
     {
         var combat = CreateTestCombat();
         // Enemy 1 can see crew (close by)
-        var enemy1 = combat.AddActor(ActorTypes.Enemy, new Vector2I(5, 5));
+        var enemy1 = combat.AddActor(ActorType.Enemy, new Vector2I(5, 5));
         // Create a wall column to block LOS from enemy2 to crew
         combat.MapState.SetTile(new Vector2I(10, 2), TileType.Wall);
         combat.MapState.SetTile(new Vector2I(10, 3), TileType.Wall);
@@ -666,9 +666,9 @@ public class M6Tests
         combat.MapState.SetTile(new Vector2I(10, 5), TileType.Wall);
         combat.MapState.SetTile(new Vector2I(10, 6), TileType.Wall);
         // Enemy 2 is behind the wall
-        var enemy2 = combat.AddActor(ActorTypes.Enemy, new Vector2I(15, 5));
+        var enemy2 = combat.AddActor(ActorType.Enemy, new Vector2I(15, 5));
         // Crew visible to enemy1 but blocked from enemy2 by wall
-        var crew = combat.AddActor(ActorTypes.Crew, new Vector2I(5, 3));
+        var crew = combat.AddActor(ActorType.Crew, new Vector2I(5, 3));
         combat.InitializePerception();
         
         // Run perception tick
@@ -687,8 +687,8 @@ public class M6Tests
     public void LastKnownPosition_UpdatesOnMovement()
     {
         var combat = CreateTestCombat();
-        var enemy = combat.AddActor(ActorTypes.Enemy, new Vector2I(5, 5));
-        var crew = combat.AddActor(ActorTypes.Crew, new Vector2I(5, 3));
+        var enemy = combat.AddActor(ActorType.Enemy, new Vector2I(5, 5));
+        var crew = combat.AddActor(ActorType.Crew, new Vector2I(5, 3));
         combat.InitializePerception();
         combat.TimeSystem.Resume();
         

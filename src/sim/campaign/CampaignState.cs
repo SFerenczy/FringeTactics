@@ -56,6 +56,8 @@ public class CampaignState
     public const int VICTORY_PARTS = 20;
     public const int XP_PER_KILL = 25;
     public const int XP_PARTICIPATION = 10;
+    public const int XP_VICTORY_BONUS = 20;
+    public const int XP_RETREAT_BONUS = 5;
 
     public CampaignState()
     {
@@ -253,8 +255,116 @@ public class CampaignState
     }
 
     /// <summary>
-    /// Apply full mission result to campaign state.
+    /// Apply mission output to campaign state.
+    /// This is the primary method for processing mission results.
     /// </summary>
+    public void ApplyMissionOutput(MissionOutput output)
+    {
+        // Process each crew outcome
+        foreach (var crewOutcome in output.CrewOutcomes)
+        {
+            var crew = GetCrewById(crewOutcome.CampaignCrewId);
+            if (crew == null) continue;
+
+            // Handle death
+            if (crewOutcome.Status == CrewFinalStatus.Dead)
+            {
+                crew.IsDead = true;
+                TotalCrewDeaths++;
+                SimLog.Log($"[Campaign] {crew.Name} KIA.");
+                continue;
+            }
+
+            // Handle MIA (treated as dead for now)
+            if (crewOutcome.Status == CrewFinalStatus.MIA)
+            {
+                crew.IsDead = true;
+                TotalCrewDeaths++;
+                SimLog.Log($"[Campaign] {crew.Name} MIA - presumed dead.");
+                continue;
+            }
+
+            // Apply injuries
+            foreach (var injury in crewOutcome.NewInjuries)
+            {
+                crew.AddInjury(injury);
+                SimLog.Log($"[Campaign] {crew.Name} received injury: {injury}");
+            }
+
+            // Apply XP
+            if (crewOutcome.SuggestedXp > 0)
+            {
+                bool leveledUp = crew.AddXp(crewOutcome.SuggestedXp);
+                if (leveledUp)
+                {
+                    SimLog.Log($"[Campaign] {crew.Name} leveled up to {crew.Level}!");
+                }
+            }
+        }
+
+        // Apply victory/defeat/retreat rewards
+        bool isVictory = output.Outcome == MissionOutcome.Victory;
+        bool isRetreat = output.Outcome == MissionOutcome.Retreat;
+
+        if (isVictory)
+        {
+            MissionsCompleted++;
+
+            if (CurrentJob != null)
+            {
+                ApplyJobReward(CurrentJob.Reward);
+                ModifyFactionRep(CurrentJob.EmployerFactionId, CurrentJob.RepGain);
+                ModifyFactionRep(CurrentJob.TargetFactionId, -CurrentJob.RepLoss);
+                SimLog.Log($"[Campaign] Job completed: {CurrentJob.Title}");
+                ClearCurrentJob();
+            }
+            else
+            {
+                Money += VICTORY_MONEY;
+                Parts += VICTORY_PARTS;
+                SimLog.Log($"[Campaign] Victory! +${VICTORY_MONEY}, +{VICTORY_PARTS} parts.");
+            }
+        }
+        else if (isRetreat)
+        {
+            // Retreat: partial failure, no rewards but reduced penalty
+            MissionsFailed++;
+            
+            if (CurrentJob != null)
+            {
+                // Half the reputation loss for retreat vs full failure
+                ModifyFactionRep(CurrentJob.EmployerFactionId, -CurrentJob.FailureRepLoss / 2);
+                SimLog.Log($"[Campaign] Job abandoned (retreat): {CurrentJob.Title}");
+                ClearCurrentJob();
+            }
+            else
+            {
+                SimLog.Log("[Campaign] Mission retreat. No rewards.");
+            }
+        }
+        else
+        {
+            // Defeat or Abort
+            MissionsFailed++;
+
+            if (CurrentJob != null)
+            {
+                ModifyFactionRep(CurrentJob.EmployerFactionId, -CurrentJob.FailureRepLoss);
+                SimLog.Log($"[Campaign] Job failed: {CurrentJob.Title}");
+                ClearCurrentJob();
+            }
+            else
+            {
+                SimLog.Log("[Campaign] Mission failed. No rewards.");
+            }
+        }
+    }
+
+    /// <summary>
+    /// Apply full mission result to campaign state.
+    /// DEPRECATED: Use ApplyMissionOutput instead.
+    /// </summary>
+    [System.Obsolete("Use ApplyMissionOutput(MissionOutput) instead")]
     public void ApplyMissionResult(MissionResult result)
     {
         // Mark dead crew
@@ -275,7 +385,7 @@ public class CampaignState
             var crew = GetCrewById(crewId);
             if (crew != null && !crew.IsDead)
             {
-                crew.AddInjury("wounded");
+                crew.AddInjury(InjuryTypes.Wounded);
                 SimLog.Log($"[Campaign] {crew.Name} was wounded.");
             }
         }
@@ -357,14 +467,18 @@ public class CampaignState
 
     /// <summary>
     /// Legacy method for compatibility - converts to MissionResult.
+    /// DEPRECATED: Use ApplyMissionOutput instead.
     /// </summary>
+    [System.Obsolete("Use ApplyMissionOutput(MissionOutput) instead")]
     public void ApplyMissionResult(bool victory, List<int> deadCrewIds)
     {
+        #pragma warning disable CS0618 // Suppress obsolete warning for internal call
         ApplyMissionResult(new MissionResult
         {
             Victory = victory,
             DeadCrewIds = deadCrewIds
         });
+        #pragma warning restore CS0618
     }
 
     /// <summary>

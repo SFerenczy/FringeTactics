@@ -57,6 +57,11 @@ public partial class MissionView : Node2D
     private float alarmNotificationTimer = 0f;
     private const float AlarmNotificationDuration = 3.0f;
     private AlarmStateWidget alarmStateWidget;
+    
+    // Retreat UI (M7)
+    private Button retreatButton;
+    private Label extractionStatusLabel;
+    private Node2D entryZoneHighlightLayer;
 
     [ExportGroup("Node Paths")]
     [Export] private Node2D gridDisplayPath;
@@ -160,6 +165,8 @@ public partial class MissionView : Node2D
         CombatState.MissionEnded += OnMissionEnded;
         CombatState.Perception.AlarmStateChanged += OnAlarmStateChanged;
         CombatState.Perception.EnemyDetectedCrew += OnEnemyDetectedCrew;
+        CombatState.RetreatInitiated += OnRetreatInitiated;
+        CombatState.RetreatCancelled += OnRetreatCancelled;
     }
 
     private void SetupUI()
@@ -201,6 +208,9 @@ public partial class MissionView : Node2D
         
         // Create alarm state widget
         CreateAlarmStateWidget();
+        
+        // Create retreat UI (M7)
+        CreateRetreatUI();
     }
     
     private void CreateSelectionBox()
@@ -278,9 +288,24 @@ public partial class MissionView : Node2D
     {
         missionVictory = victory;
 
-        // Set result text and color
-        missionResultLabel.Text = victory ? "VICTORY!" : "DEFEAT!";
-        missionResultLabel.AddThemeColorOverride("font_color", victory ? Colors.Green : Colors.Red);
+        // Set result text and color based on outcome (M7: support retreat)
+        var outcome = CombatState.FinalOutcome ?? (victory ? MissionOutcome.Victory : MissionOutcome.Defeat);
+        switch (outcome)
+        {
+            case MissionOutcome.Victory:
+                missionResultLabel.Text = "VICTORY!";
+                missionResultLabel.AddThemeColorOverride("font_color", Colors.Green);
+                break;
+            case MissionOutcome.Retreat:
+                missionResultLabel.Text = "RETREATED";
+                missionResultLabel.AddThemeColorOverride("font_color", Colors.Yellow);
+                break;
+            case MissionOutcome.Defeat:
+            default:
+                missionResultLabel.Text = "DEFEAT!";
+                missionResultLabel.AddThemeColorOverride("font_color", Colors.Red);
+                break;
+        }
 
         // Update button text based on mode
         var hasCampaign = GameState.Instance?.HasActiveCampaign() ?? false;
@@ -292,7 +317,7 @@ public partial class MissionView : Node2D
         var crewDead = 0;
         foreach (var actor in CombatState.Actors)
         {
-            if (actor.Type == "crew")
+            if (actor.Type == ActorType.Crew)
             {
                 if (actor.State == ActorState.Alive)
                 {
@@ -315,7 +340,7 @@ public partial class MissionView : Node2D
 
         // Print to console as well
         GD.Print("\n=== MISSION SUMMARY ===");
-        GD.Print($"Result: {(victory ? "VICTORY" : "DEFEAT")}");
+        GD.Print($"Result: {outcome}");
         GD.Print($"Crew Alive: {crewAlive}, Dead: {crewDead}");
         GD.Print($"Player Shots: {stats.PlayerShotsFired}, Hits: {stats.PlayerHits}, Misses: {stats.PlayerMisses}, Accuracy: {stats.PlayerAccuracy:F1}%");
         GD.Print($"Enemy Shots: {stats.EnemyShotsFired}, Hits: {stats.EnemyHits}, Misses: {stats.EnemyMisses}, Accuracy: {stats.EnemyAccuracy:F1}%");
@@ -356,6 +381,102 @@ public partial class MissionView : Node2D
         
         // Initialize with current state
         alarmStateWidget.UpdateDisplay(CombatState.Perception.AlarmState);
+    }
+    
+    private void CreateRetreatUI()
+    {
+        // Retreat button
+        retreatButton = new Button();
+        retreatButton.Text = "Retreat";
+        retreatButton.Position = new Vector2(10, 75);
+        retreatButton.Size = new Vector2(100, 28);
+        retreatButton.Pressed += OnRetreatButtonPressed;
+        uiLayer.AddChild(retreatButton);
+        
+        // Extraction status label (hidden until retreat initiated)
+        extractionStatusLabel = new Label();
+        extractionStatusLabel.Position = new Vector2(10, 108);
+        extractionStatusLabel.AddThemeFontSizeOverride("font_size", 14);
+        extractionStatusLabel.Visible = false;
+        uiLayer.AddChild(extractionStatusLabel);
+    }
+    
+    private void OnRetreatButtonPressed()
+    {
+        if (CombatState.IsRetreating)
+        {
+            CombatState.CancelRetreat();
+        }
+        else
+        {
+            CombatState.InitiateRetreat();
+        }
+    }
+    
+    private void OnRetreatInitiated()
+    {
+        retreatButton.Text = "Cancel Retreat";
+        extractionStatusLabel.Visible = true;
+        UpdateExtractionStatus();
+        CreateEntryZoneHighlights();
+    }
+    
+    private void OnRetreatCancelled()
+    {
+        retreatButton.Text = "Retreat";
+        extractionStatusLabel.Visible = false;
+        RemoveEntryZoneHighlights();
+    }
+    
+    private void UpdateExtractionStatus()
+    {
+        if (!CombatState.IsRetreating)
+        {
+            return;
+        }
+        
+        var (inZone, total) = CombatState.GetCrewExtractionStatus();
+        extractionStatusLabel.Text = $"Extraction: {inZone}/{total} in zone";
+        
+        if (inZone == total && total > 0)
+        {
+            extractionStatusLabel.AddThemeColorOverride("font_color", Colors.Green);
+        }
+        else
+        {
+            extractionStatusLabel.AddThemeColorOverride("font_color", Colors.Yellow);
+        }
+    }
+    
+    private void CreateEntryZoneHighlights()
+    {
+        if (entryZoneHighlightLayer != null)
+        {
+            return;
+        }
+        
+        entryZoneHighlightLayer = new Node2D();
+        entryZoneHighlightLayer.Name = "EntryZoneHighlights";
+        entryZoneHighlightLayer.ZIndex = 4; // Above grid, below fog
+        gridDisplay.AddChild(entryZoneHighlightLayer);
+        
+        foreach (var pos in CombatState.MapState.EntryZone)
+        {
+            var highlight = new ColorRect();
+            highlight.Size = new Vector2(TileSize - 2, TileSize - 2);
+            highlight.Position = new Vector2(pos.X * TileSize + 1, pos.Y * TileSize + 1);
+            highlight.Color = new Color(0.2f, 0.9f, 0.3f, 0.35f); // Green highlight
+            entryZoneHighlightLayer.AddChild(highlight);
+        }
+    }
+    
+    private void RemoveEntryZoneHighlights()
+    {
+        if (entryZoneHighlightLayer != null)
+        {
+            entryZoneHighlightLayer.QueueFree();
+            entryZoneHighlightLayer = null;
+        }
     }
     
     private void OnAlarmStateChanged(AlarmState oldState, AlarmState newState)
@@ -700,7 +821,7 @@ public partial class MissionView : Node2D
             }
 
             // Crew are always visible to player
-            if (actor.Type == "crew")
+            if (actor.Type == ActorType.Crew)
             {
                 view.Visible = true;
                 continue;
@@ -805,14 +926,14 @@ public partial class MissionView : Node2D
             actorsContainer.AddChild(view);
             actorViews[actor.Id] = view;
 
-            if (actor.Type == "crew")
+            if (actor.Type == ActorType.Crew)
             {
                 var color = crewColors[crewIndex % crewColors.Length];
                 view.Setup(actor, color);
                 crewActorIds.Add(actor.Id);
                 crewIndex++;
             }
-            else if (actor.Type == "enemy")
+            else if (actor.Type == ActorType.Enemy)
             {
                 view.Setup(actor, enemyColor);
             }
@@ -842,6 +963,8 @@ public partial class MissionView : Node2D
             CombatState.MissionEnded -= OnMissionEnded;
             CombatState.Perception.AlarmStateChanged -= OnAlarmStateChanged;
             CombatState.Perception.EnemyDetectedCrew -= OnEnemyDetectedCrew;
+            CombatState.RetreatInitiated -= OnRetreatInitiated;
+            CombatState.RetreatCancelled -= OnRetreatCancelled;
             CombatState.AbilitySystem.AbilityDetonated -= OnAbilityDetonated;
             CombatState.Visibility.VisibilityChanged -= OnVisibilityChanged;
             CombatState.Interactions.InteractableAdded -= OnInteractableAdded;
@@ -908,6 +1031,9 @@ public partial class MissionView : Node2D
         // Update enemy detection indicators
         UpdateDetectionIndicators();
         
+        // Update retreat extraction status (M7)
+        UpdateExtractionStatus();
+        
         // Update box selection drag
         if (inputController != null)
         {
@@ -924,7 +1050,7 @@ public partial class MissionView : Node2D
             var actorView = kvp.Value;
             var actor = actorView.GetActor();
             
-            if (actor == null || actor.Type != ActorTypes.Enemy)
+            if (actor == null || actor.Type != ActorType.Enemy)
             {
                 continue;
             }

@@ -77,7 +77,7 @@ public class VisibilitySystem
         // Calculate new visibility from all crew actors
         foreach (var actor in actors)
         {
-            if (actor.Type != "crew" || actor.State != ActorState.Alive)
+            if (actor.Type != ActorType.Crew || actor.State != ActorState.Alive)
             {
                 continue;
             }

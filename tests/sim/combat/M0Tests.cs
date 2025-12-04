@@ -163,7 +163,7 @@ public class M0Tests
         // Kill all enemies manually
         foreach (var actor in combat.Actors)
         {
-            if (actor.Type == "enemy")
+            if (actor.Type == ActorType.Enemy)
             {
                 actor.TakeDamage(9999);
             }
@@ -233,7 +233,7 @@ public class M0Tests
         var combat = new CombatState();
         combat.MapState = map;
         
-        var actor = combat.AddActor("crew", new Vector2I(1, 1));
+        var actor = combat.AddActor(ActorType.Crew, new Vector2I(1, 1));
         
         // Try to move into a wall
         combat.IssueMovementOrder(actor.Id, new Vector2I(1, 2));

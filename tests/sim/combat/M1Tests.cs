@@ -21,7 +21,7 @@ public class M1Tests
         var combat = new CombatState();
         combat.MapState = map;
 
-        var actor = combat.AddActor("crew", new Vector2I(2, 2));
+        var actor = combat.AddActor(ActorType.Crew, new Vector2I(2, 2));
         var actors = new List<Actor> { actor };
         var target = new Vector2I(5, 5);
 
@@ -40,10 +40,10 @@ public class M1Tests
         combat.MapState = map;
 
         // Create 2x2 formation
-        var actor1 = combat.AddActor("crew", new Vector2I(2, 2));
-        var actor2 = combat.AddActor("crew", new Vector2I(3, 2));
-        var actor3 = combat.AddActor("crew", new Vector2I(2, 3));
-        var actor4 = combat.AddActor("crew", new Vector2I(3, 3));
+        var actor1 = combat.AddActor(ActorType.Crew, new Vector2I(2, 2));
+        var actor2 = combat.AddActor(ActorType.Crew, new Vector2I(3, 2));
+        var actor3 = combat.AddActor(ActorType.Crew, new Vector2I(2, 3));
+        var actor4 = combat.AddActor(ActorType.Crew, new Vector2I(3, 3));
         var actors = new List<Actor> { actor1, actor2, actor3, actor4 };
 
         var target = new Vector2I(10, 10);
@@ -82,7 +82,7 @@ public class M1Tests
         var actors = new List<Actor>();
         for (int i = 0; i < 6; i++)
         {
-            actors.Add(combat.AddActor("crew", new Vector2I(2 + i, 2)));
+            actors.Add(combat.AddActor(ActorType.Crew, new Vector2I(2 + i, 2)));
         }
 
         var target = new Vector2I(10, 10);
@@ -114,7 +114,7 @@ public class M1Tests
         var combat = new CombatState();
         combat.MapState = map;
 
-        var actor = combat.AddActor("crew", new Vector2I(2, 2));
+        var actor = combat.AddActor(ActorType.Crew, new Vector2I(2, 2));
         var actors = new List<Actor> { actor };
 
         // Target the wall tile
@@ -178,7 +178,7 @@ public class M1Tests
         var combat = new CombatState();
         combat.MapState = map;
 
-        var actor = combat.AddActor("crew", new Vector2I(1, 2));
+        var actor = combat.AddActor(ActorType.Crew, new Vector2I(1, 2));
         
         // Try to move through the wall to (3,2)
         combat.IssueMovementOrder(actor.Id, new Vector2I(3, 2));
@@ -204,8 +204,8 @@ public class M1Tests
         combat.MapState = map;
 
         // Two actors at different positions
-        var actor1 = combat.AddActor("crew", new Vector2I(2, 2));
-        var actor2 = combat.AddActor("crew", new Vector2I(4, 2));
+        var actor1 = combat.AddActor(ActorType.Crew, new Vector2I(2, 2));
+        var actor2 = combat.AddActor(ActorType.Crew, new Vector2I(4, 2));
 
         // Both try to move to same tile
         combat.IssueMovementOrder(actor1.Id, new Vector2I(3, 2));
@@ -233,7 +233,7 @@ public class M1Tests
         var combat = new CombatState();
         combat.MapState = map;
 
-        var actor = combat.AddActor("crew", new Vector2I(2, 2));
+        var actor = combat.AddActor(ActorType.Crew, new Vector2I(2, 2));
         
         // Start moving
         combat.IssueMovementOrder(actor.Id, new Vector2I(5, 2));
@@ -261,10 +261,10 @@ public class M1Tests
         combat.MapState = map;
 
         // Create group of 4 units
-        var actor1 = combat.AddActor("crew", new Vector2I(2, 2));
-        var actor2 = combat.AddActor("crew", new Vector2I(3, 2));
-        var actor3 = combat.AddActor("crew", new Vector2I(2, 3));
-        var actor4 = combat.AddActor("crew", new Vector2I(3, 3));
+        var actor1 = combat.AddActor(ActorType.Crew, new Vector2I(2, 2));
+        var actor2 = combat.AddActor(ActorType.Crew, new Vector2I(3, 2));
+        var actor3 = combat.AddActor(ActorType.Crew, new Vector2I(2, 3));
+        var actor4 = combat.AddActor(ActorType.Crew, new Vector2I(3, 3));
         var actors = new List<Actor> { actor1, actor2, actor3, actor4 };
 
         var target = new Vector2I(10, 10);

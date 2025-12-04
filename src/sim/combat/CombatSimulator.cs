@@ -71,7 +71,7 @@ public static class CombatSimulator
         // Count survivors
         foreach (var actor in combat.Actors)
         {
-            if (actor.Type == "crew")
+            if (actor.Type == ActorType.Crew)
             {
                 if (actor.State == ActorState.Alive)
                 {
@@ -82,7 +82,7 @@ public static class CombatSimulator
                     summary.CrewDead++;
                 }
             }
-            else if (actor.Type == "enemy" && actor.State == ActorState.Dead)
+            else if (actor.Type == ActorType.Enemy && actor.State == ActorState.Dead)
             {
                 summary.EnemiesKilled++;
             }
@@ -119,7 +119,7 @@ public static class CombatSimulator
 
         foreach (var actor in combat.Actors)
         {
-            if (actor.Type == "crew")
+            if (actor.Type == ActorType.Crew)
             {
                 if (actor.State == ActorState.Alive)
                 {
@@ -130,7 +130,7 @@ public static class CombatSimulator
                     summary.CrewDead++;
                 }
             }
-            else if (actor.Type == "enemy" && actor.State == ActorState.Dead)
+            else if (actor.Type == ActorType.Enemy && actor.State == ActorState.Dead)
             {
                 summary.EnemiesKilled++;
             }

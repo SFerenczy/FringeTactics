@@ -180,9 +180,9 @@ public class M4Tests
         combat.MapState = map;
 
         // Attacker to the west, covered target behind half cover, exposed target in open
-        var attacker = combat.AddActor("crew", new Vector2I(3, 3));
-        var coveredTarget = combat.AddActor("enemy", new Vector2I(6, 3));  // half cover at (5,3) to west
-        var exposedTarget = combat.AddActor("enemy", new Vector2I(9, 3));  // no cover from west
+        var attacker = combat.AddActor(ActorType.Crew, new Vector2I(3, 3));
+        var coveredTarget = combat.AddActor(ActorType.Enemy, new Vector2I(6, 3));  // half cover at (5,3) to west
+        var exposedTarget = combat.AddActor(ActorType.Enemy, new Vector2I(9, 3));  // no cover from west
 
         var coveredChance = CombatResolver.CalculateHitChance(attacker, coveredTarget, attacker.EquippedWeapon, map);
         var exposedChance = CombatResolver.CalculateHitChance(attacker, exposedTarget, attacker.EquippedWeapon, map);
@@ -208,8 +208,8 @@ public class M4Tests
         var combat = new CombatState();
         combat.MapState = map;
 
-        var attacker = combat.AddActor("crew", new Vector2I(1, 2));
-        var target = combat.AddActor("enemy", new Vector2I(4, 2));
+        var attacker = combat.AddActor(ActorType.Crew, new Vector2I(1, 2));
+        var target = combat.AddActor(ActorType.Enemy, new Vector2I(4, 2));
 
         // Verify target actually has half cover
         AssertThat(map.GetCoverAgainst(target.GridPosition, attacker.GridPosition)).IsEqual(CoverHeight.Half);
@@ -244,8 +244,8 @@ public class M4Tests
         var combat = new CombatState(12345);
         combat.MapState = map;
         
-        var attacker = combat.AddActor("crew", new Vector2I(2, 2));
-        var target = combat.AddActor("enemy", new Vector2I(6, 3));
+        var attacker = combat.AddActor(ActorType.Crew, new Vector2I(2, 2));
+        var target = combat.AddActor(ActorType.Enemy, new Vector2I(6, 3));
         
         // Verify LOS exists (diagonal path misses wall)
         AssertThat(CombatResolver.HasLineOfSight(attacker.GridPosition, target.GridPosition, map)).IsTrue();
@@ -273,8 +273,8 @@ public class M4Tests
         var combat = new CombatState(12345);
         combat.MapState = map;
 
-        var attacker = combat.AddActor("crew", new Vector2I(1, 1));
-        var exposedTarget = combat.AddActor("enemy", new Vector2I(3, 1));
+        var attacker = combat.AddActor(ActorType.Crew, new Vector2I(1, 1));
+        var exposedTarget = combat.AddActor(ActorType.Enemy, new Vector2I(3, 1));
 
         var result = CombatResolver.ResolveAttack(attacker, exposedTarget, attacker.EquippedWeapon, map, combat.Rng.GetRandom());
 
@@ -300,9 +300,9 @@ public class M4Tests
         var combat = new CombatState();
         combat.MapState = map;
 
-        var westAttacker = combat.AddActor("crew", new Vector2I(1, 2));
-        var eastAttacker = combat.AddActor("crew", new Vector2I(7, 2));  // flanking from east
-        var target = combat.AddActor("enemy", new Vector2I(4, 2));       // half cover at (3,2) to west
+        var westAttacker = combat.AddActor(ActorType.Crew, new Vector2I(1, 2));
+        var eastAttacker = combat.AddActor(ActorType.Crew, new Vector2I(7, 2));  // flanking from east
+        var target = combat.AddActor(ActorType.Enemy, new Vector2I(4, 2));       // half cover at (3,2) to west
 
         // Verify west attacker sees cover, east attacker does not
         AssertThat(map.GetCoverAgainst(target.GridPosition, westAttacker.GridPosition)).IsEqual(CoverHeight.Half);
@@ -394,8 +394,8 @@ public class M4Tests
         var combat = new CombatState();
         combat.MapState = map;
 
-        var attacker = combat.AddActor("crew", new Vector2I(1, 1));
-        var target = combat.AddActor("enemy", new Vector2I(8, 1));  // Far away + cover
+        var attacker = combat.AddActor(ActorType.Crew, new Vector2I(1, 1));
+        var target = combat.AddActor(ActorType.Enemy, new Vector2I(8, 1));  // Far away + cover
 
         var hitChance = CombatResolver.CalculateHitChance(attacker, target, attacker.EquippedWeapon, map);
 
@@ -565,10 +565,10 @@ public class M4Tests
         var combat = new CombatState();
         combat.MapState = map;
 
-        var attacker = combat.AddActor("crew", new Vector2I(1, 2));
-        var lowTarget = combat.AddActor("enemy", new Vector2I(4, 2));   // behind low cover at (3,2)
-        var halfTarget = combat.AddActor("enemy", new Vector2I(6, 2));  // behind half cover at (5,2)
-        var highTarget = combat.AddActor("enemy", new Vector2I(8, 2));  // behind high cover at (7,2)
+        var attacker = combat.AddActor(ActorType.Crew, new Vector2I(1, 2));
+        var lowTarget = combat.AddActor(ActorType.Enemy, new Vector2I(4, 2));   // behind low cover at (3,2)
+        var halfTarget = combat.AddActor(ActorType.Enemy, new Vector2I(6, 2));  // behind half cover at (5,2)
+        var highTarget = combat.AddActor(ActorType.Enemy, new Vector2I(8, 2));  // behind high cover at (7,2)
 
         // Verify cover detection
         AssertThat(map.GetCoverAgainst(lowTarget.GridPosition, attacker.GridPosition)).IsEqual(CoverHeight.Low);
@@ -601,8 +601,8 @@ public class M4Tests
         var combat = new CombatState();
         combat.MapState = map;
 
-        var attacker = combat.AddActor("crew", new Vector2I(1, 2));
-        var target = combat.AddActor("enemy", new Vector2I(3, 2));
+        var attacker = combat.AddActor(ActorType.Crew, new Vector2I(1, 2));
+        var target = combat.AddActor(ActorType.Enemy, new Vector2I(3, 2));
 
         // Verify target has low cover
         AssertThat(map.GetCoverAgainst(target.GridPosition, attacker.GridPosition)).IsEqual(CoverHeight.Low);
@@ -633,8 +633,8 @@ public class M4Tests
         var combat = new CombatState();
         combat.MapState = map;
 
-        var attacker = combat.AddActor("crew", new Vector2I(1, 2));
-        var target = combat.AddActor("enemy", new Vector2I(3, 2));
+        var attacker = combat.AddActor(ActorType.Crew, new Vector2I(1, 2));
+        var target = combat.AddActor(ActorType.Enemy, new Vector2I(3, 2));
 
         AssertThat(map.GetCoverAgainst(target.GridPosition, attacker.GridPosition)).IsEqual(CoverHeight.Half);
 
@@ -664,8 +664,8 @@ public class M4Tests
         var combat = new CombatState();
         combat.MapState = map;
 
-        var attacker = combat.AddActor("crew", new Vector2I(1, 2));
-        var target = combat.AddActor("enemy", new Vector2I(3, 2));
+        var attacker = combat.AddActor(ActorType.Crew, new Vector2I(1, 2));
+        var target = combat.AddActor(ActorType.Enemy, new Vector2I(3, 2));
 
         AssertThat(map.GetCoverAgainst(target.GridPosition, attacker.GridPosition)).IsEqual(CoverHeight.High);
 
@@ -696,8 +696,8 @@ public class M4Tests
         var combat = new CombatState(12345);
         combat.MapState = map;
 
-        var attacker = combat.AddActor("crew", new Vector2I(2, 2));
-        var target = combat.AddActor("enemy", new Vector2I(5, 2));
+        var attacker = combat.AddActor(ActorType.Crew, new Vector2I(2, 2));
+        var target = combat.AddActor(ActorType.Enemy, new Vector2I(5, 2));
 
         // Verify cover height - target at (5,2), attacker at (2,2)
         // Direction from target to attacker is W, so check tile (4,2) = half cover
@@ -747,9 +747,9 @@ public class M4Tests
         var combat = new CombatState();
         combat.MapState = map;
 
-        var westAttacker = combat.AddActor("crew", new Vector2I(1, 2));
-        var eastAttacker = combat.AddActor("crew", new Vector2I(8, 3));
-        var target = combat.AddActor("enemy", new Vector2I(4, 2));
+        var westAttacker = combat.AddActor(ActorType.Crew, new Vector2I(1, 2));
+        var eastAttacker = combat.AddActor(ActorType.Crew, new Vector2I(8, 3));
+        var target = combat.AddActor(ActorType.Enemy, new Vector2I(4, 2));
 
         // West attacker sees half cover
         AssertThat(map.GetCoverAgainst(target.GridPosition, westAttacker.GridPosition)).IsEqual(CoverHeight.Half);

@@ -510,6 +510,54 @@ public class MissionConfig
     }
 
     /// <summary>
+    /// M7 test mission - session I/O and retreat testing.
+    /// Features clear entry zone, enemies, and retreat scenarios.
+    /// </summary>
+    public static MissionConfig CreateM7TestMission()
+    {
+        return new MissionConfig
+        {
+            Id = "m7_test",
+            Name = "M7 Test - Session I/O & Retreat",
+            GridSize = new Vector2I(20, 16),
+            MapTemplate = new string[]
+            {
+                "####################",
+                "#EE................#",
+                "#EE................#",
+                "#..................#",
+                "#....###....###....#",
+                "#....#.#....#.#....#",
+                "#....#D#....#D#....#",
+                "#....###....###....#",
+                "#..................#",
+                "#..................#",
+                "#..................#",
+                "#..................#",
+                "#....###....###....#",
+                "#....#T#....#T#....#",
+                "#....###....###....#",
+                "####################"
+            },
+            CrewWeaponId = "rifle",
+            CrewSpawnPositions = new List<Vector2I>
+            {
+                new Vector2I(1, 1),
+                new Vector2I(2, 1),
+                new Vector2I(1, 2),
+                new Vector2I(2, 2)
+            },
+            EnemySpawns = new List<EnemySpawn>
+            {
+                // Enemy in middle area
+                new EnemySpawn("grunt", new Vector2I(10, 9)),
+                // Enemy near bottom
+                new EnemySpawn("grunt", new Vector2I(14, 12))
+            }
+        };
+    }
+
+    /// <summary>
     /// Harder mission with more enemies and interior walls.
     /// </summary>
     public static MissionConfig CreateHardMission()

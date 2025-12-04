@@ -69,7 +69,7 @@ public partial class MissionInputController : Node
     private bool IsValidCrewSelection(int actorId)
     {
         var actor = combatState.GetActorById(actorId);
-        return actor != null && actor.Type == ActorTypes.Crew && actor.State == ActorState.Alive;
+        return actor != null && actor.Type == ActorType.Enemy && actor.State == ActorState.Alive;
     }
 
     private void OnSelectionChanged(IReadOnlyList<int> selected)
@@ -292,7 +292,7 @@ public partial class MissionInputController : Node
 
         foreach (var actor in combatState.Actors)
         {
-            if (actor.Type != ActorTypes.Crew || actor.State != ActorState.Alive)
+            if (actor.Type != ActorType.Enemy || actor.State != ActorState.Alive)
             {
                 continue;
             }
@@ -322,7 +322,7 @@ public partial class MissionInputController : Node
         var clickedActor = combatState.GetActorAtPosition(gridPos);
         float currentTime = Time.GetTicksMsec() / 1000f;
 
-        if (clickedActor != null && clickedActor.Type == ActorTypes.Crew && clickedActor.State == ActorState.Alive)
+        if (clickedActor != null && clickedActor.Type == ActorType.Enemy && clickedActor.State == ActorState.Alive)
         {
             // Double-click detection
             if (clickedActor.Id == lastClickedActorId &&
@@ -490,7 +490,7 @@ public partial class MissionInputController : Node
 
         var actorId = selection.SelectedActorIds[0];
         var actor = combatState.GetActorById(actorId);
-        if (actor == null || actor.Type != ActorTypes.Crew)
+        if (actor == null || actor.Type != ActorType.Enemy)
         {
             GD.Print("[Ability] Only crew can use abilities");
             return;

@@ -13,7 +13,8 @@ tests/
         ├── M3Tests.cs    # M3 milestone tests (hit chance, ammo, auto-defend, combat)
         ├── M4Tests.cs    # M4 milestone tests (directional cover, cover heights, flanking, balance)
         ├── M5Tests.cs    # M5 milestone tests (interactables, channeled actions, doors, terminals, hazards)
-        └── M6Tests.cs    # M6 milestone tests (stealth, detection, alarm, perception, door/LOS integration)
+        ├── M6Tests.cs    # M6 milestone tests (stealth, detection, alarm, perception, door/LOS integration)
+        └── M7Tests.cs    # M7 milestone tests (session I/O, retreat integration)
 ```
 
 ## Running Tests

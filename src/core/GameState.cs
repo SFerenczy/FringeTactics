@@ -232,7 +232,28 @@ public partial class GameState : Node
         StartSandboxWithConfig(config);
     }
 
+    /// <summary>
+    /// Start the M7 test mission for testing session I/O and retreat.
+    /// </summary>
+    public void StartM7TestMission()
+    {
+        var config = MissionConfig.CreateM7TestMission();
+        StartSandboxWithConfig(config);
+    }
+
+    /// <summary>
+    /// End mission with boolean victory flag (legacy compatibility).
+    /// </summary>
     public void EndMission(bool victory, CombatState combatState)
+    {
+        var outcome = combatState.FinalOutcome ?? (victory ? MissionOutcome.Victory : MissionOutcome.Defeat);
+        EndMission(outcome, combatState);
+    }
+    
+    /// <summary>
+    /// End mission with detailed outcome (M7).
+    /// </summary>
+    public void EndMission(MissionOutcome outcome, CombatState combatState)
     {
         if (Campaign == null)
         {
@@ -241,53 +262,16 @@ public partial class GameState : Node
             return;
         }
 
-        var result = new MissionResult { Victory = victory };
-
-        foreach (var actor in combatState.Actors)
-        {
-            if (actor.Type == "enemy" && actor.State == ActorState.Dead)
-            {
-                result.EnemiesKilled++;
-            }
-        }
-
-        foreach (var actor in combatState.Actors)
-        {
-            if (actor.Type != "crew") continue;
-            if (!actorToCrewMap.TryGetValue(actor.Id, out var crewId)) continue;
-
-            if (actor.State == ActorState.Dead)
-            {
-                result.DeadCrewIds.Add(crewId);
-            }
-            else
-            {
-                // Surviving crew get XP
-                int xp = CampaignState.XP_PARTICIPATION;
-                // Bonus XP for kills (divide kills among survivors)
-                result.CrewXpGains[crewId] = xp;
-
-                // Injured if took significant damage
-                if (actor.Hp < actor.MaxHp * 0.5f)
-                {
-                    result.InjuredCrewIds.Add(crewId);
-                }
-            }
-        }
-
-        // Distribute kill XP among survivors
-        int survivorCount = result.CrewXpGains.Count;
-        if (survivorCount > 0 && result.EnemiesKilled > 0)
-        {
-            int killXpPerSurvivor = (result.EnemiesKilled * CampaignState.XP_PER_KILL) / survivorCount;
-            foreach (var crewId in new List<int>(result.CrewXpGains.Keys))
-            {
-                result.CrewXpGains[crewId] += killXpPerSurvivor;
-            }
-        }
-
-        Campaign.ApplyMissionResult(result);
+        // Build formal mission output using MissionOutputBuilder (M7)
+        var output = MissionOutputBuilder.Build(combatState, outcome, actorToCrewMap);
+        
+        // Log mission summary
+        LogMissionSummary(output);
+        
+        // Apply mission output directly to campaign
+        Campaign.ApplyMissionOutput(output);
         CurrentCombat = null;
+        actorToCrewMap.Clear();
 
         // Check for campaign over (all crew dead)
         if (Campaign.IsCampaignOver())
@@ -301,12 +285,36 @@ public partial class GameState : Node
         Mode = "sector";
         GoToSectorView();
     }
+    
+    
+    /// <summary>
+    /// Log detailed mission summary to console.
+    /// </summary>
+    private void LogMissionSummary(MissionOutput output)
+    {
+        GD.Print($"\n[GameState] === MISSION COMPLETE ===");
+        GD.Print($"  Outcome: {output.Outcome}");
+        GD.Print($"  Duration: {output.MissionDurationSeconds:F1}s ({output.TicksElapsed} ticks)");
+        GD.Print($"  Enemies: {output.EnemiesKilled} killed, {output.EnemiesRemaining} remaining");
+        GD.Print($"  Alarm: {(output.AlarmTriggered ? "Triggered" : "Quiet")}");
+        
+        GD.Print($"  --- Crew Results ---");
+        foreach (var crew in output.CrewOutcomes)
+        {
+            var accuracy = crew.ShotsFired > 0 ? (float)crew.ShotsHit / crew.ShotsFired * 100 : 0;
+            GD.Print($"    {crew.Name}: {crew.Status}");
+            GD.Print($"      HP: {crew.FinalHp}/{crew.MaxHp}, Kills: {crew.Kills}, Shots: {crew.ShotsFired} ({accuracy:F0}% acc)");
+            GD.Print($"      Ammo: {crew.AmmoRemaining} remaining ({crew.AmmoUsed} used), XP: +{crew.SuggestedXp}");
+        }
+        GD.Print($"==============================\n");
+    }
 
     public void GoToMainMenu()
     {
         Mode = "menu";
         Campaign = null;
         CurrentCombat = null;
+        actorToCrewMap.Clear();
         GetTree().ChangeSceneToFile(MainMenuScene);
     }
 

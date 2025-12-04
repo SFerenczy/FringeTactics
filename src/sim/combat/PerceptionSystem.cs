@@ -61,7 +61,7 @@ public class PerceptionSystem
     {
         foreach (var actor in combatState.Actors)
         {
-            if (actor.Type == ActorTypes.Enemy && actor.State == ActorState.Alive)
+            if (actor.Type == ActorType.Enemy && actor.State == ActorState.Alive)
             {
                 GetOrCreatePerception(actor.Id);
             }
@@ -76,7 +76,7 @@ public class PerceptionSystem
         
         foreach (var actor in combatState.Actors)
         {
-            if (actor.Type != ActorTypes.Enemy || actor.State != ActorState.Alive)
+            if (actor.Type != ActorType.Enemy || actor.State != ActorState.Alive)
             {
                 continue;
             }
@@ -97,7 +97,7 @@ public class PerceptionSystem
         
         foreach (var crew in combatState.Actors)
         {
-            if (crew.Type != ActorTypes.Crew || crew.State != ActorState.Alive)
+            if (crew.Type != ActorType.Crew || crew.State != ActorState.Alive)
             {
                 continue;
             }
@@ -181,7 +181,7 @@ public class PerceptionSystem
     {
         foreach (var actor in combatState.Actors)
         {
-            if (actor.Type == ActorTypes.Enemy && actor.State == ActorState.Alive)
+            if (actor.Type == ActorType.Enemy && actor.State == ActorState.Alive)
             {
                 AlertEnemy(actor.Id);
             }

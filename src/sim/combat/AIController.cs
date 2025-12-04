@@ -35,7 +35,7 @@ public class AIController
     {
         foreach (var actor in combatState.Actors)
         {
-            if (actor.Type != ActorTypes.Enemy || actor.State != ActorState.Alive)
+            if (actor.Type != ActorType.Enemy || actor.State != ActorState.Alive)
             {
                 continue;
             }
@@ -119,7 +119,7 @@ public class AIController
 
         foreach (var actor in combatState.Actors)
         {
-            if (actor.Type == ActorTypes.Enemy || actor.State != ActorState.Alive)
+            if (actor.Type == ActorType.Enemy || actor.State != ActorState.Alive)
             {
                 continue;
             }

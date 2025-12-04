@@ -20,9 +20,14 @@ Real-time with pause (RTwP) tactical combat logic.
 - **VisibilitySystem.cs** - Fog of war: tracks per-tile visibility (Unknown/Revealed/Visible), LOS from crew positions
 - **InteractionSystem.cs** - Interactable management: doors, terminals, hazards; channeled actions (M5)
 - **PerceptionSystem.cs** - Enemy perception and alarm state: tracks per-enemy detection (Idle/Alerted), global AlarmState (Quiet/Alerted), LOS-based detection (M6)
-- **MissionFactory.cs** - Builds CombatState from MissionConfig + CampaignState. Initializes perception system after spawning actors (M6)
+- **MissionFactory.cs** - Builds CombatState from MissionConfig + CampaignState. Has BuildFromInput() for formal MissionInput (M7). Initializes perception system after spawning actors (M6)
 - **CombatSimulator.cs** - Headless battle simulator for testing/balancing
 - **FormationCalculator.cs** - Stateless utility for group movement: calculates spread destinations maintaining relative formation
+
+### Contracts (M7)
+- **MissionInput.cs** - Formal input contract: CrewDeployment, MissionObjective, MissionContext. Defines all data needed to start a mission.
+- **MissionOutput.cs** - Formal output contract: MissionOutcome, CrewOutcome, ObjectiveStatus. Defines all data returned after mission ends.
+- **MissionOutputBuilder.cs** - Stateless utility to build MissionOutput from completed CombatState. Extracts crew outcomes, statistics, and objective results.
 
 ### Data
 - **WeaponData.cs** - Weapon stats: range, damage, cooldown ticks, magazine size, reload time
@@ -54,6 +59,7 @@ Real-time with pause (RTwP) tactical combat logic.
 - Track fog of war visibility per tile
 - Track enemy perception and detection states (M6)
 - Manage global alarm state (M6)
+- Handle retreat initiation and extraction detection (M7)
 
 ## Dependencies
 

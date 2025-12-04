@@ -160,7 +160,7 @@ public partial class ActorView : Node2D
         }
 
         // Only show ammo for player units
-        if (actor.Type != ActorTypes.Crew)
+        if (actor.Type != ActorType.Crew)
         {
             ammoLabel.Visible = false;
             return;
@@ -198,7 +198,7 @@ public partial class ActorView : Node2D
             return;
         }
 
-        if (actor.IsReloading && actor.Type == ActorTypes.Crew)
+        if (actor.IsReloading && actor.Type == ActorType.Crew)
         {
             reloadIndicator.Visible = true;
             
@@ -289,7 +289,7 @@ public partial class ActorView : Node2D
     
     public void UpdateDetectionState(DetectionState state)
     {
-        if (actor == null || actor.Type != ActorTypes.Enemy)
+        if (actor == null || actor.Type != ActorType.Enemy)
         {
             detectionIndicator.Visible = false;
             return;

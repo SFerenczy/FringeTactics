@@ -21,119 +21,206 @@ public static class MissionFactory
 
     /// <summary>
     /// Build a CombatState from campaign crew and mission config.
+    /// Internally converts to MissionInput and delegates to BuildFromInput.
     /// </summary>
     public static MissionBuildResult BuildFromCampaign(CampaignState campaign, MissionConfig config, int? seed = null)
     {
-        var result = new MissionBuildResult();
-        var combat = new CombatState(seed ?? System.Environment.TickCount);
-        result.CombatState = combat;
-
-        // Build map from config using MapBuilder (pass InteractionSystem for template parsing)
-        combat.MapState = MapBuilder.BuildFromConfig(config, combat.Interactions);
-        combat.MissionConfig = config;
-        combat.InitializeVisibility();
+        var input = ConvertConfigToInput(config, seed ?? System.Environment.TickCount);
         
-        // Spawn additional interactables from config
-        SpawnInteractables(combat, config);
-
-        // Spawn crew from campaign with configured weapon
+        // Add crew from campaign
         var crewWeapon = WeaponData.FromId(config.CrewWeaponId);
         var aliveCrew = campaign.GetAliveCrew();
         for (int i = 0; i < aliveCrew.Count && i < config.CrewSpawnPositions.Count; i++)
         {
             var crewMember = aliveCrew[i];
-            var spawnPos = config.CrewSpawnPositions[i];
+            input.Crew.Add(new CrewDeployment
+            {
+                CampaignCrewId = crewMember.Id,
+                Name = crewMember.Name,
+                MaxHp = 100,
+                CurrentHp = 100,
+                WeaponId = config.CrewWeaponId,
+                AmmoInMagazine = crewWeapon.MagazineSize,
+                ReserveAmmo = 90,
+                SpawnPosition = config.CrewSpawnPositions[i]
+            });
+        }
+        
+        return BuildFromInput(input);
+    }
 
-            var actor = combat.AddActor("crew", spawnPos);
-            actor.CrewId = crewMember.Id;
-            actor.EquippedWeapon = crewWeapon;
+    /// <summary>
+    /// Build a CombatState for sandbox mode (no campaign).
+    /// Internally converts to MissionInput and delegates to BuildFromInput.
+    /// </summary>
+    public static CombatState BuildSandbox(MissionConfig config, int? seed = null)
+    {
+        var input = ConvertConfigToInput(config, seed ?? System.Environment.TickCount);
+        
+        // Add sandbox crew
+        var crewWeapon = WeaponData.FromId(config.CrewWeaponId);
+        var sandboxCrewCount = Mathf.Min(3, config.CrewSpawnPositions.Count);
+        for (int i = 0; i < sandboxCrewCount; i++)
+        {
+            input.Crew.Add(new CrewDeployment
+            {
+                CampaignCrewId = -1,
+                Name = $"Crew {i + 1}",
+                MaxHp = 100,
+                CurrentHp = 100,
+                WeaponId = config.CrewWeaponId,
+                AmmoInMagazine = crewWeapon.MagazineSize,
+                ReserveAmmo = 90,
+                SpawnPosition = config.CrewSpawnPositions[i]
+            });
+        }
+        
+        return BuildFromInput(input).CombatState;
+    }
+    
+    /// <summary>
+    /// Convert a MissionConfig to MissionInput for unified processing.
+    /// </summary>
+    private static MissionInput ConvertConfigToInput(MissionConfig config, int seed)
+    {
+        var input = new MissionInput
+        {
+            MissionId = config.Id,
+            MissionName = config.Name,
+            MapTemplate = config.MapTemplate,
+            GridSize = config.GridSize,
+            Seed = seed
+        };
+        
+        // Convert enemy spawns
+        foreach (var spawn in config.EnemySpawns)
+        {
+            input.Enemies.Add(spawn);
+        }
+        
+        // Convert interactable spawns
+        foreach (var spawn in config.InteractableSpawns)
+        {
+            input.Interactables.Add(spawn);
+        }
+        
+        return input;
+    }
 
-            result.ActorToCrewMap[actor.Id] = crewMember.Id;
+    /// <summary>
+    /// Build a CombatState from a formal MissionInput (M7).
+    /// This is the preferred method for campaign-driven missions.
+    /// </summary>
+    public static MissionBuildResult BuildFromInput(MissionInput input)
+    {
+        var result = new MissionBuildResult();
+        var combat = new CombatState(input.Seed);
+        result.CombatState = combat;
 
-            SimLog.Log($"[MissionFactory] Spawned {crewMember.Name} (Crew#{crewMember.Id}) as Actor#{actor.Id} at {spawnPos} with {crewWeapon.Name}");
+        // Build map from template
+        if (input.MapTemplate != null && input.MapTemplate.Length > 0)
+        {
+            combat.MapState = MapBuilder.BuildFromTemplate(input.MapTemplate, combat.Interactions);
+        }
+        else if (input.GridSize.HasValue)
+        {
+            combat.MapState = new MapState(input.GridSize.Value);
         }
 
-        // Spawn enemies from definitions
-        SpawnEnemies(combat, config);
+        // Store mission config for reference
+        combat.MissionConfig = new MissionConfig
+        {
+            Id = input.MissionId,
+            Name = input.MissionName
+        };
+
+        combat.InitializeVisibility();
+
+        // Spawn additional interactables from input
+        foreach (var spawn in input.Interactables)
+        {
+            var interactable = combat.Interactions.AddInteractable(spawn.Type, spawn.Position, spawn.Properties);
+            if (spawn.InitialState.HasValue)
+            {
+                interactable.SetState(spawn.InitialState.Value);
+            }
+            SimLog.Log($"[MissionFactory] Spawned {spawn.Type}#{interactable.Id} at {spawn.Position}");
+        }
+
+        // Spawn crew from deployment specs
+        var entryZoneIndex = 0;
+        foreach (var crew in input.Crew)
+        {
+            var spawnPos = crew.SpawnPosition ?? GetNextEntryZonePosition(combat.MapState, ref entryZoneIndex);
+            var actor = combat.AddActor(ActorType.Crew, spawnPos);
+
+            // Apply crew data
+            actor.Name = crew.Name;
+            actor.CrewId = crew.CampaignCrewId;
+            actor.MaxHp = crew.MaxHp;
+            actor.Hp = crew.CurrentHp;
+            actor.Stats["aim"] = (int)((crew.Accuracy - 0.7f) * 100);
+            
+            // Apply move speed modifier if different from default (base is 4.0 in Actor)
+            if (crew.MoveSpeed != 2.0f)
+            {
+                var speedMultiplier = crew.MoveSpeed / 2.0f;
+                actor.Modifiers.Add(StatModifier.Multiplicative("crew_base", StatType.MoveSpeed, speedMultiplier, -1));
+            }
+
+            // Apply weapon
+            if (!string.IsNullOrEmpty(crew.WeaponId))
+            {
+                actor.EquippedWeapon = WeaponData.FromId(crew.WeaponId);
+                actor.CurrentMagazine = crew.AmmoInMagazine;
+                actor.ReserveAmmo = crew.ReserveAmmo;
+            }
+
+            result.ActorToCrewMap[actor.Id] = crew.CampaignCrewId;
+
+            SimLog.Log($"[MissionFactory] Spawned {crew.Name} (Crew#{crew.CampaignCrewId}) as Actor#{actor.Id} at {spawnPos}");
+        }
+
+        // Spawn enemies
+        var hasEnemies = input.Enemies.Count > 0;
+        combat.SetHasEnemyObjective(hasEnemies);
+
+        foreach (var spawn in input.Enemies)
+        {
+            var enemyDef = Definitions.Enemies.Get(spawn.EnemyId);
+            var weaponData = WeaponData.FromId(enemyDef.WeaponId);
+
+            var actor = combat.AddActor(ActorType.Enemy, spawn.Position);
+            actor.Name = enemyDef.Name;
+            actor.Hp = enemyDef.Hp;
+            actor.MaxHp = enemyDef.Hp;
+            actor.EquippedWeapon = weaponData;
+
+            SimLog.Log($"[MissionFactory] Spawned {enemyDef.Name} (Actor#{actor.Id}) at {spawn.Position}");
+        }
 
         // Initialize perception system after all actors are spawned
         combat.InitializePerception();
 
-        // Calculate initial visibility so entry zone is visible at start
+        // Calculate initial visibility
         combat.Visibility.UpdateVisibility(combat.Actors);
 
         return result;
     }
 
     /// <summary>
-    /// Build a CombatState for sandbox mode (no campaign).
+    /// Get next available entry zone position for spawning.
     /// </summary>
-    public static CombatState BuildSandbox(MissionConfig config, int? seed = null)
+    private static Vector2I GetNextEntryZonePosition(MapState map, ref int index)
     {
-        var combat = new CombatState(seed ?? System.Environment.TickCount);
-
-        // Build map from config using MapBuilder (pass InteractionSystem for template parsing)
-        combat.MapState = MapBuilder.BuildFromConfig(config, combat.Interactions);
-        combat.MissionConfig = config;
-        combat.InitializeVisibility();
-        
-        // Spawn additional interactables from config
-        SpawnInteractables(combat, config);
-
-        // Spawn sandbox crew with configured weapon
-        var crewWeapon = WeaponData.FromId(config.CrewWeaponId);
-        var sandboxCrewCount = Mathf.Min(3, config.CrewSpawnPositions.Count);
-        for (int i = 0; i < sandboxCrewCount; i++)
+        if (map.EntryZone.Count == 0)
         {
-            var spawnPos = config.CrewSpawnPositions[i];
-            var actor = combat.AddActor("crew", spawnPos);
-            actor.EquippedWeapon = crewWeapon;
-            SimLog.Log($"[MissionFactory] Spawned sandbox crew Actor#{actor.Id} at {spawnPos} with {crewWeapon.Name}");
+            return new Vector2I(1, 1); // Fallback
         }
 
-        // Spawn enemies from definitions
-        SpawnEnemies(combat, config);
-
-        // Initialize perception system after all actors are spawned
-        combat.InitializePerception();
-
-        // Calculate initial visibility so entry zone is visible at start
-        combat.Visibility.UpdateVisibility(combat.Actors);
-
-        return combat;
+        var pos = map.EntryZone[index % map.EntryZone.Count];
+        index++;
+        return pos;
     }
 
-    private static void SpawnEnemies(CombatState combat, MissionConfig config)
-    {
-        var hasEnemies = config.EnemySpawns.Count > 0;
-        combat.SetHasEnemyObjective(hasEnemies);
-        
-        foreach (var spawn in config.EnemySpawns)
-        {
-            var enemyDef = Definitions.Enemies.Get(spawn.EnemyId);
-            var weaponData = WeaponData.FromId(enemyDef.WeaponId);
-
-            var actor = combat.AddActor("enemy", spawn.Position);
-            actor.Hp = enemyDef.Hp;
-            actor.MaxHp = enemyDef.Hp;
-            actor.EquippedWeapon = weaponData;
-
-            SimLog.Log($"[MissionFactory] Spawned {enemyDef.Name} (Actor#{actor.Id}) at {spawn.Position} with {weaponData.Name}, HP:{enemyDef.Hp}");
-        }
-    }
-    
-    private static void SpawnInteractables(CombatState combat, MissionConfig config)
-    {
-        foreach (var spawn in config.InteractableSpawns)
-        {
-            var interactable = combat.Interactions.AddInteractable(spawn.Type, spawn.Position, spawn.Properties);
-            
-            if (spawn.InitialState.HasValue)
-            {
-                interactable.SetState(spawn.InitialState.Value);
-            }
-            
-            SimLog.Log($"[MissionFactory] Spawned {spawn.Type}#{interactable.Id} at {spawn.Position}");
-        }
-    }
 }

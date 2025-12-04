@@ -117,10 +117,13 @@ public class AttackSystem
         var attackType = isAutoDefend ? "auto-defend" : "attack";
         var coverTag = GetCoverTag(result.TargetCoverHeight);
 
+        // Record shot statistics (M7)
+        attacker.RecordShot(result.Hit, result.Hit ? result.Damage : 0);
+        
         if (result.Hit)
         {
-            var isGodMode = (target.Type == ActorTypes.Crew && DevTools.CrewGodMode) ||
-                           (target.Type == ActorTypes.Enemy && DevTools.EnemyGodMode);
+            var isGodMode = (target.Type == ActorType.Crew && DevTools.CrewGodMode) ||
+                           (target.Type == ActorType.Enemy && DevTools.EnemyGodMode);
 
             if (!isGodMode)
             {
@@ -136,6 +139,7 @@ public class AttackSystem
             }
             else
             {
+                attacker.RecordKill(); // M7 statistics
                 SimLog.Log($"[Combat] {target.Type}#{target.Id} DIED!");
                 ActorDied?.Invoke(target);
             }
@@ -164,7 +168,7 @@ public class AttackSystem
 
     private static void UpdateStats(CombatStats stats, Actor attacker, AttackResult result)
     {
-        if (attacker.Type == ActorTypes.Crew)
+        if (attacker.Type == ActorType.Crew)
         {
             stats.PlayerShotsFired++;
             if (result.Hit)

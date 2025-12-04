@@ -18,7 +18,8 @@ public partial class Actor
     private const int BaseVisionRadius = 8;
 
     public int Id { get; set; }
-    public string Type { get; set; } // "crew", "enemy", "drone"
+    public ActorType Type { get; set; }
+    public string Name { get; set; }
     public int CrewId { get; set; } = -1;
     public Vector2I GridPosition { get; set; } = Vector2I.Zero;
     public Vector2 VisualPosition { get; set; } = Vector2.Zero; // smooth position for rendering
@@ -47,6 +48,14 @@ public partial class Actor
     
     // Event for reload completion
     public event Action<Actor> ReloadCompleted;
+    
+    // Combat statistics (M7)
+    public int Kills { get; private set; } = 0;
+    public int ShotsFired { get; private set; } = 0;
+    public int ShotsHit { get; private set; } = 0;
+    public int TotalDamageDealt { get; private set; } = 0;
+    public int TotalDamageTaken { get; private set; } = 0;
+    public int AmmoUsed { get; private set; } = 0;
 
     // Channeled action state
     public bool IsChanneling { get; private set; } = false;
@@ -73,7 +82,7 @@ public partial class Actor
     public event Action<Actor, int> DamageTaken; // actor, damage amount
     public event Action<Actor> Died;
 
-    public Actor(int actorId, string actorType)
+    public Actor(int actorId, ActorType actorType)
     {
         Id = actorId;
         Type = actorType;
@@ -271,6 +280,7 @@ public partial class Actor
         }
 
         Hp -= damage;
+        TotalDamageTaken += damage; // M7 statistics
         DamageTaken?.Invoke(this, damage);
         
         // Interrupt channeling when taking damage
@@ -306,7 +316,29 @@ public partial class Actor
         if (CurrentMagazine > 0)
         {
             CurrentMagazine--;
+            AmmoUsed++;
         }
+    }
+    
+    /// <summary>
+    /// Record a shot fired by this actor (M7 statistics).
+    /// </summary>
+    public void RecordShot(bool hit, int damage = 0)
+    {
+        ShotsFired++;
+        if (hit)
+        {
+            ShotsHit++;
+            TotalDamageDealt += damage;
+        }
+    }
+    
+    /// <summary>
+    /// Record a kill by this actor (M7 statistics).
+    /// </summary>
+    public void RecordKill()
+    {
+        Kills++;
     }
 
     /// <summary>

@@ -136,7 +136,7 @@ public class M5Tests
         
         var doorPos = new Vector2I(5, 5);
         var door = combat.Interactions.AddInteractable(InteractableTypes.Door, doorPos);
-        var actor = combat.AddActor("crew", new Vector2I(5, 4));
+        var actor = combat.AddActor(ActorType.Crew, new Vector2I(5, 4));
         
         // Door starts closed
         AssertThat(door.State).IsEqual(InteractableState.DoorClosed);
@@ -162,7 +162,7 @@ public class M5Tests
         var door = combat.Interactions.AddInteractable(InteractableTypes.Door, doorPos,
             new System.Collections.Generic.Dictionary<string, object> { { "hackDifficulty", 40 } });
         door.SetState(InteractableState.DoorLocked);
-        var actor = combat.AddActor("crew", new Vector2I(5, 4));
+        var actor = combat.AddActor(ActorType.Crew, new Vector2I(5, 4));
         
         // Execute interaction - should start channeling
         combat.Interactions.ExecuteInteraction(actor, door, "hack");
@@ -212,7 +212,7 @@ public class M5Tests
         var terminalPos = new Vector2I(5, 5);
         var terminal = combat.Interactions.AddInteractable(InteractableTypes.Terminal, terminalPos,
             new System.Collections.Generic.Dictionary<string, object> { { "hackDifficulty", 60 } });
-        var actor = combat.AddActor("crew", new Vector2I(5, 4));
+        var actor = combat.AddActor(ActorType.Crew, new Vector2I(5, 4));
         actor.Map = map;
         
         // Start hacking
@@ -235,7 +235,7 @@ public class M5Tests
         var terminalPos = new Vector2I(5, 5);
         var terminal = combat.Interactions.AddInteractable(InteractableTypes.Terminal, terminalPos,
             new System.Collections.Generic.Dictionary<string, object> { { "hackDifficulty", 60 } });
-        var actor = combat.AddActor("crew", new Vector2I(5, 4));
+        var actor = combat.AddActor(ActorType.Crew, new Vector2I(5, 4));
         
         // Start hacking
         combat.Interactions.ExecuteInteraction(actor, terminal, "hack");
@@ -270,7 +270,7 @@ public class M5Tests
         var terminalPos = new Vector2I(5, 5);
         var terminal = combat.Interactions.AddInteractable(InteractableTypes.Terminal, terminalPos,
             new System.Collections.Generic.Dictionary<string, object> { { "hackDifficulty", 60 } });
-        var actor = combat.AddActor("crew", new Vector2I(5, 4));
+        var actor = combat.AddActor(ActorType.Crew, new Vector2I(5, 4));
         
         // Start hacking
         combat.Interactions.ExecuteInteraction(actor, terminal, "hack");
@@ -289,7 +289,7 @@ public class M5Tests
         var terminalPos = new Vector2I(5, 5);
         var terminal = combat.Interactions.AddInteractable(InteractableTypes.Terminal, terminalPos,
             new System.Collections.Generic.Dictionary<string, object> { { "hackDifficulty", 60 } });
-        var actor = combat.AddActor("crew", new Vector2I(5, 4));
+        var actor = combat.AddActor(ActorType.Crew, new Vector2I(5, 4));
         actor.Map = map;
         
         // Start hacking
@@ -335,7 +335,7 @@ public class M5Tests
             });
         
         // Place actor in blast radius
-        var actor = combat.AddActor("crew", new Vector2I(5, 4));
+        var actor = combat.AddActor(ActorType.Crew, new Vector2I(5, 4));
         var initialHp = actor.Hp;
         
         // Trigger hazard
@@ -427,11 +427,11 @@ public class M5Tests
         var door = combat.Interactions.AddInteractable(InteractableTypes.Door, doorPos);
         
         // Adjacent actor can interact
-        var adjacentActor = combat.AddActor("crew", new Vector2I(5, 4));
+        var adjacentActor = combat.AddActor(ActorType.Crew, new Vector2I(5, 4));
         AssertThat(combat.Interactions.CanInteract(adjacentActor, door)).IsTrue();
         
         // Far actor cannot interact
-        var farActor = combat.AddActor("crew", new Vector2I(1, 1));
+        var farActor = combat.AddActor(ActorType.Crew, new Vector2I(1, 1));
         AssertThat(combat.Interactions.CanInteract(farActor, door)).IsFalse();
     }
     
@@ -536,7 +536,7 @@ public class M5Tests
                 { "hackDifficulty", 5 },
                 { "objectiveId", "hack_terminal_1" }
             });
-        var actor = combat.AddActor("crew", new Vector2I(5, 4));
+        var actor = combat.AddActor(ActorType.Crew, new Vector2I(5, 4));
         
         // Objective not set initially
         AssertThat(combat.Objectives.ContainsKey("hack_terminal_1")).IsFalse();
@@ -581,14 +581,14 @@ public class M5Tests
         var door = combat.Interactions.GetInteractableAt(new Vector2I(4, 2));
         AssertThat(door).IsNotNull();
         
-        // Place crew on one side, enemy on other
-        var crew = combat.AddActor("crew", new Vector2I(2, 3));
-        var enemy = combat.AddActor("enemy", new Vector2I(5, 3));
+        // Place crew on one side, ActorType.Enemy on other
+        var crew = combat.AddActor(ActorType.Crew, new Vector2I(2, 3));
+        var enemy = combat.AddActor(ActorType.Enemy, new Vector2I(5, 3));
         
         // Update visibility with door closed
         combat.Visibility.UpdateVisibility(combat.Actors);
         
-        // Door blocks LOS - enemy should not be visible through door
+        // Door blocks LOS - ActorType.Enemy should not be visible through door
         // (Note: depends on exact LOS algorithm, this tests the integration)
         AssertThat(door.BlocksLOS()).IsTrue();
         
@@ -639,7 +639,7 @@ public class M5Tests
         var terminalPos = new Vector2I(5, 5);
         var terminal = combat.Interactions.AddInteractable(InteractableTypes.Terminal, terminalPos,
             new System.Collections.Generic.Dictionary<string, object> { { "hackDifficulty", 60 } });
-        var actor = combat.AddActor("crew", new Vector2I(5, 4));
+        var actor = combat.AddActor(ActorType.Crew, new Vector2I(5, 4));
         
         // Can fire initially
         AssertThat(actor.CanFire()).IsTrue();
@@ -662,7 +662,7 @@ public class M5Tests
         
         var doorPos = new Vector2I(5, 5);
         var door = combat.Interactions.AddInteractable(InteractableTypes.Door, doorPos);
-        var actor = combat.AddActor("crew", new Vector2I(5, 4));
+        var actor = combat.AddActor(ActorType.Crew, new Vector2I(5, 4));
         
         AssertThat(door.State).IsEqual(InteractableState.DoorClosed);
         

@@ -10,6 +10,17 @@ public enum CrewRole
     Scout
 }
 
+/// <summary>
+/// Standard injury type identifiers.
+/// </summary>
+public static class InjuryTypes
+{
+    public const string Wounded = "wounded";
+    public const string Critical = "critical";
+    public const string Concussed = "concussed";
+    public const string Bleeding = "bleeding";
+}
+
 public class CrewMember
 {
     public int Id { get; set; }
