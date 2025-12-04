@@ -353,6 +353,8 @@ public class M3Tests
         // by checking which target gets selected after AI thinks
         
         combat.InitializeVisibility();
+        combat.InitializePerception();
+        combat.Perception.AlertAllEnemies();
         combat.TimeSystem.Resume();
         
         // Run AI tick
@@ -381,6 +383,8 @@ public class M3Tests
         woundedTarget.TakeDamage(woundedTarget.MaxHp - 10); // Nearly dead
 
         combat.InitializeVisibility();
+        combat.InitializePerception();
+        combat.Perception.AlertAllEnemies();
         combat.TimeSystem.Resume();
         
         // Run AI tick
