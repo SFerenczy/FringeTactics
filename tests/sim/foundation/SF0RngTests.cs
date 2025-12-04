@@ -9,7 +9,7 @@ namespace FringeTactics.Tests;
 /// These tests don't require Godot runtime as they test pure C# logic.
 /// </summary>
 [TestSuite]
-public class RngStreamTests
+public class SF0RngTests
 {
     [TestCase]
     public void SameSeed_ProducesSameSequence()

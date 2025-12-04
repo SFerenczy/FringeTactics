@@ -21,6 +21,14 @@ public static class JobSystem
     private static int nextJobId = 0;
 
     /// <summary>
+    /// Reset the job ID counter. Call when starting a new campaign.
+    /// </summary>
+    public static void ResetJobIdCounter()
+    {
+        nextJobId = 0;
+    }
+
+    /// <summary>
     /// Generate job offers for a given node.
     /// </summary>
     public static List<Job> GenerateJobsForNode(Sector sector, int nodeId, Random rng, int count = 3)
@@ -123,7 +131,8 @@ public static class JobSystem
             Reward = JobReward.FromDifficulty(difficulty),
             RepGain = GetRepGain(difficulty),
             RepLoss = GetRepLoss(difficulty),
-            FailureRepLoss = GetFailureRepLoss(difficulty)
+            FailureRepLoss = GetFailureRepLoss(difficulty),
+            DeadlineDays = GetDeadlineDays(difficulty, rng)
         };
 
         return job;
@@ -198,6 +207,17 @@ public static class JobSystem
             JobDifficulty.Medium => 10,
             JobDifficulty.Hard => 15,
             _ => 5
+        };
+    }
+
+    private static int GetDeadlineDays(JobDifficulty difficulty, Random rng)
+    {
+        return difficulty switch
+        {
+            JobDifficulty.Easy => rng.Next(5, 10),    // 5-9 days
+            JobDifficulty.Medium => rng.Next(7, 14),  // 7-13 days
+            JobDifficulty.Hard => rng.Next(10, 20),   // 10-19 days
+            _ => 7
         };
     }
 

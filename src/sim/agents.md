@@ -7,6 +7,7 @@ Pure game logic. The "inside" of the hexagonal architecture.
 - **SimLog.cs** - Logging abstraction: adapter layer subscribes to receive log messages
 - **RngStream.cs** - Single seeded RNG stream with serializable state for save/load
 - **RngService.cs** - Multi-stream RNG manager with isolated campaign/tactical streams
+- **CampaignTime.cs** - Campaign day tracking with explicit advancement API
 
 ## Subdirectories
 

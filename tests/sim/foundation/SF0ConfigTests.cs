@@ -7,7 +7,7 @@ namespace FringeTactics.Tests;
 /// SF0 Milestone tests - validates config loading and validation.
 /// </summary>
 [TestSuite]
-public class ValidationResultTests
+public class SF0ConfigTests
 {
     [TestCase]
     public void NewResult_IsValid()

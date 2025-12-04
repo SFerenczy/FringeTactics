@@ -5,15 +5,19 @@ Campaign/meta-game state: crew management, resources, mission tracking, jobs.
 ## Files
 
 - **CampaignState.cs** - Root strategic state:
+  - Time: CampaignTime for day tracking
+  - Rng: RngService for deterministic generation
   - Resources: money, fuel, parts, meds, ammo
   - Sector and CurrentNodeId for location
   - Crew roster management
   - Jobs: AvailableJobs, CurrentJob
   - FactionRep: reputation with each faction (0-100)
-  - Mission costs and rewards
+  - Mission costs and rewards (including time cost)
   - Campaign stats: TotalMoneyEarned, TotalCrewDeaths
-  - `ApplyMissionResult(MissionResult)` for XP, injuries, deaths, job rewards
-  - `AcceptJob()`, `ClearCurrentJob()`, `IsAtJobTarget()`
+  - `ApplyMissionOutput(MissionOutput)` for XP, injuries, deaths, job rewards
+  - `AcceptJob()` sets absolute deadline, `ClearCurrentJob()`, `IsAtJobTarget()`
+  - `Rest()` heals injuries and advances time
+  - `ShouldRest()` checks if rest would be beneficial
   - `IsCampaignOver()` checks if all crew are dead
 - **CrewMember.cs** - Individual crew member:
   - Identity: id, name, role (Soldier/Medic/Tech/Scout)
@@ -26,18 +30,22 @@ Campaign/meta-game state: crew management, resources, mission tracking, jobs.
   - `GenerateTestSector(seed)` creates 9-node test map
 - **TravelSystem.cs** - Travel between nodes:
   - Fuel cost based on distance
+  - Time cost based on distance (minimum 1 day)
   - `CanTravel()`, `Travel()` methods
+  - `CalculateTravelDays()`, `GetTravelCostSummary()`
   - Future: ambush encounters
 - **Job.cs** - Job/contract definition:
   - JobDifficulty enum: Easy, Medium, Hard
   - JobType enum: Assault, Defense, Extraction
   - JobReward: money, parts, fuel, ammo
   - Employer/target faction, rep gains/losses
+  - DeadlineDays (relative), DeadlineDay (absolute), HasDeadline
   - Links to target node and MissionConfig
 - **JobSystem.cs** - Stateless job generation:
-  - `GenerateJobsForNode()` creates 2-3 jobs at a location
+  - `GenerateJobsForNode()` creates 2-3 jobs at a location with deadlines
   - `GenerateMissionConfig()` creates combat setup from job difficulty
-  - Determines difficulty based on target node type
+  - `ResetJobIdCounter()` resets job ID counter for new campaigns
+  - Determines difficulty and deadline based on target node type
 - **ShipState.cs** - Ship status (future use)
 
 ## Responsibilities

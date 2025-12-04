@@ -336,4 +336,42 @@ public partial class GameState : Node
     {
         return Campaign != null;
     }
+
+    // --- Time Query Accessors ---
+
+    /// <summary>
+    /// Get current campaign day (0 if no campaign).
+    /// </summary>
+    public int GetCampaignDay()
+    {
+        return Campaign?.Time?.CurrentDay ?? 0;
+    }
+
+    /// <summary>
+    /// Get current tactical tick (0 if no mission).
+    /// </summary>
+    public int GetTacticalTick()
+    {
+        return CurrentCombat?.TimeSystem?.CurrentTick ?? 0;
+    }
+
+    /// <summary>
+    /// Get formatted campaign day string (empty if no campaign).
+    /// </summary>
+    public string GetCampaignDayFormatted()
+    {
+        return Campaign?.Time?.FormatCurrentDay() ?? "";
+    }
+
+    /// <summary>
+    /// Get formatted tactical time string (empty if no mission).
+    /// </summary>
+    public string GetTacticalTimeFormatted()
+    {
+        if (CurrentCombat == null) return "";
+        float seconds = CurrentCombat.TimeSystem.GetCurrentTime();
+        int minutes = (int)(seconds / 60);
+        int secs = (int)(seconds % 60);
+        return $"{minutes}:{secs:D2}";
+    }
 }

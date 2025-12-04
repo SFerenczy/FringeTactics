@@ -23,6 +23,10 @@ public static class TravelSystem
     public const float FUEL_PER_DISTANCE = 0.05f;
     public const int MIN_FUEL_COST = 2;
 
+    // Time cost per unit of distance
+    public const float DAYS_PER_DISTANCE = 0.02f;
+    public const int MIN_TRAVEL_DAYS = 1;
+
     // Random encounter chance (for future use)
     public const float AMBUSH_CHANCE = 0.15f;
 
@@ -34,6 +38,16 @@ public static class TravelSystem
         var distance = sector.GetTravelDistance(fromId, toId);
         var cost = (int)(distance * FUEL_PER_DISTANCE);
         return Math.Max(cost, MIN_FUEL_COST);
+    }
+
+    /// <summary>
+    /// Calculate time cost in days to travel between two nodes.
+    /// </summary>
+    public static int CalculateTravelDays(Sector sector, int fromId, int toId)
+    {
+        var distance = sector.GetTravelDistance(fromId, toId);
+        var days = (int)Math.Ceiling(distance * DAYS_PER_DISTANCE);
+        return Math.Max(days, MIN_TRAVEL_DAYS);
     }
 
     /// <summary>
@@ -67,6 +81,16 @@ public static class TravelSystem
     }
 
     /// <summary>
+    /// Get a summary of travel costs for display.
+    /// </summary>
+    public static string GetTravelCostSummary(CampaignState campaign, Sector sector, int toId)
+    {
+        var fuelCost = CalculateFuelCost(sector, campaign.CurrentNodeId, toId);
+        var timeCost = CalculateTravelDays(sector, campaign.CurrentNodeId, toId);
+        return $"{fuelCost} fuel, {CampaignTime.FormatDuration(timeCost)}";
+    }
+
+    /// <summary>
     /// Attempt to travel to a node. Returns result and consumes fuel on success.
     /// </summary>
     public static TravelResult Travel(CampaignState campaign, Sector sector, int toId, Random rng = null)
@@ -81,14 +105,17 @@ public static class TravelSystem
         if (campaign.Fuel < fuelCost)
             return TravelResult.NotEnoughFuel;
 
-        // Consume fuel
+        // Calculate costs
         var fromNode = sector.GetNode(campaign.CurrentNodeId);
         var toNode = sector.GetNode(toId);
+        var timeCost = CalculateTravelDays(sector, campaign.CurrentNodeId, toId);
 
+        // Consume resources
         campaign.Fuel -= fuelCost;
+        campaign.Time.AdvanceDays(timeCost);
         campaign.CurrentNodeId = toId;
 
-        SimLog.Log($"[Travel] Traveled from {fromNode?.Name} to {toNode?.Name}. Fuel: -{fuelCost} (remaining: {campaign.Fuel})");
+        SimLog.Log($"[Travel] Traveled from {fromNode?.Name} to {toNode?.Name}. Cost: {fuelCost} fuel, {timeCost} day(s). (Fuel remaining: {campaign.Fuel})");
 
         // Random encounter check (for future use)
         if (rng != null && toNode?.Type == NodeType.Contested)

@@ -64,23 +64,43 @@ Unified time representation for both campaign and tactical layers.
 
 **Key capabilities:**
 
-- `TimeState` with:
-  - `CampaignDay`: Current day (int).
-  - `TacticalTick`: Current tick within mission (reset per mission).
-- Time advancement API:
-  - `AdvanceCampaignDays(int days)`.
-  - `AdvanceTacticalTick()` (already exists in Tactical).
-- Time queries:
-  - `GetCampaignDay()`.
-  - `GetTacticalTick()`.
+- `CampaignTime` with:
+  - `CurrentDay`: Current day (int, 1-indexed).
+  - `AdvanceDays(int days)`: Advance campaign time.
+  - `DayAdvanced` event for subscribers.
+- `TimeSystem` (tactical, unchanged):
+  - `CurrentTick`: Current tick within mission.
+  - `Update(dt)`: Advance ticks at 20/sec.
+- Time queries via `GameState`:
+  - `GetCampaignDay()`, `GetCampaignDayFormatted()`.
+  - `GetTacticalTick()`, `GetTacticalTimeFormatted()`.
+- Time-consuming actions:
+  - Travel: +1-N days based on distance.
+  - Mission: +1 day on start.
+  - Rest: +3 days, heals 1 injury.
+- Job deadlines:
+  - `DeadlineDays` (relative), `DeadlineDay` (absolute).
+  - `HasDeadlinePassed()`, `DaysUntilDeadline()`.
 
 **Why here:**  
 Campaign time is needed for contracts, deadlines, and travel. Tactical already has tick-based time.
 
 **Deliverables:**
-- `TimeState` class.
-- Integration with existing `CombatState` tick system.
+- `CampaignTime` class with serialization support.
+- Integration with `CampaignState`, `TravelSystem`, `JobSystem`.
+- Time query accessors in `GameState`.
 - Unit tests for time advancement.
+
+**Status:** ✅ Complete
+
+**Implementation:**
+- `CampaignTime.cs` - Campaign day tracking with advancement API
+- `CampaignState.Time` - Owns CampaignTime, Rest() action, mission time cost
+- `TravelSystem` - Travel time cost based on distance
+- `Job` - DeadlineDays, DeadlineDay, HasDeadline
+- `JobSystem` - Generates jobs with deadlines
+- `GameState` - Time query accessors
+- Unit tests in `SF1TimeTests.cs` (31 tests)
 
 ---
 

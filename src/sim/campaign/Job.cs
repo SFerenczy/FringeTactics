@@ -79,6 +79,23 @@ public class Job
     public int RepLoss { get; set; } = 5;    // Rep with target on success (negative)
     public int FailureRepLoss { get; set; } = 10; // Rep with employer on failure
 
+    // Deadline tracking
+    /// <summary>
+    /// Days from acceptance until deadline (used during generation).
+    /// </summary>
+    public int DeadlineDays { get; set; } = 0;
+
+    /// <summary>
+    /// Absolute day by which the job must be completed.
+    /// Set when job is accepted. 0 means no deadline.
+    /// </summary>
+    public int DeadlineDay { get; set; } = 0;
+
+    /// <summary>
+    /// Check if this job has a deadline.
+    /// </summary>
+    public bool HasDeadline => DeadlineDay > 0;
+
     // Mission config (generated when job is accepted)
     public MissionConfig MissionConfig { get; set; } = null;
 

@@ -3,20 +3,14 @@ using System.Collections.Generic;
 
 namespace FringeTactics;
 
-/// <summary>
-/// Result data from a completed mission, used to update campaign.
-/// </summary>
-public class MissionResult
-{
-    public bool Victory { get; set; }
-    public List<int> DeadCrewIds { get; set; } = new();
-    public List<int> InjuredCrewIds { get; set; } = new();
-    public Dictionary<int, int> CrewXpGains { get; set; } = new(); // crewId -> xp
-    public int EnemiesKilled { get; set; }
-}
-
 public class CampaignState
 {
+    // Time tracking
+    public CampaignTime Time { get; private set; } = new();
+
+    // RNG service for deterministic generation
+    public RngService Rng { get; private set; }
+
     // Resources
     public int Money { get; set; } = 0;
     public int Fuel { get; set; } = 100;
@@ -50,6 +44,11 @@ public class CampaignState
     // Mission costs (consumed on mission start)
     public const int MISSION_AMMO_COST = 10;
     public const int MISSION_FUEL_COST = 5;
+    public const int MISSION_TIME_DAYS = 1;
+
+    // Rest configuration
+    public const int REST_TIME_DAYS = 3;
+    public const int REST_HEAL_AMOUNT = 1;
 
     // Rewards
     public const int VICTORY_MONEY = 150;
@@ -68,13 +67,18 @@ public class CampaignState
     /// </summary>
     public static CampaignState CreateNew(int sectorSeed = 12345)
     {
+        // Reset static counters for fresh campaign
+        JobSystem.ResetJobIdCounter();
+
         var campaign = new CampaignState
         {
             Money = 200,
             Fuel = 100,
             Parts = 50,
             Meds = 5,
-            Ammo = 50
+            Ammo = 50,
+            Time = new CampaignTime(),
+            Rng = new RngService(sectorSeed)
         };
 
         // Generate sector
@@ -94,19 +98,27 @@ public class CampaignState
         campaign.AddCrew("Casey", CrewRole.Tech);
 
         // Generate initial jobs at starting location
-        campaign.RefreshJobsAtCurrentNode(new Random(sectorSeed));
+        campaign.RefreshJobsAtCurrentNode();
 
         return campaign;
     }
 
     /// <summary>
-    /// Refresh available jobs at current node.
+    /// Refresh available jobs at current node using campaign RNG.
     /// </summary>
-    public void RefreshJobsAtCurrentNode(Random rng = null)
+    public void RefreshJobsAtCurrentNode()
     {
-        rng ??= new Random();
+        var rng = CreateSeededRandom();
         AvailableJobs = JobSystem.GenerateJobsForNode(Sector, CurrentNodeId, rng);
         SimLog.Log($"[Campaign] Generated {AvailableJobs.Count} jobs at {GetCurrentNode()?.Name}");
+    }
+
+    /// <summary>
+    /// Create a seeded Random from campaign RNG for deterministic generation.
+    /// </summary>
+    private Random CreateSeededRandom()
+    {
+        return new Random(Rng?.Campaign?.NextInt(int.MaxValue) ?? Environment.TickCount);
     }
 
     /// <summary>
@@ -129,8 +141,15 @@ public class CampaignState
         CurrentJob = job;
         AvailableJobs.Remove(job);
 
-        // Generate mission config for the job
-        CurrentJob.MissionConfig = JobSystem.GenerateMissionConfig(job, new Random());
+        // Set absolute deadline from relative days
+        if (job.DeadlineDays > 0)
+        {
+            job.DeadlineDay = Time.CurrentDay + job.DeadlineDays;
+            SimLog.Log($"[Campaign] Job deadline: Day {job.DeadlineDay} ({job.DeadlineDays} days from now)");
+        }
+
+        // Generate mission config for the job using campaign RNG
+        CurrentJob.MissionConfig = JobSystem.GenerateMissionConfig(job, CreateSeededRandom());
 
         SimLog.Log($"[Campaign] Accepted job: {job.Title} at {Sector.GetNode(job.TargetNodeId)?.Name}");
         return true;
@@ -251,7 +270,46 @@ public class CampaignState
     {
         Ammo -= MISSION_AMMO_COST;
         Fuel -= MISSION_FUEL_COST;
-        SimLog.Log($"[Campaign] Mission started. Consumed {MISSION_AMMO_COST} ammo, {MISSION_FUEL_COST} fuel.");
+        Time.AdvanceDays(MISSION_TIME_DAYS);
+        SimLog.Log($"[Campaign] Mission started. Cost: {MISSION_AMMO_COST} ammo, {MISSION_FUEL_COST} fuel, {MISSION_TIME_DAYS} day(s).");
+    }
+
+    /// <summary>
+    /// Rest at current location. Heals injuries, advances time.
+    /// </summary>
+    /// <returns>Number of injuries healed.</returns>
+    public int Rest()
+    {
+        int healed = 0;
+
+        foreach (var crew in GetAliveCrew())
+        {
+            if (healed >= REST_HEAL_AMOUNT) break;
+            if (crew.Injuries.Count > 0)
+            {
+                var injury = crew.Injuries[0];
+                crew.HealInjury(injury);
+                healed++;
+                SimLog.Log($"[Campaign] {crew.Name}'s {injury} healed during rest.");
+            }
+        }
+
+        Time.AdvanceDays(REST_TIME_DAYS);
+        SimLog.Log($"[Campaign] Rested for {REST_TIME_DAYS} days. Healed {healed} injury(ies).");
+
+        return healed;
+    }
+
+    /// <summary>
+    /// Check if rest would be beneficial (any injuries to heal).
+    /// </summary>
+    public bool ShouldRest()
+    {
+        foreach (var crew in GetAliveCrew())
+        {
+            if (crew.Injuries.Count > 0) return true;
+        }
+        return false;
     }
 
     /// <summary>
@@ -361,90 +419,6 @@ public class CampaignState
     }
 
     /// <summary>
-    /// Apply full mission result to campaign state.
-    /// DEPRECATED: Use ApplyMissionOutput instead.
-    /// </summary>
-    [System.Obsolete("Use ApplyMissionOutput(MissionOutput) instead")]
-    public void ApplyMissionResult(MissionResult result)
-    {
-        // Mark dead crew
-        foreach (var crewId in result.DeadCrewIds)
-        {
-            var crew = GetCrewById(crewId);
-            if (crew != null)
-            {
-                crew.IsDead = true;
-                TotalCrewDeaths++;
-                SimLog.Log($"[Campaign] {crew.Name} KIA.");
-            }
-        }
-
-        // Apply injuries to survivors
-        foreach (var crewId in result.InjuredCrewIds)
-        {
-            var crew = GetCrewById(crewId);
-            if (crew != null && !crew.IsDead)
-            {
-                crew.AddInjury(InjuryTypes.Wounded);
-                SimLog.Log($"[Campaign] {crew.Name} was wounded.");
-            }
-        }
-
-        // Award XP
-        foreach (var kvp in result.CrewXpGains)
-        {
-            var crew = GetCrewById(kvp.Key);
-            if (crew != null && !crew.IsDead)
-            {
-                bool leveledUp = crew.AddXp(kvp.Value);
-                if (leveledUp)
-                {
-                    SimLog.Log($"[Campaign] {crew.Name} leveled up to {crew.Level}!");
-                }
-            }
-        }
-
-        // Apply victory/defeat rewards
-        if (result.Victory)
-        {
-            MissionsCompleted++;
-
-            // Apply job rewards if we have an active job
-            if (CurrentJob != null)
-            {
-                ApplyJobReward(CurrentJob.Reward);
-                ModifyFactionRep(CurrentJob.EmployerFactionId, CurrentJob.RepGain);
-                ModifyFactionRep(CurrentJob.TargetFactionId, -CurrentJob.RepLoss);
-                SimLog.Log($"[Campaign] Job completed: {CurrentJob.Title}");
-                ClearCurrentJob();
-            }
-            else
-            {
-                // Fallback rewards for non-job missions
-                Money += VICTORY_MONEY;
-                Parts += VICTORY_PARTS;
-                SimLog.Log($"[Campaign] Victory! +${VICTORY_MONEY}, +{VICTORY_PARTS} parts.");
-            }
-        }
-        else
-        {
-            MissionsFailed++;
-
-            // Apply job failure penalty
-            if (CurrentJob != null)
-            {
-                ModifyFactionRep(CurrentJob.EmployerFactionId, -CurrentJob.FailureRepLoss);
-                SimLog.Log($"[Campaign] Job failed: {CurrentJob.Title}");
-                ClearCurrentJob();
-            }
-            else
-            {
-                SimLog.Log("[Campaign] Mission failed. No rewards.");
-            }
-        }
-    }
-
-    /// <summary>
     /// Apply job reward to campaign resources.
     /// </summary>
     private void ApplyJobReward(JobReward reward)
@@ -463,22 +437,6 @@ public class CampaignState
     public bool IsCampaignOver()
     {
         return GetAliveCrew().Count == 0;
-    }
-
-    /// <summary>
-    /// Legacy method for compatibility - converts to MissionResult.
-    /// DEPRECATED: Use ApplyMissionOutput instead.
-    /// </summary>
-    [System.Obsolete("Use ApplyMissionOutput(MissionOutput) instead")]
-    public void ApplyMissionResult(bool victory, List<int> deadCrewIds)
-    {
-        #pragma warning disable CS0618 // Suppress obsolete warning for internal call
-        ApplyMissionResult(new MissionResult
-        {
-            Victory = victory,
-            DeadCrewIds = deadCrewIds
-        });
-        #pragma warning restore CS0618
     }
 
     /// <summary>

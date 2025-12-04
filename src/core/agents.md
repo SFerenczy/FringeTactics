@@ -26,6 +26,13 @@ Orchestrates game flow and state transitions. Bridges sim logic with scene prese
 - `Campaign` - Current CampaignState (null if no campaign)
 - `CurrentCombat` - Current CombatState for active mission (null between missions)
 
+## Time Query Accessors
+
+- `GetCampaignDay()` - Current campaign day (0 if no campaign)
+- `GetTacticalTick()` - Current tactical tick (0 if no mission)
+- `GetCampaignDayFormatted()` - "Day N" string
+- `GetTacticalTimeFormatted()` - "M:SS" string
+
 ## Dependencies
 
 - **Imports from**: `src/sim/` (CampaignState, CombatState, ActorState)
