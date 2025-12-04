@@ -4,11 +4,57 @@ using System.Linq;
 namespace FringeTactics;
 
 /// <summary>
+/// Simple stats snapshot from combat state.
+/// </summary>
+public struct CombatStatsSnapshot
+{
+    public int EnemiesKilled;
+    public int EnemiesRemaining;
+    public int CrewDeaths;
+    public int CrewInjured;
+    public int CrewAlive;
+}
+
+/// <summary>
 /// Builds a MissionOutput from the final CombatState.
 /// Stateless utility for extracting mission results.
 /// </summary>
 public static class MissionOutputBuilder
 {
+    /// <summary>
+    /// Calculate stats snapshot from current actor states.
+    /// Used by both MissionOutputBuilder and CombatState.EndMission for consistency.
+    /// </summary>
+    public static CombatStatsSnapshot CalculateStats(IEnumerable<Actor> actors)
+    {
+        var stats = new CombatStatsSnapshot();
+        
+        foreach (var actor in actors)
+        {
+            if (actor.Type == ActorType.Enemy)
+            {
+                if (actor.State == ActorState.Dead)
+                    stats.EnemiesKilled++;
+                else
+                    stats.EnemiesRemaining++;
+            }
+            else if (actor.Type == ActorType.Crew)
+            {
+                if (actor.State == ActorState.Dead)
+                {
+                    stats.CrewDeaths++;
+                }
+                else
+                {
+                    stats.CrewAlive++;
+                    if (actor.Hp < actor.MaxHp)
+                        stats.CrewInjured++;
+                }
+            }
+        }
+        
+        return stats;
+    }
     /// <summary>
     /// Build complete mission output from combat state.
     /// </summary>
@@ -20,32 +66,18 @@ public static class MissionOutputBuilder
         MissionOutcome outcome,
         Dictionary<int, int> actorToCrewMap)
     {
+        var stats = CalculateStats(combat.Actors);
+        
         var output = new MissionOutput
         {
             Outcome = outcome,
             MissionId = combat.MissionConfig?.Id ?? "unknown",
             TicksElapsed = combat.TimeSystem.CurrentTick,
             MissionDurationSeconds = combat.TimeSystem.CurrentTick * TimeSystem.TickDuration,
-            AlarmTriggered = combat.Perception.AlarmState == AlarmState.Alerted
+            AlarmTriggered = combat.Perception.AlarmState == AlarmState.Alerted,
+            EnemiesKilled = stats.EnemiesKilled,
+            EnemiesRemaining = stats.EnemiesRemaining
         };
-
-        // Count enemies
-        foreach (var actor in combat.Actors)
-        {
-            if (actor.Type != ActorType.Enemy)
-            {
-                continue;
-            }
-
-            if (actor.State == ActorState.Dead)
-            {
-                output.EnemiesKilled++;
-            }
-            else
-            {
-                output.EnemiesRemaining++;
-            }
-        }
 
         // Build crew outcomes
         foreach (var actor in combat.Actors)

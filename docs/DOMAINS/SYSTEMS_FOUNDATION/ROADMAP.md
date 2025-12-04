@@ -120,14 +120,25 @@ Decouple domains via a simple event system.
   - `MissionCompletedEvent`.
   - `ActorDiedEvent`.
   - `ResourceChangedEvent`.
+  - `DayAdvancedEvent`.
+  - `TravelCompletedEvent`.
+  - `JobAcceptedEvent`, `JobCompletedEvent`.
+  - `FactionRepChangedEvent`.
+  - `CrewLeveledUpEvent`, `CrewInjuredEvent`, `CrewDiedEvent`.
 
 **Why here:**  
 Simulation (G3) needs to subscribe to events from other domains. Starting simple now avoids coupling.
 
 **Deliverables:**
 - `EventBus` class.
-- Event type definitions.
+- Event type definitions (`Events.cs`).
 - Integration points in Tactical (emit on mission end).
+- Integration points in Campaign (emit on day advance, resource change, travel).
+- Unit and integration tests.
+
+**Status:** ✅ Complete
+
+**Implementation:** See `SF2_IMPLEMENTATION.md` for detailed breakdown.
 
 ---
 

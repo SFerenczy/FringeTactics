@@ -8,9 +8,11 @@ Unit and integration tests using GdUnit4.
 tests/
 └── sim/
     ├── foundation/
-    │   ├── SF0RngTests.cs    # SF0 RNG tests (RngStream, RngService, determinism, save/restore)
-    │   ├── SF0ConfigTests.cs # SF0 config tests (validation, ConfigRegistry, Definitions)
-    │   └── SF1TimeTests.cs   # SF1 time tests (CampaignTime, day advancement, deadlines)
+    │   ├── SF0RngTests.cs      # SF0 RNG tests (RngStream, RngService, determinism, save/restore)
+    │   ├── SF0ConfigTests.cs   # SF0 config tests (validation, ConfigRegistry, Definitions)
+    │   ├── SF1TimeTests.cs     # SF1 time tests (CampaignTime, day advancement, deadlines)
+    │   ├── SF2EventBusTests.cs     # SF2 event bus tests (30 tests: subscribe, publish, unsubscribe, event types)
+    │   └── SF2IntegrationTests.cs  # SF2 integration tests (12 tests: wiring, cross-domain events, travel)
     └── combat/
         ├── M0Tests.cs    # M0 milestone tests (map, movement, time)
         ├── M1Tests.cs    # M1 milestone tests (formation, collision, group movement)
@@ -75,6 +77,8 @@ or from project folder (adjust to your local setup)
 - `ValidationResult` - Error/warning accumulation, merge
 - `ConfigRegistry` - Config loading, validation, fail-fast mode
 - `CampaignTime` - Day advancement, deadline checking, save/restore
+- `EventBus` - Subscribe, unsubscribe, publish, type isolation, exception handling
+- `Events` - Event struct data integrity, value equality
 - `WeaponDef.Validate` - Required fields, value ranges
 - `EnemyDef.Validate` - Required fields, weapon reference
 - `AbilityDef.Validate` - Required fields, value ranges

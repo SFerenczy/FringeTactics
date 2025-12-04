@@ -13,6 +13,11 @@ public partial class GameState : Node
     public CampaignState Campaign { get; private set; } = null;
     public CombatState CurrentCombat { get; private set; } = null;
     public string Mode { get; private set; } = "menu";
+    
+    /// <summary>
+    /// Central event bus for cross-domain communication.
+    /// </summary>
+    public EventBus EventBus { get; private set; } = new();
 
     // Track crew-to-actor mapping for mission results
     private Dictionary<int, int> actorToCrewMap = new(); // actorId -> crewId
@@ -38,10 +43,30 @@ public partial class GameState : Node
 
     public void StartNewCampaign()
     {
+        EventBus.Clear();
         Campaign = CampaignState.CreateNew();
+        WireEventBus(Campaign);
         Mode = "sector";
         GD.Print($"[GameState] New campaign started at {Campaign.GetCurrentNode()?.Name}");
         GoToSectorView();
+    }
+    
+    /// <summary>
+    /// Wire event bus to campaign state and its subsystems.
+    /// IMPORTANT: Must be called after loading a campaign from save (SF3).
+    /// </summary>
+    private void WireEventBus(CampaignState campaign)
+    {
+        campaign.EventBus = EventBus;
+        campaign.Time.EventBus = EventBus;
+    }
+    
+    /// <summary>
+    /// Wire event bus to combat state.
+    /// </summary>
+    private void WireEventBus(CombatState combat)
+    {
+        combat.EventBus = EventBus;
     }
 
     /// <summary>
@@ -116,6 +141,7 @@ public partial class GameState : Node
         var config = Campaign.CurrentJob.MissionConfig ?? MissionConfig.CreateTestMission();
         var buildResult = MissionFactory.BuildFromCampaign(Campaign, config);
         CurrentCombat = buildResult.CombatState;
+        WireEventBus(CurrentCombat);
         actorToCrewMap = buildResult.ActorToCrewMap;
 
         GD.Print($"[GameState] Starting mission: {Campaign.CurrentJob.Title}");
@@ -139,6 +165,7 @@ public partial class GameState : Node
     {
         currentSandboxConfig = config;
         CurrentCombat = MissionFactory.BuildSandbox(config);
+        WireEventBus(CurrentCombat);
         actorToCrewMap.Clear();
 
         Mode = "mission";
@@ -315,6 +342,7 @@ public partial class GameState : Node
         Campaign = null;
         CurrentCombat = null;
         actorToCrewMap.Clear();
+        EventBus.Clear();
         GetTree().ChangeSceneToFile(MainMenuScene);
     }
 

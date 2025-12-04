@@ -8,6 +8,8 @@ Pure game logic. The "inside" of the hexagonal architecture.
 - **RngStream.cs** - Single seeded RNG stream with serializable state for save/load
 - **RngService.cs** - Multi-stream RNG manager with isolated campaign/tactical streams
 - **CampaignTime.cs** - Campaign day tracking with explicit advancement API
+- **EventBus.cs** - Typed event bus for cross-domain communication (SF2)
+- **Events.cs** - Event type definitions (readonly record structs) for EventBus
 
 ## Subdirectories
 

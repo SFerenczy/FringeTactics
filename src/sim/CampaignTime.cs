@@ -18,6 +18,11 @@ public class CampaignTime
     /// </summary>
     public int DaysElapsed => CurrentDay - 1;
 
+    /// <summary>
+    /// Event bus for cross-domain communication (optional, set by GameState).
+    /// </summary>
+    public EventBus EventBus { get; set; }
+
     public event Action<int, int> DayAdvanced; // (oldDay, newDay)
 
     public CampaignTime()
@@ -48,6 +53,12 @@ public class CampaignTime
 
         SimLog.Log($"[CampaignTime] Day {oldDay} -> Day {CurrentDay} (+{days} days)");
         DayAdvanced?.Invoke(oldDay, CurrentDay);
+        
+        EventBus?.Publish(new DayAdvancedEvent(
+            OldDay: oldDay,
+            NewDay: CurrentDay,
+            DaysAdvanced: days
+        ));
 
         return CurrentDay;
     }

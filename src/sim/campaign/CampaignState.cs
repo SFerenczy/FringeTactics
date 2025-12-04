@@ -10,6 +10,11 @@ public class CampaignState
 
     // RNG service for deterministic generation
     public RngService Rng { get; private set; }
+    
+    /// <summary>
+    /// Event bus for cross-domain communication (optional, set by GameState).
+    /// </summary>
+    public EventBus EventBus { get; set; }
 
     // Resources
     public int Money { get; set; } = 0;
@@ -152,6 +157,14 @@ public class CampaignState
         CurrentJob.MissionConfig = JobSystem.GenerateMissionConfig(job, CreateSeededRandom());
 
         SimLog.Log($"[Campaign] Accepted job: {job.Title} at {Sector.GetNode(job.TargetNodeId)?.Name}");
+        
+        EventBus?.Publish(new JobAcceptedEvent(
+            JobId: job.Id,
+            JobTitle: job.Title,
+            TargetNodeId: job.TargetNodeId,
+            DeadlineDay: job.DeadlineDay
+        ));
+        
         return true;
     }
 
@@ -186,14 +199,24 @@ public class CampaignState
     {
         if (string.IsNullOrEmpty(factionId)) return;
 
+        int oldRep = FactionRep.GetValueOrDefault(factionId, 50);
         if (!FactionRep.ContainsKey(factionId))
         {
             FactionRep[factionId] = 50;
         }
 
         FactionRep[factionId] = Math.Clamp(FactionRep[factionId] + delta, 0, 100);
+        int newRep = FactionRep[factionId];
         var factionName = Sector.Factions.GetValueOrDefault(factionId, factionId);
-        SimLog.Log($"[Campaign] {factionName} rep: {FactionRep[factionId]} ({(delta >= 0 ? "+" : "")}{delta})");
+        SimLog.Log($"[Campaign] {factionName} rep: {newRep} ({(delta >= 0 ? "+" : "")}{delta})");
+        
+        EventBus?.Publish(new FactionRepChangedEvent(
+            FactionId: factionId,
+            FactionName: factionName,
+            OldRep: oldRep,
+            NewRep: newRep,
+            Delta: delta
+        ));
     }
 
     /// <summary>
@@ -268,10 +291,29 @@ public class CampaignState
     /// </summary>
     public void ConsumeMissionResources()
     {
+        int oldAmmo = Ammo;
+        int oldFuel = Fuel;
+        
         Ammo -= MISSION_AMMO_COST;
         Fuel -= MISSION_FUEL_COST;
         Time.AdvanceDays(MISSION_TIME_DAYS);
         SimLog.Log($"[Campaign] Mission started. Cost: {MISSION_AMMO_COST} ammo, {MISSION_FUEL_COST} fuel, {MISSION_TIME_DAYS} day(s).");
+        
+        EventBus?.Publish(new ResourceChangedEvent(
+            ResourceType: ResourceTypes.Ammo,
+            OldValue: oldAmmo,
+            NewValue: Ammo,
+            Delta: -MISSION_AMMO_COST,
+            Reason: "mission_cost"
+        ));
+        
+        EventBus?.Publish(new ResourceChangedEvent(
+            ResourceType: ResourceTypes.Fuel,
+            OldValue: oldFuel,
+            NewValue: Fuel,
+            Delta: -MISSION_FUEL_COST,
+            Reason: "mission_cost"
+        ));
     }
 
     /// <summary>
@@ -423,12 +465,34 @@ public class CampaignState
     /// </summary>
     private void ApplyJobReward(JobReward reward)
     {
+        int oldMoney = Money;
+        int oldParts = Parts;
+        int oldFuel = Fuel;
+        int oldAmmo = Ammo;
+        
         Money += reward.Money;
         TotalMoneyEarned += reward.Money;
         Parts += reward.Parts;
         Fuel += reward.Fuel;
         Ammo += reward.Ammo;
         SimLog.Log($"[Campaign] Reward: {reward}");
+        
+        if (reward.Money > 0)
+        {
+            EventBus?.Publish(new ResourceChangedEvent(ResourceTypes.Money, oldMoney, Money, reward.Money, "job_reward"));
+        }
+        if (reward.Parts > 0)
+        {
+            EventBus?.Publish(new ResourceChangedEvent(ResourceTypes.Parts, oldParts, Parts, reward.Parts, "job_reward"));
+        }
+        if (reward.Fuel > 0)
+        {
+            EventBus?.Publish(new ResourceChangedEvent(ResourceTypes.Fuel, oldFuel, Fuel, reward.Fuel, "job_reward"));
+        }
+        if (reward.Ammo > 0)
+        {
+            EventBus?.Publish(new ResourceChangedEvent(ResourceTypes.Ammo, oldAmmo, Ammo, reward.Ammo, "job_reward"));
+        }
     }
 
     /// <summary>

@@ -12,7 +12,7 @@ public class AttackSystem
     private readonly Func<int, Actor> getActorById;
 
     public event Action<Actor, Actor, AttackResult> AttackResolved;
-    public event Action<Actor> ActorDied;
+    public event Action<Actor, Actor> ActorDied; // (victim, killer)
 
     public AttackSystem(Func<int, Actor> getActorById)
     {
@@ -141,7 +141,7 @@ public class AttackSystem
             {
                 attacker.RecordKill(); // M7 statistics
                 SimLog.Log($"[Combat] {target.Type}#{target.Id} DIED!");
-                ActorDied?.Invoke(target);
+                ActorDied?.Invoke(target, attacker);
             }
         }
         else

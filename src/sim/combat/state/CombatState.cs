@@ -56,6 +56,11 @@ public partial class CombatState
 
     // Perception system (enemy detection, alarm state)
     public PerceptionSystem Perception { get; private set; }
+    
+    /// <summary>
+    /// Event bus for cross-domain communication (optional, set by GameState).
+    /// </summary>
+    public EventBus EventBus { get; set; }
 
     // C# Events
     public event Action<Actor> ActorAdded;
@@ -173,9 +178,17 @@ public partial class CombatState
         AttackResolved?.Invoke(attacker, target, result);
     }
 
-    private void OnActorDied(Actor actor)
+    private void OnActorDied(Actor victim, Actor killer)
     {
-        ActorDied?.Invoke(actor);
+        ActorDied?.Invoke(victim);
+        
+        EventBus?.Publish(new ActorDiedEvent(
+            ActorId: victim.Id,
+            ActorType: victim.Type,
+            ActorName: victim.Name ?? $"{victim.Type}#{victim.Id}",
+            KillerId: killer?.Id ?? 0,
+            Position: victim.GridPosition
+        ));
     }
 
     private void CheckMissionEnd()
@@ -241,6 +254,15 @@ public partial class CombatState
         PhaseChanged?.Invoke(Phase);
         MissionEnded?.Invoke(Victory); // Legacy event for backward compatibility
         MissionCompleted?.Invoke(outcome);
+        
+        var stats = MissionOutputBuilder.CalculateStats(Actors);
+        EventBus?.Publish(new MissionCompletedEvent(
+            Outcome: outcome,
+            EnemiesKilled: stats.EnemiesKilled,
+            CrewDeaths: stats.CrewDeaths,
+            CrewInjured: stats.CrewInjured,
+            DurationSeconds: TimeSystem.GetCurrentTime()
+        ));
     }
     
     /// <summary>

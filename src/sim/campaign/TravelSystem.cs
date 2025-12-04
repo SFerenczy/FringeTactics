@@ -109,13 +109,32 @@ public static class TravelSystem
         var fromNode = sector.GetNode(campaign.CurrentNodeId);
         var toNode = sector.GetNode(toId);
         var timeCost = CalculateTravelDays(sector, campaign.CurrentNodeId, toId);
+        var fromNodeId = campaign.CurrentNodeId;
 
         // Consume resources
+        int oldFuel = campaign.Fuel;
         campaign.Fuel -= fuelCost;
         campaign.Time.AdvanceDays(timeCost);
         campaign.CurrentNodeId = toId;
 
         SimLog.Log($"[Travel] Traveled from {fromNode?.Name} to {toNode?.Name}. Cost: {fuelCost} fuel, {timeCost} day(s). (Fuel remaining: {campaign.Fuel})");
+        
+        // Publish events
+        campaign.EventBus?.Publish(new ResourceChangedEvent(
+            ResourceType: ResourceTypes.Fuel,
+            OldValue: oldFuel,
+            NewValue: campaign.Fuel,
+            Delta: -fuelCost,
+            Reason: "travel"
+        ));
+        
+        campaign.EventBus?.Publish(new TravelCompletedEvent(
+            FromNodeId: fromNodeId,
+            ToNodeId: toId,
+            ToNodeName: toNode?.Name ?? "Unknown",
+            FuelCost: fuelCost,
+            DaysCost: timeCost
+        ));
 
         // Random encounter check (for future use)
         if (rng != null && toNode?.Type == NodeType.Contested)

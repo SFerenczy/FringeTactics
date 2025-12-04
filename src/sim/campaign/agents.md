@@ -7,6 +7,7 @@ Campaign/meta-game state: crew management, resources, mission tracking, jobs.
 - **CampaignState.cs** - Root strategic state:
   - Time: CampaignTime for day tracking
   - Rng: RngService for deterministic generation
+  - EventBus: for cross-domain event publishing (SF2)
   - Resources: money, fuel, parts, meds, ammo
   - Sector and CurrentNodeId for location
   - Crew roster management
@@ -15,7 +16,9 @@ Campaign/meta-game state: crew management, resources, mission tracking, jobs.
   - Mission costs and rewards (including time cost)
   - Campaign stats: TotalMoneyEarned, TotalCrewDeaths
   - `ApplyMissionOutput(MissionOutput)` for XP, injuries, deaths, job rewards
-  - `AcceptJob()` sets absolute deadline, `ClearCurrentJob()`, `IsAtJobTarget()`
+  - `AcceptJob()` sets absolute deadline, publishes JobAcceptedEvent
+  - `ModifyFactionRep()` publishes FactionRepChangedEvent
+  - `ConsumeMissionResources()` publishes ResourceChangedEvent
   - `Rest()` heals injuries and advances time
   - `ShouldRest()` checks if rest would be beneficial
   - `IsCampaignOver()` checks if all crew are dead
@@ -33,6 +36,7 @@ Campaign/meta-game state: crew management, resources, mission tracking, jobs.
   - Time cost based on distance (minimum 1 day)
   - `CanTravel()`, `Travel()` methods
   - `CalculateTravelDays()`, `GetTravelCostSummary()`
+  - Publishes TravelCompletedEvent and ResourceChangedEvent (SF2)
   - Future: ambush encounters
 - **Job.cs** - Job/contract definition:
   - JobDifficulty enum: Easy, Medium, Hard
