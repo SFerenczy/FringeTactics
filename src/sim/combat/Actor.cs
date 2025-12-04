@@ -13,7 +13,9 @@ public enum ActorState
 
 public partial class Actor
 {
-    public const float MoveSpeed = 4.0f; // tiles per second
+    private const float BaseMoveSpeed = 4.0f;
+    private const float BaseAccuracy = 0.7f;
+    private const int BaseVisionRadius = 8;
 
     public int Id { get; set; }
     public string Type { get; set; } // "crew", "enemy", "drone"
@@ -26,7 +28,9 @@ public partial class Actor
     public Dictionary<string, int> Stats { get; set; } = new() { { "aim", 0 }, { "toughness", 0 }, { "reflexes", 0 } };
     public List<string> Abilities { get; set; } = new();
     public List<string> StatusEffects { get; set; } = new();
-    public int VisionRadius { get; set; } = 8;
+    
+    // Stat modifier system
+    public ModifierCollection Modifiers { get; } = new();
 
     // Weapon and attack
     public WeaponData EquippedWeapon { get; set; } = WeaponData.DefaultRifle;
@@ -63,6 +67,7 @@ public partial class Actor
     public MapState Map { get; set; } = null;
 
     // C# Events
+    public event Action<Actor> ModifiersChanged;
     public event Action<Actor, Vector2I> PositionChanged;
     public event Action<Actor> ArrivedAtTarget;
     public event Action<Actor, int> DamageTaken; // actor, damage amount
@@ -81,6 +86,7 @@ public partial class Actor
         Stats = new Dictionary<string, int> { { "aim", 0 }, { "toughness", 0 }, { "reflexes", 0 } };
         Abilities = new List<string>();
         StatusEffects = new List<string>();
+        Modifiers.ModifiersChanged += () => ModifiersChanged?.Invoke(this);
         EquippedWeapon = WeaponData.DefaultRifle;
         CurrentMagazine = EquippedWeapon.MagazineSize;
         ReserveAmmo = EquippedWeapon.MagazineSize * 3;
@@ -193,7 +199,7 @@ public partial class Actor
         }
 
         // Progress movement
-        MoveProgress += MoveSpeed * tickDuration;
+        MoveProgress += GetMoveSpeed() * tickDuration;
 
         if (MoveProgress >= 1.0f)
         {
@@ -365,6 +371,105 @@ public partial class Actor
     public void StartCooldown()
     {
         AttackCooldown = EquippedWeapon.CooldownTicks;
+    }
+
+    // === Stat Accessors (use modifiers) ===
+
+    /// <summary>
+    /// Get effective move speed after modifiers.
+    /// </summary>
+    public float GetMoveSpeed()
+    {
+        return Modifiers.Calculate(StatType.MoveSpeed, BaseMoveSpeed);
+    }
+
+    /// <summary>
+    /// Get effective accuracy after modifiers.
+    /// </summary>
+    public float GetAccuracy()
+    {
+        var aimBonus = Stats.TryGetValue("aim", out var aim) ? aim * 0.01f : 0f;
+        return Modifiers.Calculate(StatType.Accuracy, BaseAccuracy + aimBonus);
+    }
+
+    /// <summary>
+    /// Get effective vision radius after modifiers.
+    /// </summary>
+    public int GetVisionRadius()
+    {
+        return (int)Modifiers.Calculate(StatType.VisionRadius, BaseVisionRadius);
+    }
+
+    /// <summary>
+    /// Check if actor is stunned (cannot act).
+    /// </summary>
+    public bool IsStunned()
+    {
+        return Modifiers.HasModifier("stunned");
+    }
+
+    /// <summary>
+    /// Check if actor is suppressed.
+    /// </summary>
+    public bool IsSuppressed()
+    {
+        return Modifiers.HasModifier("suppressed");
+    }
+
+    /// <summary>
+    /// Remove expired modifiers. Call each tick.
+    /// </summary>
+    public void UpdateModifiers(int currentTick)
+    {
+        Modifiers.RemoveExpired(currentTick);
+    }
+
+    // === Movement Methods (for MovementSystem) ===
+
+    /// <summary>
+    /// Set the current move direction.
+    /// </summary>
+    public void SetMoveDirection(Vector2I direction)
+    {
+        MoveDirection = direction;
+    }
+
+    /// <summary>
+    /// Advance movement progress by the given amount.
+    /// </summary>
+    public void AdvanceMovement(float tickDuration)
+    {
+        MoveProgress += GetMoveSpeed() * tickDuration;
+
+        if (MoveProgress >= 1.0f)
+        {
+            MoveProgress = 0.0f;
+            GridPosition += MoveDirection;
+            PositionChanged?.Invoke(this, GridPosition);
+
+            if (GridPosition == TargetPosition)
+            {
+                CompleteMovement();
+            }
+        }
+    }
+
+    /// <summary>
+    /// Complete movement and fire arrival event.
+    /// </summary>
+    public void CompleteMovement()
+    {
+        IsMoving = false;
+        ArrivedAtTarget?.Invoke(this);
+    }
+
+    /// <summary>
+    /// Stop movement entirely (blocked path).
+    /// </summary>
+    public void StopMovement()
+    {
+        IsMoving = false;
+        TargetPosition = GridPosition;
     }
 
     public Vector2 GetVisualPosition(int tileSize)

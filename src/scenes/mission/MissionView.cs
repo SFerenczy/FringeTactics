@@ -1,5 +1,6 @@
 using Godot;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace FringeTactics;
 
@@ -13,29 +14,23 @@ public partial class MissionView : Node2D
     private PackedScene timeStateWidgetScene;
 
     public CombatState CombatState { get; private set; }
-    private Dictionary<int, ActorView> actorViews = new(); // actorId -> ActorView
-    private List<int> crewActorIds = new(); // ordered list of crew actor IDs for number key selection
-    private List<int> selectedActorIds = new(); // supports multi-selection
+    private Dictionary<int, ActorView> actorViews = new();
+    private List<int> crewActorIds = new();
 
-    // Ability targeting
-    private AbilityData pendingAbility = null; // ability waiting for target selection
+    // Input controller (owns selection state, ability targeting, etc.)
+    private MissionInputController inputController;
+
+    // Ability targeting UI
     private Label abilityTargetingLabel;
 
     // Movement target marker
     private Node2D moveTargetMarker;
     private ColorRect moveTargetFill;
     private ColorRect moveTargetBorder;
-    private Dictionary<int, Vector2I> actorMoveTargets = new(); // actorId -> target position
+    private Dictionary<int, Vector2I> actorMoveTargets = new();
 
-    // Box selection state
-    private bool isDragSelecting = false;
-    private Vector2 dragStartScreen;
-    private Vector2 dragStartWorld;
+    // Box selection visual
     private ColorRect selectionBox;
-    private const float DragThreshold = 5f;
-
-    // Control groups (Ctrl+1-3 to save, 1-3 to recall)
-    private Dictionary<int, List<int>> controlGroups = new(); // group number -> actor IDs
 
     // Fog of war overlay
     private Node2D fogLayer;
@@ -53,11 +48,6 @@ public partial class MissionView : Node2D
     // Interactable views
     private Dictionary<int, InteractableView> interactableViews = new();
     private Node2D interactablesContainer;
-
-    // Double-click detection
-    private float lastClickTime = 0f;
-    private int lastClickedActorId = -1;
-    private const float DoubleClickThreshold = 0.3f;
 
     // Mission result tracking
     private bool missionVictory = false;
@@ -94,6 +84,7 @@ public partial class MissionView : Node2D
         tacticalCamera = GetNode<TacticalCamera>("TacticalCamera");
 
         InitializeCombat();
+        SetupInputController();
         SetupUI();
         SetupCamera();
         DrawGrid();
@@ -101,6 +92,39 @@ public partial class MissionView : Node2D
         CreateInteractablesLayer();
         CreateCoverIndicator();
         SpawnActorViews();
+    }
+
+    private void SetupInputController()
+    {
+        inputController = new MissionInputController();
+        inputController.Name = "InputController";
+        AddChild(inputController);
+
+        inputController.Initialize(
+            CombatState,
+            crewActorIds,
+            TileSize,
+            ScreenToWorld
+        );
+
+        // Subscribe to input controller events
+        inputController.SelectionChanged += OnSelectionChanged;
+        inputController.ActorSelected += OnActorSelected;
+        inputController.MoveOrderIssued += OnMoveOrderIssued;
+        inputController.AttackOrderIssued += OnAttackOrderIssued;
+        inputController.InteractionOrderIssued += OnInteractionOrderIssued;
+        inputController.ReloadOrderIssued += OnReloadOrderIssued;
+        inputController.AbilityTargetingStarted += OnAbilityTargetingStarted;
+        inputController.AbilityTargetingCancelled += OnAbilityTargetingCancelled;
+        inputController.AbilityOrderIssued += OnAbilityOrderIssued;
+        inputController.BoxSelectionUpdated += OnBoxSelectionUpdated;
+        inputController.ToggleVisibilityDebug += OnToggleVisibilityDebug;
+        inputController.CenterOnActor += OnCenterOnActor;
+    }
+
+    private Vector2 ScreenToWorld(Vector2 screenPos)
+    {
+        return GetCanvasTransform().AffineInverse() * screenPos;
     }
     
     private void SetupCamera()
@@ -511,14 +535,15 @@ public partial class MissionView : Node2D
             return;
         }
 
-        if (selectedActorIds.Count == 0)
+        var selectedIds = inputController?.SelectedActorIds;
+        if (selectedIds == null || selectedIds.Count == 0)
         {
             coverIndicator.Hide();
             return;
         }
 
         var positions = new List<Vector2I>();
-        foreach (var actorId in selectedActorIds)
+        foreach (var actorId in selectedIds)
         {
             var actor = CombatState.GetActorById(actorId);
             if (actor != null && actor.State == ActorState.Alive)
@@ -710,7 +735,7 @@ public partial class MissionView : Node2D
 
     public override void _ExitTree()
     {
-        // Unsubscribe from events to prevent disposed object access on scene reload
+        // Unsubscribe from CombatState events
         if (CombatState != null)
         {
             CombatState.MissionEnded -= OnMissionEnded;
@@ -719,6 +744,23 @@ public partial class MissionView : Node2D
             CombatState.Interactions.InteractableAdded -= OnInteractableAdded;
             CombatState.Interactions.InteractableRemoved -= OnInteractableRemoved;
             CombatState.Interactions.InteractableStateChanged -= OnInteractableStateChanged;
+        }
+
+        // Unsubscribe from input controller events
+        if (inputController != null)
+        {
+            inputController.SelectionChanged -= OnSelectionChanged;
+            inputController.ActorSelected -= OnActorSelected;
+            inputController.MoveOrderIssued -= OnMoveOrderIssued;
+            inputController.AttackOrderIssued -= OnAttackOrderIssued;
+            inputController.InteractionOrderIssued -= OnInteractionOrderIssued;
+            inputController.ReloadOrderIssued -= OnReloadOrderIssued;
+            inputController.AbilityTargetingStarted -= OnAbilityTargetingStarted;
+            inputController.AbilityTargetingCancelled -= OnAbilityTargetingCancelled;
+            inputController.AbilityOrderIssued -= OnAbilityOrderIssued;
+            inputController.BoxSelectionUpdated -= OnBoxSelectionUpdated;
+            inputController.ToggleVisibilityDebug -= OnToggleVisibilityDebug;
+            inputController.CenterOnActor -= OnCenterOnActor;
         }
         
         // Cleanup interactable views
@@ -757,10 +799,12 @@ public partial class MissionView : Node2D
         // Update interactable channel progress displays
         UpdateInteractableChannelProgress();
         
-        // Update box selection if mouse is held (check for drag start or update existing drag)
-        if (Input.IsMouseButtonPressed(MouseButton.Left) && pendingAbility == null)
+        // Update box selection drag
+        if (inputController != null)
         {
-            UpdateBoxSelectionVisual();
+            var currentScreen = GetViewport().GetMousePosition();
+            var currentWorld = ScreenToWorld(currentScreen);
+            inputController.UpdateDragSelection(currentScreen, currentWorld);
         }
     }
     
@@ -815,13 +859,14 @@ public partial class MissionView : Node2D
 
     private void UpdateCoverIndicatorsIfMoving()
     {
-        if (selectedActorIds.Count == 0)
+        var selectedIds = inputController?.SelectedActorIds;
+        if (selectedIds == null || selectedIds.Count == 0)
         {
             return;
         }
 
         bool needsUpdate = false;
-        foreach (var actorId in selectedActorIds)
+        foreach (var actorId in selectedIds)
         {
             var actor = CombatState.GetActorById(actorId);
             if (actor == null)
@@ -842,525 +887,119 @@ public partial class MissionView : Node2D
         }
     }
 
-    public override void _Input(InputEvent @event)
+    // === Input Controller Event Handlers ===
+
+    private void OnSelectionChanged(IReadOnlyList<int> selectedIds)
     {
-        // Toggle pause with Space
-        if (@event.IsActionPressed("pause_toggle"))
+        // Update visual selection state on all actor views
+        foreach (var kvp in actorViews)
         {
-            GD.Print("Pause toggle pressed!");
-            CombatState.TimeSystem.TogglePause();
-            return;
+            var isSelected = selectedIds.Contains(kvp.Key);
+            kvp.Value.SetSelected(isSelected);
         }
 
-        // Number key selection / control groups
-        if (@event is InputEventKey keyEvent && keyEvent.Pressed)
-        {
-            bool ctrlHeld = Input.IsKeyPressed(Key.Ctrl);
-            int groupNum = keyEvent.Keycode switch
-            {
-                Key.Key1 => 1,
-                Key.Key2 => 2,
-                Key.Key3 => 3,
-                _ => -1
-            };
-
-            if (groupNum > 0)
-            {
-                if (ctrlHeld)
-                {
-                    SaveControlGroup(groupNum);
-                }
-                else
-                {
-                    RecallControlGroup(groupNum);
-                }
-                return;
-            }
-
-            if (keyEvent.Keycode == Key.Tab)
-            {
-                SelectAllCrew();
-                return;
-            }
-        }
-
-        // Toggle visibility debug overlay (F3)
-        if (@event is InputEventKey f3Event && f3Event.Pressed && f3Event.Keycode == Key.F3)
-        {
-            ToggleVisibilityDebug();
-            return;
-        }
-
-        // Grenade ability (G key)
-        if (@event is InputEventKey gEvent && gEvent.Pressed && gEvent.Keycode == Key.G)
-        {
-            var grenade = Definitions.Abilities.Get("frag_grenade")?.ToAbilityData();
-            if (grenade != null)
-            {
-                StartAbilityTargeting(grenade);
-            }
-            return;
-        }
-
-        // Reload (R key)
-        if (@event is InputEventKey rEvent && rEvent.Pressed && rEvent.Keycode == Key.R)
-        {
-            foreach (var actorId in selectedActorIds)
-            {
-                CombatState.IssueReloadOrder(actorId);
-            }
-            return;
-        }
-
-        // Cancel targeting with Escape
-        if (@event is InputEventKey escEvent && escEvent.Pressed && escEvent.Keycode == Key.Escape)
-        {
-            CancelAbilityTargeting();
-            return;
-        }
-
-        // Handle mouse input
-        if (@event is InputEventMouseButton mouseEvent)
-        {
-            HandleMouseClick(mouseEvent);
-        }
-    }
-
-    private void SaveControlGroup(int groupNum)
-    {
-        if (selectedActorIds.Count == 0)
-        {
-            GD.Print($"[ControlGroup] Cannot save empty selection to group {groupNum}");
-            return;
-        }
-
-        controlGroups[groupNum] = new List<int>(selectedActorIds);
-        GD.Print($"[ControlGroup] Saved {selectedActorIds.Count} units to group {groupNum}");
-    }
-
-    private void RecallControlGroup(int groupNum)
-    {
-        if (!controlGroups.TryGetValue(groupNum, out var actorIds) || actorIds.Count == 0)
-        {
-            // Fallback: select crew by index if no control group saved
-            if (groupNum - 1 < crewActorIds.Count)
-            {
-                SelectActor(crewActorIds[groupNum - 1]);
-            }
-            return;
-        }
-
-        ClearSelection();
-        foreach (var actorId in actorIds)
-        {
-            var actor = CombatState.GetActorById(actorId);
-            if (actor != null && actor.State == ActorState.Alive)
-            {
-                selectedActorIds.Add(actorId);
-                if (actorViews.ContainsKey(actorId))
-                {
-                    actorViews[actorId].SetSelected(true);
-                }
-            }
-        }
-        GD.Print($"[ControlGroup] Recalled group {groupNum}: {selectedActorIds.Count} units");
+        // Update cover indicators
         UpdateCoverIndicators();
-    }
 
-    private void SelectAllCrew()
-    {
-        ClearSelection();
-        foreach (var actorId in crewActorIds)
+        // Clear camera follow if nothing selected
+        if (selectedIds.Count == 0)
         {
-            var actor = CombatState.GetActorById(actorId);
-            if (actor != null && actor.State == ActorState.Alive && actorViews.ContainsKey(actorId))
-            {
-                selectedActorIds.Add(actorId);
-                actorViews[actorId].SetSelected(true);
-            }
+            tacticalCamera.ClearFollowTarget();
+            coverIndicator?.Hide();
         }
-        GD.Print($"[Selection] Selected all {selectedActorIds.Count} crew");
-        UpdateCoverIndicators();
     }
 
-    private void AddToSelection(int actorId)
+    private void OnActorSelected(int actorId)
     {
+        if (actorViews.TryGetValue(actorId, out var view))
+        {
+            tacticalCamera.SetFollowTarget(view);
+        }
+    }
+
+    private void OnMoveOrderIssued(int actorId, Vector2I targetPos)
+    {
+        CombatState.IssueMovementOrder(actorId, targetPos);
         var actor = CombatState.GetActorById(actorId);
-        if (actor == null || actor.State != ActorState.Alive)
-            return;
-        if (actor.Type != "crew")
-            return;
-        if (selectedActorIds.Contains(actorId))
-            return;
-        if (!actorViews.ContainsKey(actorId))
-            return;
-
-        selectedActorIds.Add(actorId);
-        actorViews[actorId].SetSelected(true);
-        UpdateCoverIndicators();
+        if (actor != null && actor.IsMoving)
+        {
+            actorMoveTargets[actorId] = targetPos;
+        }
+        UpdateMoveTargetMarker();
     }
 
-    private void RemoveFromSelection(int actorId)
+    private void OnAttackOrderIssued(int actorId, int targetId)
     {
-        if (selectedActorIds.Remove(actorId) && actorViews.ContainsKey(actorId))
-        {
-            actorViews[actorId].SetSelected(false);
-            UpdateCoverIndicators();
-        }
+        CombatState.IssueAttackOrder(actorId, targetId);
     }
 
-    private void SelectActor(int actorId)
+    private void OnInteractionOrderIssued(int actorId, int interactableId)
     {
-        // Select a single actor by ID (clears previous selection).
-        GD.Print($"SelectActor: actorId={actorId}");
-        ClearSelection();
-        if (actorViews.ContainsKey(actorId))
-        {
-            selectedActorIds.Add(actorId);
-            actorViews[actorId].SetSelected(true);
-            
-            // Set camera to follow this actor
-            tacticalCamera.SetFollowTarget(actorViews[actorId]);
-            
-            GD.Print($"Actor {actorId} selected, selectedActorIds.Count={selectedActorIds.Count}");
-        }
-        UpdateCoverIndicators();
+        CombatState.IssueInteractionOrder(actorId, interactableId);
     }
 
-    private void ClearSelection()
+    private void OnReloadOrderIssued(int actorId)
     {
-        // Deselect all currently selected actors.
-        foreach (var actorId in selectedActorIds)
-        {
-            if (actorViews.ContainsKey(actorId))
-            {
-                actorViews[actorId].SetSelected(false);
-            }
-        }
-        selectedActorIds.Clear();
-        
-        // Clear camera follow target
-        tacticalCamera.ClearFollowTarget();
-        
-        // Hide cover indicators
-        coverIndicator?.Hide();
+        CombatState.IssueReloadOrder(actorId);
     }
 
-    private void HandleMouseClick(InputEventMouseButton @event)
+    private void OnAbilityTargetingStarted(AbilityData ability)
     {
-        var gridPos = ScreenToGrid(@event.Position);
-
-        // If targeting an ability, left click confirms, right click cancels
-        if (pendingAbility != null)
-        {
-            if (@event.Pressed)
-            {
-                if (@event.ButtonIndex == MouseButton.Left)
-                {
-                    ConfirmAbilityTarget(gridPos);
-                }
-                else if (@event.ButtonIndex == MouseButton.Right)
-                {
-                    CancelAbilityTargeting();
-                }
-            }
-            return;
-        }
-
-        if (@event.ButtonIndex == MouseButton.Left)
-        {
-            if (@event.Pressed)
-            {
-                StartPotentialDrag(@event.Position);
-            }
-            else
-            {
-                FinishLeftClick(@event.Position, gridPos);
-            }
-        }
-        else if (@event.ButtonIndex == MouseButton.Right && @event.Pressed)
-        {
-            HandleRightClick(gridPos);
-        }
+        abilityTargetingLabel.Text = $"Targeting: {ability.Name} (Range: {ability.Range})\nLeft Click to confirm, Right Click to cancel";
+        abilityTargetingLabel.Visible = true;
     }
 
-    private void StartPotentialDrag(Vector2 screenPos)
+    private void OnAbilityTargetingCancelled()
     {
-        dragStartScreen = screenPos;
-        dragStartWorld = GetCanvasTransform().AffineInverse() * screenPos;
+        abilityTargetingLabel.Visible = false;
     }
 
-    private void FinishLeftClick(Vector2 screenPos, Vector2I gridPos)
+    private void OnAbilityOrderIssued(int actorId, AbilityData ability, Vector2I targetTile)
     {
-        if (isDragSelecting)
+        var success = CombatState.IssueAbilityOrder(actorId, ability, targetTile);
+        if (success)
         {
-            FinishBoxSelection(screenPos);
+            GD.Print($"[Ability] {ability.Name} launched at {targetTile}!");
         }
         else
         {
-            bool shiftHeld = Input.IsKeyPressed(Key.Shift);
-            HandleSelection(gridPos, shiftHeld);
+            GD.Print($"[Ability] Cannot use {ability.Name} at {targetTile} (out of range?)");
         }
     }
 
-    private void UpdateBoxSelectionVisual()
+    private void OnBoxSelectionUpdated(Rect2 rect, bool isActive)
     {
-        if (!Input.IsMouseButtonPressed(MouseButton.Left))
+        selectionBox.Visible = isActive;
+        if (isActive)
         {
-            return;
-        }
-
-        var currentScreen = GetViewport().GetMousePosition();
-        var distance = (currentScreen - dragStartScreen).Length();
-
-        if (!isDragSelecting && distance > DragThreshold)
-        {
-            isDragSelecting = true;
-            selectionBox.Visible = true;
-        }
-
-        if (isDragSelecting)
-        {
-            var currentWorld = GetCanvasTransform().AffineInverse() * currentScreen;
-            var minX = Mathf.Min(dragStartWorld.X, currentWorld.X);
-            var minY = Mathf.Min(dragStartWorld.Y, currentWorld.Y);
-            var maxX = Mathf.Max(dragStartWorld.X, currentWorld.X);
-            var maxY = Mathf.Max(dragStartWorld.Y, currentWorld.Y);
-
-            selectionBox.Position = new Vector2(minX, minY);
-            selectionBox.Size = new Vector2(maxX - minX, maxY - minY);
+            selectionBox.Position = rect.Position;
+            selectionBox.Size = rect.Size;
         }
     }
 
-    private void FinishBoxSelection(Vector2 endScreen)
+    private void OnToggleVisibilityDebug()
     {
-        isDragSelecting = false;
-        selectionBox.Visible = false;
-
-        var endWorld = GetCanvasTransform().AffineInverse() * endScreen;
-        var rect = new Rect2(
-            Mathf.Min(dragStartWorld.X, endWorld.X),
-            Mathf.Min(dragStartWorld.Y, endWorld.Y),
-            Mathf.Abs(endWorld.X - dragStartWorld.X),
-            Mathf.Abs(endWorld.Y - dragStartWorld.Y)
-        );
-
-        bool shiftHeld = Input.IsKeyPressed(Key.Shift);
-        if (!shiftHeld)
-        {
-            ClearSelection();
-        }
-
-        int addedCount = 0;
-        foreach (var actor in CombatState.Actors)
-        {
-            if (actor.Type != "crew" || actor.State != ActorState.Alive)
-                continue;
-
-            var actorWorldPos = actor.GetVisualPosition(TileSize);
-            var actorCenter = actorWorldPos + new Vector2(TileSize / 2f, TileSize / 2f);
-
-            if (rect.HasPoint(actorCenter))
-            {
-                AddToSelection(actor.Id);
-                addedCount++;
-            }
-        }
-
-        if (addedCount > 0)
-        {
-            GD.Print($"[Selection] Box selected {addedCount} units, total: {selectedActorIds.Count}");
-            UpdateCoverIndicators();
-        }
+        ToggleVisibilityDebug();
     }
 
-    private void HandleSelection(Vector2I gridPos, bool additive)
+    private void OnCenterOnActor(int actorId)
     {
-        var clickedActor = CombatState.GetActorAtPosition(gridPos);
-        float currentTime = Time.GetTicksMsec() / 1000f;
-
-        if (clickedActor != null && clickedActor.Type == "crew" && clickedActor.State == ActorState.Alive)
+        if (actorViews.TryGetValue(actorId, out var view))
         {
-            // Check for double-click to select all crew
-            if (clickedActor.Id == lastClickedActorId &&
-                currentTime - lastClickTime < DoubleClickThreshold)
-            {
-                SelectAllCrew();
-                lastClickedActorId = -1;
-                return;
-            }
-
-            lastClickTime = currentTime;
-            lastClickedActorId = clickedActor.Id;
-
-            if (additive)
-            {
-                if (selectedActorIds.Contains(clickedActor.Id))
-                {
-                    RemoveFromSelection(clickedActor.Id);
-                    GD.Print($"[Selection] Removed actor {clickedActor.Id}, total: {selectedActorIds.Count}");
-                }
-                else
-                {
-                    AddToSelection(clickedActor.Id);
-                    GD.Print($"[Selection] Added actor {clickedActor.Id}, total: {selectedActorIds.Count}");
-                }
-            }
-            else
-            {
-                SelectActor(clickedActor.Id);
-            }
-        }
-        else if (!additive)
-        {
-            ClearSelection();
-            lastClickedActorId = -1;
+            tacticalCamera.SetFollowTarget(view);
         }
     }
 
-    private void HandleRightClick(Vector2I gridPos)
-    {
-        GD.Print($"HandleRightClick: gridPos={gridPos}, selectedCount={selectedActorIds.Count}");
-
-        // Check if clicking on an interactable
-        var interactable = CombatState.Interactions.GetInteractableAt(gridPos);
-        if (interactable != null)
-        {
-            if (TryInteractWith(interactable))
-            {
-                return;
-            }
-        }
-
-        // Check if clicking on an enemy actor
-        var targetActor = CombatState.GetActorAtPosition(gridPos);
-        if (targetActor != null && targetActor.State == ActorState.Alive)
-        {
-            // Can only target visible enemies
-            if (!CombatState.Visibility.IsVisible(targetActor.GridPosition))
-            {
-                // Target not visible, treat as move order
-                IssueGroupMoveOrder(gridPos);
-                return;
-            }
-
-            // Check if target is an enemy (different type from selected)
-            var isEnemy = false;
-            foreach (var actorId in selectedActorIds)
-            {
-                var selected = CombatState.GetActorById(actorId);
-                if (selected != null && selected.Type != targetActor.Type)
-                {
-                    isEnemy = true;
-                    break;
-                }
-            }
-
-            if (isEnemy)
-            {
-                // Issue attack order
-                foreach (var actorId in selectedActorIds)
-                {
-                    CombatState.IssueAttackOrder(actorId, targetActor.Id);
-                }
-                return;
-            }
-        }
-
-        // Otherwise, issue move order with formation
-        IssueGroupMoveOrder(gridPos);
-    }
-    
-    private bool TryInteractWith(Interactable interactable)
-    {
-        if (selectedActorIds.Count == 0)
-        {
-            return false;
-        }
-        
-        // Find the best actor to interact (closest that can interact)
-        Actor bestActor = null;
-        float bestDistance = float.MaxValue;
-        
-        foreach (var actorId in selectedActorIds)
-        {
-            var actor = CombatState.GetActorById(actorId);
-            if (actor == null || actor.State != ActorState.Alive)
-            {
-                continue;
-            }
-            
-            if (!CombatState.Interactions.CanInteract(actor, interactable))
-            {
-                continue;
-            }
-            
-            var distance = CombatResolver.GetDistance(actor.GridPosition, interactable.Position);
-            if (distance < bestDistance)
-            {
-                bestDistance = distance;
-                bestActor = actor;
-            }
-        }
-        
-        if (bestActor == null)
-        {
-            GD.Print($"[Interaction] No selected actor can interact with {interactable.Type}#{interactable.Id}");
-            return false;
-        }
-        
-        // Issue interaction order
-        var success = CombatState.IssueInteractionOrder(bestActor.Id, interactable.Id);
-        if (success)
-        {
-            GD.Print($"[Interaction] {bestActor.Type}#{bestActor.Id} interacting with {interactable.Type}#{interactable.Id}");
-        }
-        return success;
-    }
-
-    private void IssueGroupMoveOrder(Vector2I targetPos)
-    {
-        // Gather selected actors
-        var selectedActors = new List<Actor>();
-        foreach (var actorId in selectedActorIds)
-        {
-            var actor = CombatState.GetActorById(actorId);
-            if (actor != null && actor.State == ActorState.Alive)
-            {
-                selectedActors.Add(actor);
-            }
-        }
-
-        if (selectedActors.Count == 0)
-            return;
-
-        // Calculate formation destinations
-        var destinations = FormationCalculator.CalculateGroupDestinations(
-            selectedActors,
-            targetPos,
-            CombatState.MapState
-        );
-
-        // Issue individual orders
-        foreach (var kvp in destinations)
-        {
-            CombatState.IssueMovementOrder(kvp.Key, kvp.Value);
-
-            var actor = CombatState.GetActorById(kvp.Key);
-            if (actor != null && actor.IsMoving)
-            {
-                actorMoveTargets[kvp.Key] = kvp.Value;
-            }
-        }
-
-        GD.Print($"[Movement] Group move: {selectedActors.Count} units to formation around {targetPos}");
-        UpdateMoveTargetMarker();
-    }
-    
     private void UpdateMoveTargetMarker()
     {
-        // Show marker at the target of the first selected actor that is moving
-        foreach (var actorId in selectedActorIds)
+        var selectedIds = inputController?.SelectedActorIds;
+        if (selectedIds == null)
+        {
+            HideMoveTarget();
+            return;
+        }
+
+        foreach (var actorId in selectedIds)
         {
             if (actorMoveTargets.TryGetValue(actorId, out var target))
             {
@@ -1372,82 +1011,19 @@ public partial class MissionView : Node2D
                 }
             }
         }
-        
-        // No selected actor is moving, hide marker
+
         HideMoveTarget();
     }
-    
+
     private void ShowMoveTarget(Vector2I gridPos)
     {
         moveTargetMarker.Position = new Vector2(gridPos.X * TileSize + 1, gridPos.Y * TileSize + 1);
         moveTargetMarker.Visible = true;
     }
-    
+
     private void HideMoveTarget()
     {
         moveTargetMarker.Visible = false;
-    }
-
-    // === Ability Targeting ===
-
-    private void StartAbilityTargeting(AbilityData ability)
-    {
-        // Need exactly one actor selected
-        if (selectedActorIds.Count != 1)
-        {
-            GD.Print("[Ability] Select exactly one crew member to use ability");
-            return;
-        }
-
-        var actorId = selectedActorIds[0];
-        var actor = CombatState.GetActorById(actorId);
-        if (actor == null || actor.Type != "crew")
-        {
-            GD.Print("[Ability] Only crew can use abilities");
-            return;
-        }
-
-        // Check cooldown
-        if (CombatState.AbilitySystem.IsOnCooldown(actorId, ability.Id))
-        {
-            var remaining = CombatState.AbilitySystem.GetCooldownRemaining(actorId, ability.Id);
-            GD.Print($"[Ability] {ability.Name} on cooldown: {remaining} ticks remaining");
-            return;
-        }
-
-        pendingAbility = ability;
-        abilityTargetingLabel.Text = $"Targeting: {ability.Name} (Range: {ability.Range})\nLeft Click to confirm, Right Click to cancel";
-        abilityTargetingLabel.Visible = true;
-        GD.Print($"[Ability] Targeting {ability.Name} - click to select target tile");
-    }
-
-    private void ConfirmAbilityTarget(Vector2I targetTile)
-    {
-        if (pendingAbility == null || selectedActorIds.Count == 0)
-        {
-            CancelAbilityTargeting();
-            return;
-        }
-
-        var actorId = selectedActorIds[0];
-        var success = CombatState.IssueAbilityOrder(actorId, pendingAbility, targetTile);
-
-        if (success)
-        {
-            GD.Print($"[Ability] {pendingAbility.Name} launched at {targetTile}!");
-        }
-        else
-        {
-            GD.Print($"[Ability] Cannot use {pendingAbility.Name} at {targetTile} (out of range?)");
-        }
-
-        CancelAbilityTargeting();
-    }
-
-    private void CancelAbilityTargeting()
-    {
-        pendingAbility = null;
-        abilityTargetingLabel.Visible = false;
     }
 
     private void OnAbilityDetonated(AbilityData ability, Vector2I tile)

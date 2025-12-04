@@ -25,6 +25,7 @@ public partial class DevTools : Node
         Instance = this;
         GD.Print("[DevTools] Initialized. Shift+Alt: M=Money, F=Fuel, A=Ammo, P=Parts, H=Meds, T=Teleport");
         GD.Print("[DevTools] Combat cheats: Shift+Alt+G=Crew God Mode, Shift+Alt+E=Enemy God Mode");
+        GD.Print("[DevTools] Data: Shift+Alt+D=Reload Definitions");
     }
 
     public override void _UnhandledInput(InputEvent @event)
@@ -44,6 +45,10 @@ public partial class DevTools : Node
             case Key.E: // Enemy God Mode toggle
                 EnemyGodMode = !EnemyGodMode;
                 GD.Print($"[DevTools] Enemy God Mode: {(EnemyGodMode ? "ON" : "OFF")}");
+                return;
+
+            case Key.D: // Reload Definitions
+                Definitions.Reload();
                 return;
         }
 

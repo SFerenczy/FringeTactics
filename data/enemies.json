@@ -1,0 +1,30 @@
+{
+    "grunt": {
+        "id": "grunt",
+        "name": "Grunt",
+        "hp": 80,
+        "weaponId": "rifle",
+        "behavior": "Aggressive"
+    },
+    "gunner": {
+        "id": "gunner",
+        "name": "Gunner",
+        "hp": 100,
+        "weaponId": "smg",
+        "behavior": "Aggressive"
+    },
+    "sniper": {
+        "id": "sniper",
+        "name": "Sniper",
+        "hp": 60,
+        "weaponId": "rifle",
+        "behavior": "Defensive"
+    },
+    "heavy": {
+        "id": "heavy",
+        "name": "Heavy",
+        "hp": 150,
+        "weaponId": "shotgun",
+        "behavior": "Aggressive"
+    }
+}

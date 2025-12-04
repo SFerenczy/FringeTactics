@@ -1,0 +1,41 @@
+{
+    "frag_grenade": {
+        "id": "frag_grenade",
+        "name": "Frag Grenade",
+        "type": "Grenade",
+        "targetType": "Tile",
+        "range": 6,
+        "cooldown": 60,
+        "delay": 20,
+        "radius": 2,
+        "damage": 40,
+        "effectId": null,
+        "effectDuration": 0
+    },
+    "stun_grenade": {
+        "id": "stun_grenade",
+        "name": "Stun Grenade",
+        "type": "Grenade",
+        "targetType": "Tile",
+        "range": 6,
+        "cooldown": 50,
+        "delay": 20,
+        "radius": 2,
+        "damage": 10,
+        "effectId": "stunned",
+        "effectDuration": 40
+    },
+    "stun_shot": {
+        "id": "stun_shot",
+        "name": "Stun Shot",
+        "type": "Shot",
+        "targetType": "Actor",
+        "range": 6,
+        "cooldown": 40,
+        "delay": 0,
+        "radius": 0,
+        "damage": 10,
+        "effectId": "stunned",
+        "effectDuration": 40
+    }
+}

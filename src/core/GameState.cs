@@ -31,6 +31,9 @@ public partial class GameState : Node
     {
         Instance = this;
         SimLog.OnLog += message => GD.Print(message);
+        
+        // Load game data from JSON files
+        Definitions.Load();
     }
 
     public void StartNewCampaign()

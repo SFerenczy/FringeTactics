@@ -1,16 +1,91 @@
+using Godot;
 using System.Collections.Generic;
 
 namespace FringeTactics;
 
 /// <summary>
 /// Central registry for all game data definitions.
-/// This is the "data layer" - no logic, just lookups.
+/// Loads from JSON files in data/ folder, with hardcoded fallbacks.
 /// </summary>
 public static class Definitions
 {
-    public static WeaponDefinitions Weapons { get; } = new();
-    public static EnemyDefinitions Enemies { get; } = new();
-    public static AbilityDefinitions Abilities { get; } = new();
+    private const string WeaponsPath = "res://data/weapons.json";
+    private const string EnemiesPath = "res://data/enemies.json";
+    private const string AbilitiesPath = "res://data/abilities.json";
+
+    private static bool isLoaded = false;
+
+    public static WeaponDefinitions Weapons { get; private set; } = new();
+    public static EnemyDefinitions Enemies { get; private set; } = new();
+    public static AbilityDefinitions Abilities { get; private set; } = new();
+
+    /// <summary>
+    /// Load definitions from JSON files. Called automatically on first access.
+    /// </summary>
+    public static void Load()
+    {
+        if (isLoaded)
+        {
+            return;
+        }
+
+        Weapons = new WeaponDefinitions();
+        Enemies = new EnemyDefinitions();
+        Abilities = new AbilityDefinitions();
+
+        // Load from JSON if files exist
+        if (DataLoader.FileExists(WeaponsPath))
+        {
+            var weaponData = DataLoader.LoadDictionary<WeaponDef>(WeaponsPath);
+            if (weaponData.Count > 0)
+            {
+                Weapons = new WeaponDefinitions(weaponData);
+            }
+        }
+
+        if (DataLoader.FileExists(EnemiesPath))
+        {
+            var enemyData = DataLoader.LoadDictionary<EnemyDef>(EnemiesPath);
+            if (enemyData.Count > 0)
+            {
+                Enemies = new EnemyDefinitions(enemyData);
+            }
+        }
+
+        if (DataLoader.FileExists(AbilitiesPath))
+        {
+            var abilityData = DataLoader.LoadDictionary<AbilityDef>(AbilitiesPath);
+            if (abilityData.Count > 0)
+            {
+                Abilities = new AbilityDefinitions(abilityData);
+            }
+        }
+
+        isLoaded = true;
+        GD.Print("[Definitions] Data loaded");
+    }
+
+    /// <summary>
+    /// Force reload definitions from JSON files.
+    /// Useful for hot-reloading during development.
+    /// </summary>
+    public static void Reload()
+    {
+        isLoaded = false;
+        Load();
+        GD.Print("[Definitions] Data reloaded");
+    }
+
+    /// <summary>
+    /// Ensure definitions are loaded. Call this before accessing any definitions.
+    /// </summary>
+    public static void EnsureLoaded()
+    {
+        if (!isLoaded)
+        {
+            Load();
+        }
+    }
 }
 
 // ============================================================================
@@ -31,64 +106,38 @@ public class WeaponDef
 
 public class WeaponDefinitions
 {
-    // Weapon balance tuned for cover gameplay. See CombatBalance.cs for design rationale.
-    private readonly Dictionary<string, WeaponDef> weapons = new()
-    {
-        // Rifle: Balanced all-rounder
-        // 4 hits to kill (100 HP), reliable at medium range
-        ["rifle"] = new WeaponDef
-        {
-            Id = "rifle",
-            Name = "Assault Rifle",
-            Damage = 25,
-            Range = 8,
-            CooldownTicks = 10,    // 0.5s between shots
-            Accuracy = 0.70f,      // 70% base, ~42% vs cover
-            MagazineSize = 30,
-            ReloadTicks = 40       // 2 sec
-        },
-        // Pistol: Backup weapon, accurate but weak
-        // 6 hits to kill, good for finishing wounded targets
-        ["pistol"] = new WeaponDef
-        {
-            Id = "pistol",
-            Name = "Pistol",
-            Damage = 18,
-            Range = 5,
-            CooldownTicks = 6,     // 0.3s between shots
-            Accuracy = 0.75f,      // More accurate at short range
-            MagazineSize = 12,
-            ReloadTicks = 20       // 1 sec
-        },
-        // SMG: Spray and pray, volume of fire
-        // 7 hits to kill, but very fast fire rate
-        ["smg"] = new WeaponDef
-        {
-            Id = "smg",
-            Name = "SMG",
-            Damage = 15,
-            Range = 6,
-            CooldownTicks = 4,     // 0.2s between shots (very fast)
-            Accuracy = 0.55f,      // Less accurate, relies on volume
-            MagazineSize = 25,
-            ReloadTicks = 30       // 1.5 sec
-        },
-        // Shotgun: High risk/reward, devastating up close
-        // 2 hits to kill! But must close distance
-        ["shotgun"] = new WeaponDef
-        {
-            Id = "shotgun",
-            Name = "Shotgun",
-            Damage = 50,
-            Range = 4,             // Very short range
-            CooldownTicks = 18,    // 0.9s between shots (slow)
-            Accuracy = 0.85f,      // Very accurate when in range
-            MagazineSize = 6,
-            ReloadTicks = 60       // 3 sec
-        }
-    };
+    private readonly Dictionary<string, WeaponDef> weapons;
 
-    public WeaponDef Get(string id) => weapons.TryGetValue(id, out var w) ? w : weapons["rifle"];
+    /// <summary>
+    /// Create with hardcoded defaults (fallback).
+    /// </summary>
+    public WeaponDefinitions()
+    {
+        weapons = new Dictionary<string, WeaponDef>
+        {
+            ["rifle"] = new WeaponDef
+            {
+                Id = "rifle",
+                Name = "Assault Rifle",
+                Damage = 25,
+                Range = 8,
+                CooldownTicks = 10,
+                Accuracy = 0.70f,
+                MagazineSize = 30,
+                ReloadTicks = 40
+            }
+        };
+    }
+
+    /// <summary>
+    /// Create from loaded JSON data.
+    /// </summary>
+    public WeaponDefinitions(Dictionary<string, WeaponDef> data)
+    {
+        weapons = data;
+    }
+
+    public WeaponDef Get(string id) => weapons.TryGetValue(id, out var w) ? w : weapons.GetValueOrDefault("rifle");
     public bool Has(string id) => weapons.ContainsKey(id);
     public IEnumerable<WeaponDef> All => weapons.Values;
 }
@@ -115,43 +164,35 @@ public class EnemyDef
 
 public class EnemyDefinitions
 {
-    private readonly Dictionary<string, EnemyDef> enemies = new()
-    {
-        ["grunt"] = new EnemyDef
-        {
-            Id = "grunt",
-            Name = "Grunt",
-            Hp = 80,
-            WeaponId = "rifle",
-            Behavior = EnemyBehavior.Aggressive
-        },
-        ["gunner"] = new EnemyDef
-        {
-            Id = "gunner",
-            Name = "Gunner",
-            Hp = 100,
-            WeaponId = "smg",
-            Behavior = EnemyBehavior.Aggressive
-        },
-        ["sniper"] = new EnemyDef
-        {
-            Id = "sniper",
-            Name = "Sniper",
-            Hp = 60,
-            WeaponId = "rifle",
-            Behavior = EnemyBehavior.Defensive
-        },
-        ["heavy"] = new EnemyDef
-        {
-            Id = "heavy",
-            Name = "Heavy",
-            Hp = 150,
-            WeaponId = "shotgun",
-            Behavior = EnemyBehavior.Aggressive
-        }
-    };
+    private readonly Dictionary<string, EnemyDef> enemies;
 
-    public EnemyDef Get(string id) => enemies.TryGetValue(id, out var e) ? e : enemies["grunt"];
+    /// <summary>
+    /// Create with hardcoded defaults (fallback).
+    /// </summary>
+    public EnemyDefinitions()
+    {
+        enemies = new Dictionary<string, EnemyDef>
+        {
+            ["grunt"] = new EnemyDef
+            {
+                Id = "grunt",
+                Name = "Grunt",
+                Hp = 80,
+                WeaponId = "rifle",
+                Behavior = EnemyBehavior.Aggressive
+            }
+        };
+    }
+
+    /// <summary>
+    /// Create from loaded JSON data.
+    /// </summary>
+    public EnemyDefinitions(Dictionary<string, EnemyDef> data)
+    {
+        enemies = data;
+    }
+
+    public EnemyDef Get(string id) => enemies.TryGetValue(id, out var e) ? e : enemies.GetValueOrDefault("grunt");
     public bool Has(string id) => enemies.ContainsKey(id);
     public IEnumerable<EnemyDef> All => enemies.Values;
 }
@@ -202,51 +243,39 @@ public class AbilityDef
 
 public class AbilityDefinitions
 {
-    private readonly Dictionary<string, AbilityDef> abilities = new()
+    private readonly Dictionary<string, AbilityDef> abilities;
+
+    /// <summary>
+    /// Create with hardcoded defaults (fallback).
+    /// </summary>
+    public AbilityDefinitions()
     {
-        ["frag_grenade"] = new AbilityDef
+        abilities = new Dictionary<string, AbilityDef>
         {
-            Id = "frag_grenade",
-            Name = "Frag Grenade",
-            Type = AbilityType.Grenade,
-            TargetType = AbilityTargetType.Tile,
-            Range = 6,
-            Cooldown = 60,
-            Delay = 20,
-            Radius = 2,
-            Damage = 40,
-            EffectId = null,
-            EffectDuration = 0
-        },
-        ["stun_grenade"] = new AbilityDef
-        {
-            Id = "stun_grenade",
-            Name = "Stun Grenade",
-            Type = AbilityType.Grenade,
-            TargetType = AbilityTargetType.Tile,
-            Range = 6,
-            Cooldown = 50,
-            Delay = 20,
-            Radius = 2,
-            Damage = 10,
-            EffectId = "stunned",
-            EffectDuration = 40
-        },
-        ["stun_shot"] = new AbilityDef
-        {
-            Id = "stun_shot",
-            Name = "Stun Shot",
-            Type = AbilityType.Shot,
-            TargetType = AbilityTargetType.Actor,
-            Range = 6,
-            Cooldown = 40,
-            Delay = 0,
-            Radius = 0,
-            Damage = 10,
-            EffectId = "stunned",
-            EffectDuration = 40
-        }
-    };
+            ["frag_grenade"] = new AbilityDef
+            {
+                Id = "frag_grenade",
+                Name = "Frag Grenade",
+                Type = AbilityType.Grenade,
+                TargetType = AbilityTargetType.Tile,
+                Range = 6,
+                Cooldown = 60,
+                Delay = 20,
+                Radius = 2,
+                Damage = 40,
+                EffectId = null,
+                EffectDuration = 0
+            }
+        };
+    }
+
+    /// <summary>
+    /// Create from loaded JSON data.
+    /// </summary>
+    public AbilityDefinitions(Dictionary<string, AbilityDef> data)
+    {
+        abilities = data;
+    }
 
     public AbilityDef Get(string id) => abilities.TryGetValue(id, out var a) ? a : null;
     public bool Has(string id) => abilities.ContainsKey(id);

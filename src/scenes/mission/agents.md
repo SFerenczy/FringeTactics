@@ -10,36 +10,39 @@ Visual representation of tactical combat. Renders CombatState and handles player
 - **TimeStateWidget.tscn** - Pause/time display widget
 
 ### Scripts
-- **MissionView.cs** - Main controller: spawns actors, handles input, issues orders to CombatState, renders fog of war, manages cover indicators, manages interactable views
+- **MissionView.cs** - Main view: spawns actors, renders fog of war, cover indicators, interactable views. Subscribes to MissionInputController events.
+- **MissionInputController.cs** - Handles all input: selection, movement orders, attack orders, ability targeting, box selection. Owns SelectionManager.
+- **SelectionManager.cs** - Manages selection state and control groups. Pure C# class (no Node).
 - **ActorView.cs** - Actor visual: position sync, HP bar, hit flash, death state
 - **InteractableView.cs** - Interactable visual: color-coded by type/state, channel progress bar (M5)
 - **TimeStateWidget.cs** - Displays pause state and current time
 - **TacticalCamera.cs** - Camera controller: pan (WASD/edge), zoom (scroll), follow selected unit
 - **CoverIndicator.cs** - Displays directional cover indicators for selected units
 
-### Unused
-- **MissionView.gd** - Empty placeholder (using C# instead)
+## Architecture
+
+The mission view follows a Controller → View pattern:
+
+- **MissionInputController** - Interprets raw input into high-level commands (events)
+- **SelectionManager** - Owns selection state, control groups
+- **MissionView** - Subscribes to controller events, updates visuals, issues orders to CombatState
 
 ## Responsibilities
 
-- Draw the tactical grid with tile type visualization (floor/wall/entry zone)
-- Render fog of war overlay (Unknown=black, Revealed=semi-transparent, Visible=clear)
-- Hide enemies in fog, show when visible
-- Prevent targeting enemies through fog
-- Spawn and position actor visuals
-- Handle selection:
-  - Single click to select one unit
-  - Shift+click to add/remove from selection
-  - Drag box to select multiple units
-  - Double-click to select all crew
-  - Number keys (1-3) to recall control groups (or select crew by index if no group saved)
-  - Ctrl+1-3 to save current selection as control group
-  - Tab to select all crew
-- Translate right-click to move or attack orders
-- Show movement target marker when units are moving
-- Show HP bars, hit feedback, death states
-- Camera control: pan, zoom, follow selected unit
-- Show cover indicators for selected units (blue bars on tile edges)
+### MissionInputController
+- Handle all keyboard and mouse input
+- Manage selection state via SelectionManager
+- Emit events for: selection changes, move/attack orders, ability targeting
+- Handle box selection drag state
+- Handle control groups (Ctrl+1-3 save, 1-3 recall)
+
+### MissionView
+- Draw the tactical grid with tile type visualization
+- Render fog of war overlay
+- Spawn and manage actor visuals
+- Show cover indicators for selected units
+- Show movement target markers
+- Issue orders to CombatState when receiving events from input controller
 
 ## Dependencies
 
@@ -48,10 +51,12 @@ Visual representation of tactical combat. Renders CombatState and handles player
 
 ## Input Flow
 
-1. Player clicks/keys → MissionView._Input()
-2. MissionView calls CombatState.IssueMovementOrder() or IssueAttackOrder()
-3. CombatState processes orders in simulation ticks
-4. Actor events fire → ActorView updates visuals
+1. Player clicks/keys → MissionInputController._Input()
+2. MissionInputController interprets intent, updates SelectionManager
+3. MissionInputController emits events (MoveOrderIssued, AttackOrderIssued, etc.)
+4. MissionView receives events, calls CombatState.IssueMovementOrder() etc.
+5. CombatState processes orders in simulation ticks
+6. Actor events fire → ActorView updates visuals
 
 ## Fog of War Flow
 

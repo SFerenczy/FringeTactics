@@ -5,13 +5,15 @@ Real-time with pause (RTwP) tactical combat logic.
 ## Files
 
 ### State
-- **CombatState.cs** - Root combat state: actors, map, time system, MissionPhase (Setup/Active/Complete), objectives. Processes ticks and attacks.
-- **Actor.cs** - Individual combatant: position, HP, state (Alive/Down/Dead), movement, attack orders
+- **CombatState.cs** - Root combat state: actors, map, time system, MissionPhase (Setup/Active/Complete), objectives. Orchestrates systems per tick.
+- **Actor.cs** - Individual combatant: position, HP, state (Alive/Down/Dead), movement, attack orders, stat modifiers
 - **MapState.cs** - Grid map state: TileType (Floor/Wall/Void), cover flags, entry zones, interactables
 - **MapBuilder.cs** - Factory for creating MapState from templates or configs
 
 ### Systems
 - **TimeSystem.cs** - Tick-based time: pause/resume, time scale, accumulator pattern
+- **AttackSystem.cs** - Processes attacks each tick: manual attacks, auto-defend. Emits AttackResolved, ActorDied events.
+- **MovementSystem.cs** - Stateless movement utilities: collision resolution, pathfinding around obstacles
 - **CombatResolver.cs** - Stateless attack resolution: range, LOS, hit chance, damage
 - **AIController.cs** - Simple enemy AI: every N ticks, pick closest visible player, move toward range, attack if able
 - **AbilitySystem.cs** - Ability execution: cooldowns, delayed effects, AoE damage, status effects
@@ -32,6 +34,7 @@ Real-time with pause (RTwP) tactical combat logic.
 - **AttackResult.cs** - Struct for attack resolution results: hit/miss, damage, cover height
 - **Interactable.cs** - Interactable entity: doors, terminals, hazards with state machine (M5)
 - **ChanneledAction.cs** - Channeled action data: type, target, duration, progress tracking (M5)
+- **StatModifier.cs** - Stat modifier system: StatType enum, StatModifier class, ModifierCollection for calculating effective stats
 
 ### Utilities
 - **ActorTypes.cs** - Constants for actor type strings: Crew, Enemy, Drone

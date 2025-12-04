@@ -25,6 +25,7 @@ public partial class CombatState
     public bool Victory { get; set; } = false;
     private int nextActorId = 0;
     private AIController aiController;
+    private AttackSystem attackSystem;
     
     // Mission phase tracking
     public MissionPhase Phase { get; private set; } = MissionPhase.Active;
@@ -71,6 +72,10 @@ public partial class CombatState
         AbilitySystem = new AbilitySystem(this);
         Visibility = new VisibilitySystem(MapState);
         Interactions = new InteractionSystem(this);
+        
+        attackSystem = new AttackSystem(GetActorById);
+        attackSystem.AttackResolved += OnAttackResolved;
+        attackSystem.ActorDied += OnActorDied;
 
         SimLog.Log($"[CombatState] Initialized with seed {seed}");
     }
@@ -101,6 +106,13 @@ public partial class CombatState
     {
         // Process a single simulation tick.
         var tickDuration = TimeSystem.TickDuration;
+        var currentTick = TimeSystem.CurrentTick;
+
+        // Update actor modifiers (remove expired effects)
+        foreach (var actor in Actors)
+        {
+            actor.UpdateModifiers(currentTick);
+        }
 
         // Run AI decisions
         aiController.Tick();
@@ -111,11 +123,11 @@ public partial class CombatState
         // Process interactions
         Interactions.Tick();
 
-        // Process attacks first
-        ProcessAttacks();
+        // Process attacks (delegated to AttackSystem)
+        attackSystem.ProcessTick(Actors, MapState, Rng, Stats);
 
         // Resolve movement collisions before actors move
-        ResolveMovementCollisions();
+        MovementSystem.ResolveCollisions(Actors, MapState);
 
         // Then process actor movement/cooldowns
         foreach (var actor in Actors)
@@ -130,54 +142,14 @@ public partial class CombatState
         CheckMissionEnd();
     }
 
-    private void ResolveMovementCollisions()
+    private void OnAttackResolved(Actor attacker, Actor target, AttackResult result)
     {
-        // Build map of next-tile destinations for moving actors
-        var destinations = new Dictionary<Vector2I, List<Actor>>();
+        AttackResolved?.Invoke(attacker, target, result);
+    }
 
-        foreach (var actor in Actors)
-        {
-            if (actor.State != ActorState.Alive || !actor.IsMoving)
-                continue;
-
-            // Calculate the tile this actor is about to enter
-            var moveDir = GridUtils.GetStepDirection(actor.GridPosition, actor.TargetPosition);
-            var nextTile = actor.GridPosition + moveDir;
-
-            if (!destinations.ContainsKey(nextTile))
-                destinations[nextTile] = new List<Actor>();
-            destinations[nextTile].Add(actor);
-        }
-
-        // For tiles with multiple actors heading there, pause all but the closest
-        foreach (var kvp in destinations)
-        {
-            var tile = kvp.Key;
-            var actors = kvp.Value;
-
-            // Also check if an actor is already standing on that tile
-            var occupant = GetActorAtPosition(tile);
-            bool tileOccupied = occupant != null && occupant.State == ActorState.Alive && !occupant.IsMoving;
-
-            if (actors.Count > 1 || tileOccupied)
-            {
-                // Sort by distance to target (closest gets priority)
-                actors.Sort((a, b) =>
-                {
-                    var distA = (a.TargetPosition - a.GridPosition).LengthSquared();
-                    var distB = (b.TargetPosition - b.GridPosition).LengthSquared();
-                    return distA.CompareTo(distB);
-                });
-
-                // If tile is occupied by stationary unit, pause all movers
-                int startIndex = tileOccupied ? 0 : 1;
-
-                for (int i = startIndex; i < actors.Count; i++)
-                {
-                    actors[i].PauseMovement();
-                }
-            }
-        }
+    private void OnActorDied(Actor actor)
+    {
+        ActorDied?.Invoke(actor);
     }
 
     private void CheckMissionEnd()
@@ -243,176 +215,6 @@ public partial class CombatState
     {
         hasEnemyObjective = hasEnemies;
         SimLog.Log($"[CombatState] Enemy objective set: {hasEnemies}");
-    }
-
-    private void ProcessAttacks()
-    {
-        // Process manual attack orders
-        foreach (var attacker in Actors)
-        {
-            if (attacker.State != ActorState.Alive)
-            {
-                continue;
-            }
-
-            if (!attacker.AttackTargetId.HasValue)
-            {
-                continue;
-            }
-
-            if (!attacker.CanFire())
-            {
-                // Auto-reload if out of ammo in magazine but have reserve
-                if (attacker.NeedsReload())
-                {
-                    attacker.StartReload();
-                }
-                continue;
-            }
-
-            var target = GetActorById(attacker.AttackTargetId.Value);
-            if (target == null || target.State != ActorState.Alive)
-            {
-                // Target gone or dead, clear order
-                attacker.SetAttackTarget(null);
-                continue;
-            }
-
-            // Try to attack
-            if (CombatResolver.CanAttack(attacker, target, attacker.EquippedWeapon, MapState))
-            {
-                ExecuteAttack(attacker, target, isAutoDefend: false);
-            }
-        }
-
-        // Process auto-defend (return fire)
-        ProcessAutoDefend();
-    }
-
-    private void ProcessAutoDefend()
-    {
-        foreach (var defender in Actors)
-        {
-            if (defender.State != ActorState.Alive)
-            {
-                continue;
-            }
-
-            // Skip if has manual attack order (manual orders take priority)
-            if (defender.AttackTargetId.HasValue)
-            {
-                continue;
-            }
-
-            // Skip if no auto-defend target
-            if (!defender.AutoDefendTargetId.HasValue)
-            {
-                continue;
-            }
-
-            if (!defender.CanFire())
-            {
-                // Auto-reload during auto-defend too
-                if (defender.NeedsReload())
-                {
-                    defender.StartReload();
-                }
-                continue;
-            }
-
-            var attacker = GetActorById(defender.AutoDefendTargetId.Value);
-            if (attacker == null || attacker.State != ActorState.Alive)
-            {
-                // Attacker gone or dead, clear auto-defend
-                defender.ClearAutoDefendTarget();
-                continue;
-            }
-
-            // Try to return fire
-            if (CombatResolver.CanAttack(defender, attacker, defender.EquippedWeapon, MapState))
-            {
-                ExecuteAttack(defender, attacker, isAutoDefend: true);
-            }
-        }
-    }
-
-    private void ExecuteAttack(Actor attacker, Actor target, bool isAutoDefend)
-    {
-        var result = CombatResolver.ResolveAttack(attacker, target, attacker.EquippedWeapon, MapState, Rng.GetRandom());
-        attacker.StartCooldown();
-        attacker.ConsumeAmmo();
-
-        var attackType = isAutoDefend ? "auto-defend" : "attack";
-
-        var coverTag = result.TargetCoverHeight switch
-        {
-            CoverHeight.Low => " [LOW COVER]",
-            CoverHeight.Half => " [HALF COVER]",
-            CoverHeight.High => " [HIGH COVER]",
-            CoverHeight.Full => " [FULL COVER]",
-            _ => ""
-        };
-        
-        if (result.Hit)
-        {
-            // Check god mode before applying damage
-            var isGodMode = (target.Type == ActorTypes.Crew && DevTools.CrewGodMode) ||
-                           (target.Type == ActorTypes.Enemy && DevTools.EnemyGodMode);
-            
-            if (!isGodMode)
-            {
-                target.TakeDamage(result.Damage);
-            }
-            
-            var godModeTag = isGodMode ? " [GOD MODE]" : "";
-            SimLog.Log($"[Combat] {attacker.Type}#{attacker.Id} hit {target.Type}#{target.Id} ({attackType}) for {result.Damage} damage ({result.HitChance:P0} chance){coverTag}. HP: {target.Hp}/{target.MaxHp}{godModeTag}");
-
-            // Set auto-defend target on the victim (they'll return fire)
-            if (target.State == ActorState.Alive)
-            {
-                target.SetAutoDefendTarget(attacker.Id);
-            }
-            else
-            {
-                SimLog.Log($"[Combat] {target.Type}#{target.Id} DIED!");
-                ActorDied?.Invoke(target);
-            }
-        }
-        else
-        {
-            SimLog.Log($"[Combat] {attacker.Type}#{attacker.Id} missed {target.Type}#{target.Id} ({attackType}) ({result.HitChance:P0} chance){coverTag}");
-            
-            // Even a miss triggers auto-defend (they know they're being shot at)
-            target.SetAutoDefendTarget(attacker.Id);
-        }
-
-        AttackResolved?.Invoke(attacker, target, result);
-
-        // Track stats
-        if (attacker.Type == ActorTypes.Crew)
-        {
-            Stats.PlayerShotsFired++;
-            if (result.Hit)
-            {
-                Stats.PlayerHits++;
-            }
-            else
-            {
-                Stats.PlayerMisses++;
-            }
-        }
-        else
-        {
-            Stats.EnemyShotsFired++;
-            if (result.Hit)
-            {
-                Stats.EnemyHits++;
-            }
-            else
-            {
-                Stats.EnemyMisses++;
-            }
-        }
     }
 
     public Actor AddActor(string actorType, Vector2I position)

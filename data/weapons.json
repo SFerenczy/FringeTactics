@@ -1,0 +1,42 @@
+{
+  "rifle": {
+    "id": "rifle",
+    "name": "Assault Rifle",
+    "damage": 25,
+    "range": 8,
+    "cooldownTicks": 10,
+    "accuracy": 0.70,
+    "magazineSize": 30,
+    "reloadTicks": 40
+  },
+  "pistol": {
+    "id": "pistol",
+    "name": "Pistol",
+    "damage": 18,
+    "range": 5,
+    "cooldownTicks": 6,
+    "accuracy": 0.75,
+    "magazineSize": 12,
+    "reloadTicks": 20
+  },
+  "smg": {
+    "id": "smg",
+    "name": "SMG",
+    "damage": 15,
+    "range": 6,
+    "cooldownTicks": 4,
+    "accuracy": 0.55,
+    "magazineSize": 25,
+    "reloadTicks": 30
+  },
+  "shotgun": {
+    "id": "shotgun",
+    "name": "Shotgun",
+    "damage": 50,
+    "range": 4,
+    "cooldownTicks": 18,
+    "accuracy": 0.85,
+    "magazineSize": 6,
+    "reloadTicks": 60
+  }
+}

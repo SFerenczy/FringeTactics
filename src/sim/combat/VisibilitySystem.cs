@@ -97,7 +97,7 @@ public class VisibilitySystem
     private void CalculateActorVisibility(Actor actor)
     {
         var origin = actor.GridPosition;
-        var radius = actor.VisionRadius;
+        var radius = actor.GetVisionRadius();
 
         for (int dy = -radius; dy <= radius; dy++)
         {
