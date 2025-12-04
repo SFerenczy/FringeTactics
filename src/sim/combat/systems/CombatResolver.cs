@@ -1,5 +1,4 @@
 using Godot; // For Vector2I, Mathf only - no Node/UI types
-using System;
 
 namespace FringeTactics;
 
@@ -85,7 +84,7 @@ public static class CombatResolver
     /// Resolve an attack. Returns the result with damage dealt.
     /// Uses distance-based hit chance calculation.
     /// </summary>
-    public static AttackResult ResolveAttack(Actor attacker, Actor target, WeaponData weapon, MapState map, Random rng)
+    public static AttackResult ResolveAttack(Actor attacker, Actor target, WeaponData weapon, MapState map, RngStream rng)
     {
         var result = new AttackResult
         {
@@ -110,7 +109,7 @@ public static class CombatResolver
         var hitChance = CalculateHitChance(attacker, target, weapon, map);
         result.HitChance = hitChance;
         
-        var roll = (float)rng.NextDouble();
+        var roll = rng.NextFloat();
         result.Hit = roll < hitChance;
 
         if (result.Hit)

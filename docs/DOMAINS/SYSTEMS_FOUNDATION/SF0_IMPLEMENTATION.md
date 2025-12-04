@@ -202,10 +202,10 @@ public class RngStreamState
 ```
 
 **Acceptance Criteria**:
-- [ ] `RngStream` class with seed, call count tracking
-- [ ] `RestoreState()` correctly replays to saved position
-- [ ] `GetState()` returns serializable state
-- [ ] All RNG methods increment `CallCount`
+- [x] `RngStream` class with seed, call count tracking
+- [x] `RestoreState()` correctly replays to saved position
+- [x] `GetState()` returns serializable state
+- [x] All RNG methods increment `CallCount`
 
 ---
 
@@ -358,11 +358,11 @@ public class RngServiceState
 ```
 
 **Acceptance Criteria**:
-- [ ] `RngService` manages multiple named streams
-- [ ] `MasterSeed` is player-visible and deterministic
-- [ ] Stream seeds derived deterministically from master seed
-- [ ] `GetState()` / `RestoreState()` round-trip correctly
-- [ ] `ResetTacticalStream()` allows per-mission seeds
+- [x] `RngService` manages multiple named streams
+- [x] `MasterSeed` is player-visible and deterministic
+- [x] Stream seeds derived deterministically from master seed
+- [x] `GetState()` / `RestoreState()` round-trip correctly
+- [x] `ResetTacticalStream()` allows per-mission seeds
 
 ---
 
@@ -395,9 +395,9 @@ public CombatState(MissionConfig config, RngStream tacticalRng)
 - Tests need to create `RngStream` instead of `CombatRng`
 
 **Acceptance Criteria**:
-- [ ] `CombatState` uses `RngStream` instead of `CombatRng`
-- [ ] All combat RNG calls go through the tactical stream
-- [ ] Existing tests still pass (with updated RNG creation)
+- [x] `CombatState` uses `RngStream` instead of `CombatRng`
+- [x] All combat RNG calls go through the tactical stream
+- [x] Existing tests still pass (with updated RNG creation)
 
 ---
 
@@ -413,8 +413,8 @@ public class CombatRng { ... }
 ```
 
 **Acceptance Criteria**:
-- [ ] `CombatRng` marked obsolete or removed
-- [ ] No direct usages of `CombatRng` remain
+- [x] `CombatRng` marked obsolete or removed
+- [x] No direct usages of `CombatRng` remain
 
 ---
 
@@ -455,9 +455,9 @@ public class ValidationResult
 ```
 
 **Acceptance Criteria**:
-- [ ] `ValidationResult` type exists
-- [ ] Can accumulate multiple errors/warnings
-- [ ] `IsValid` returns true only when no errors
+- [x] `ValidationResult` type exists
+- [x] Can accumulate multiple errors/warnings
+- [x] `IsValid` returns true only when no errors
 
 ---
 
@@ -545,10 +545,10 @@ public class AbilityDef
 ```
 
 **Acceptance Criteria**:
-- [ ] Each definition type has a `Validate()` method
-- [ ] Required fields are checked
-- [ ] Value ranges are validated
-- [ ] Error messages include the definition ID for context
+- [x] Each definition type has a `Validate()` method
+- [x] Required fields are checked
+- [x] Value ranges are validated
+- [x] Error messages include the definition ID for context
 
 ---
 
@@ -760,11 +760,11 @@ public class ConfigRegistry
 ```
 
 **Acceptance Criteria**:
-- [ ] `ConfigRegistry` loads all config files
-- [ ] Validation runs on each loaded item
-- [ ] Cross-reference validation (e.g., enemy weapon exists)
-- [ ] `FailFastOnErrors` throws in development mode
-- [ ] `LastLoadResult` available for inspection
+- [x] `ConfigRegistry` loads all config files
+- [x] Validation runs on each loaded item
+- [x] Cross-reference validation (e.g., enemy weapon exists)
+- [x] `FailFastOnErrors` throws in development mode
+- [x] `LastLoadResult` available for inspection
 
 ---
 
@@ -795,7 +795,7 @@ public class AbilityDefinitions
 ```
 
 **Acceptance Criteria**:
-- [ ] Each definitions class has a `Count` property
+- [x] Each definitions class has a `Count` property
 
 ---
 
@@ -842,9 +842,9 @@ public static class Definitions
 **Recommendation**: Option A for backward compatibility during migration.
 
 **Acceptance Criteria**:
-- [ ] Existing code using `Definitions.Weapons` still works
-- [ ] Validation runs on first access
-- [ ] `Reload()` forces re-validation
+- [x] Existing code using `Definitions.Weapons` still works
+- [x] Validation runs on first access
+- [x] `Reload()` forces re-validation
 
 ---
 
@@ -1034,10 +1034,10 @@ public class RngServiceTests
 ```
 
 **Acceptance Criteria**:
-- [ ] Tests verify determinism with same seed
-- [ ] Tests verify stream isolation
-- [ ] Tests verify save/restore round-trip
-- [ ] All tests pass
+- [x] Tests verify determinism with same seed
+- [x] Tests verify stream isolation
+- [x] Tests verify save/restore round-trip
+- [x] All tests pass
 
 ---
 
@@ -1149,9 +1149,9 @@ public class ConfigValidationTests
 ```
 
 **Acceptance Criteria**:
-- [ ] Tests verify valid definitions pass
-- [ ] Tests verify invalid definitions fail with specific errors
-- [ ] Tests verify `ConfigRegistry.Load()` works
+- [x] Tests verify valid definitions pass
+- [x] Tests verify invalid definitions fail with specific errors
+- [x] Tests verify `ConfigRegistry.Load()` works
 
 ---
 
@@ -1170,7 +1170,7 @@ Add entries for new files:
 - `ConfigRegistry.cs` - Enhanced config loading with validation
 
 **Acceptance Criteria**:
-- [ ] `agents.md` files updated with new file descriptions
+- [x] `agents.md` files updated with new file descriptions
 
 ---
 
@@ -1179,18 +1179,18 @@ Add entries for new files:
 ### Manual Testing
 
 1. **RNG Determinism**
-   - [ ] Same master seed produces same campaign events
-   - [ ] Same tactical seed produces same combat outcomes
-   - [ ] Consuming campaign RNG doesn't affect tactical RNG
+   - [x] Same master seed produces same campaign events
+   - [x] Same tactical seed produces same combat outcomes
+   - [x] Consuming campaign RNG doesn't affect tactical RNG
 
 2. **Config Loading**
-   - [ ] Game starts with valid JSON files
-   - [ ] Game warns but continues with missing files
-   - [ ] Game fails fast (in dev mode) with invalid data
+   - [x] Game starts with valid JSON files
+   - [x] Game warns but continues with missing files
+   - [x] Game fails fast (in dev mode) with invalid data
 
 3. **Save/Load (Preparation)**
-   - [ ] RNG state can be serialized to JSON
-   - [ ] RNG state can be restored from JSON
+   - [x] RNG state can be serialized to JSON
+   - [x] RNG state can be restored from JSON
 
 ### Automated Tests
 
@@ -1231,13 +1231,13 @@ See Step 3.1 and 3.2 for test implementations.
 
 When SF0 is complete, you should be able to:
 
-1. ✅ Create an `RngService` with a master seed
-2. ✅ Get deterministic sequences from `Campaign` and `Tactical` streams
-3. ✅ Serialize and restore RNG state
-4. ✅ Load config files with validation
-5. ✅ See clear error messages for invalid config data
-6. ✅ Fail fast in development mode on validation errors
-7. ✅ All existing tactical tests still pass
+1. ✅ Create an `RngService` with a master seed - **DONE**
+2. ✅ Get deterministic sequences from `Campaign` and `Tactical` streams - **DONE**
+3. ✅ Serialize and restore RNG state - **DONE**
+4. ✅ Load config files with validation - **DONE**
+5. ✅ See clear error messages for invalid config data - **DONE**
+6. ✅ Fail fast in development mode on validation errors - **DONE**
+7. ✅ All existing tactical tests still pass - **DONE** (156 tests pass, 2 pre-existing AI failures)
 
 **Natural Pause Point**: After SF0, you have the foundation for deterministic simulation and validated data loading. This enables replay debugging, save/load, and confident content authoring.
 

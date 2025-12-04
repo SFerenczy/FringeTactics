@@ -110,7 +110,7 @@ public class AttackSystem
 
     private void ExecuteAttack(Actor attacker, Actor target, MapState map, RngStream rng, CombatStats stats, bool isAutoDefend)
     {
-        var result = CombatResolver.ResolveAttack(attacker, target, attacker.EquippedWeapon, map, rng.GetRandom());
+        var result = CombatResolver.ResolveAttack(attacker, target, attacker.EquippedWeapon, map, rng);
         attacker.StartCooldown();
         attacker.ConsumeAmmo();
 

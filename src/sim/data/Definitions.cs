@@ -1,4 +1,3 @@
-using Godot;
 using System.Collections.Generic;
 
 namespace FringeTactics;
@@ -36,7 +35,7 @@ public static class Definitions
     {
         registry = new ConfigRegistry();
         registry.Load();
-        GD.Print("[Definitions] Data reloaded");
+        SimLog.Log("[Definitions] Data reloaded");
     }
 
     /// <summary>
@@ -129,7 +128,7 @@ public class WeaponDefinitions
         weapons = data;
     }
 
-    public WeaponDef Get(string id) => weapons.TryGetValue(id, out var w) ? w : weapons.GetValueOrDefault("rifle");
+    public WeaponDef Get(string id) => weapons.TryGetValue(id, out var w) ? w : null;
     public bool Has(string id) => weapons.ContainsKey(id);
     public IEnumerable<WeaponDef> All => weapons.Values;
     public int Count => weapons.Count;
@@ -201,7 +200,7 @@ public class EnemyDefinitions
         enemies = data;
     }
 
-    public EnemyDef Get(string id) => enemies.TryGetValue(id, out var e) ? e : enemies.GetValueOrDefault("grunt");
+    public EnemyDef Get(string id) => enemies.TryGetValue(id, out var e) ? e : null;
     public bool Has(string id) => enemies.ContainsKey(id);
     public IEnumerable<EnemyDef> All => enemies.Values;
     public int Count => enemies.Count;

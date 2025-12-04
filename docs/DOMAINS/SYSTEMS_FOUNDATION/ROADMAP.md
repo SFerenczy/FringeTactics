@@ -45,7 +45,15 @@ Tactical already uses RNG and config data. Formalizing this ensures determinism 
 - Unit tests for RNG determinism.
 - Unit tests for config loading.
 
-**Status:** Partially complete (Tactical uses ad-hoc RNG and config loading)
+**Status:** ✅ Complete
+
+**Implementation:**
+- `RngStream.cs` - Single seeded RNG stream with serializable state
+- `RngService.cs` - Multi-stream RNG manager with campaign/tactical streams
+- `ValidationResult.cs` - Validation result accumulator
+- `ConfigRegistry.cs` - Config loading with validation and fail-fast mode
+- `CombatRng.cs` - Marked obsolete, replaced by RngStream
+- Unit tests in `SF0RngTests.cs` and `SF0ConfigTests.cs`
 
 ---
 

@@ -8,28 +8,17 @@ namespace FringeTactics;
 /// </summary>
 public class ConfigLoadResult
 {
-    public bool Success { get; set; } = true;
-    public List<string> Errors { get; } = new();
-    public List<string> Warnings { get; } = new();
+    public ValidationResult Validation { get; } = new();
     public int ItemsLoaded { get; set; }
 
-    public void AddError(string message)
-    {
-        Errors.Add(message);
-        Success = false;
-    }
+    public bool Success => Validation.IsValid;
+    public List<string> Errors => Validation.Errors;
+    public List<string> Warnings => Validation.Warnings;
 
-    public void AddWarning(string message) => Warnings.Add(message);
+    public void AddError(string message) => Validation.AddError(message);
+    public void AddWarning(string message) => Validation.AddWarning(message);
 
-    public void Merge(ValidationResult validation)
-    {
-        Errors.AddRange(validation.Errors);
-        Warnings.AddRange(validation.Warnings);
-        if (validation.Errors.Count > 0)
-        {
-            Success = false;
-        }
-    }
+    public void Merge(ValidationResult validation) => Validation.Merge(validation);
 }
 
 /// <summary>
@@ -76,7 +65,6 @@ public class ConfigRegistry
         result.Merge(abilityResult);
         result.ItemsLoaded += Abilities.Count;
 
-        result.Success = result.Errors.Count == 0;
         LastLoadResult = result;
         IsLoaded = true;
 

@@ -33,7 +33,6 @@ Real-time with pause (RTwP) tactical combat logic.
 - **WeaponData.cs** - Weapon stats: range, damage, cooldown ticks, magazine size, reload time
 - **CombatStats.cs** - Combat statistics: shots fired, hits, misses for player and enemy
 - **AbilityData.cs** - Ability definitions: targeting type, range, cooldown, delay, radius, damage, effects
-- **CombatRng.cs** - [DEPRECATED] Legacy RNG wrapper, use RngStream from RngService instead
 - **VisibilityState.cs** - Enum for tile visibility: Unknown, Revealed, Visible
 - **CoverDirection.cs** - CoverHeight enum (None/Low/Half/High/Full), CoverDirection flags enum, and helper methods for direction calculations
 - **CombatBalance.cs** - Centralized combat balance constants, cover height reduction values, and GetCoverReduction() helper

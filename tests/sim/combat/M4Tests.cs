@@ -254,7 +254,7 @@ public class M4Tests
         // Cover check looks at tile (5,2) - wall!
         AssertThat(map.HasCoverAgainst(target.GridPosition, attacker.GridPosition)).IsTrue();
 
-        var result = CombatResolver.ResolveAttack(attacker, target, attacker.EquippedWeapon, map, combat.Rng.GetRandom());
+        var result = CombatResolver.ResolveAttack(attacker, target, attacker.EquippedWeapon, map, combat.Rng);
 
         AssertThat(result.TargetInCover).IsTrue();
     }
@@ -276,7 +276,7 @@ public class M4Tests
         var attacker = combat.AddActor(ActorType.Crew, new Vector2I(1, 1));
         var exposedTarget = combat.AddActor(ActorType.Enemy, new Vector2I(3, 1));
 
-        var result = CombatResolver.ResolveAttack(attacker, exposedTarget, attacker.EquippedWeapon, map, combat.Rng.GetRandom());
+        var result = CombatResolver.ResolveAttack(attacker, exposedTarget, attacker.EquippedWeapon, map, combat.Rng);
 
         AssertThat(result.TargetInCover).IsFalse();
     }
@@ -703,7 +703,7 @@ public class M4Tests
         // Direction from target to attacker is W, so check tile (4,2) = half cover
         AssertThat(map.GetCoverAgainst(target.GridPosition, attacker.GridPosition)).IsEqual(CoverHeight.Half);
 
-        var result = CombatResolver.ResolveAttack(attacker, target, attacker.EquippedWeapon, map, combat.Rng.GetRandom());
+        var result = CombatResolver.ResolveAttack(attacker, target, attacker.EquippedWeapon, map, combat.Rng);
 
         AssertThat(result.TargetCoverHeight).IsEqual(CoverHeight.Half);
         AssertThat(result.TargetInCover).IsTrue();

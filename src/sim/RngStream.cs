@@ -62,12 +62,6 @@ public class RngStream
     };
 
     /// <summary>
-    /// Get the underlying Random for passing to stateless functions.
-    /// Note: Direct use bypasses CallCount tracking.
-    /// </summary>
-    public Random GetRandom() => random;
-
-    /// <summary>
     /// Roll a float between 0 and 1.
     /// </summary>
     public float NextFloat()
