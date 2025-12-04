@@ -1,5 +1,7 @@
 # TACTICAL_DOMAIN.md – Tactical Domain
 
+**Dependencies**: CAMPAIGN_FOUNDATIONS.md sections 3 (Crew stats/traits), 6 (RNG), 7 (Mission I/O).
+
 ## Purpose
 
 The Tactical domain owns the **on-foot, real-time-with-pause (RTwP) simulation** for missions.
@@ -122,11 +124,11 @@ The Tactical domain consumes:
   - Objective definitions:
     - Primary/secondary objectives, win/fail conditions.
 
-- **Snapshot of persistent state** (from Management / Campaign):
+- **Snapshot of persistent state** (from Management / Campaign) (see CAMPAIGN_FOUNDATIONS.md 3.1, 7.1):
   - Player squad composition:
     - Which crew members are present in this mission.
   - Tactical-relevant stats:
-    - Health, skills, traits that affect on-foot behaviour.
+    - Health, skills, traits that affect on-foot behaviour (per campaign foundations).
   - Equipment and consumables:
     - Weapon loadouts, armor, gadgets, medkits, ammo counts.
 
@@ -153,7 +155,7 @@ The Tactical domain consumes:
 
 The Tactical domain produces:
 
-- **Mission result** (for Campaign/Management):
+- **Mission result** (for Campaign/Management) (see CAMPAIGN_FOUNDATIONS.md 7.2):
   - Per-unit outcomes:
     - Alive/dead, health, status effects, immediate injuries.
   - Per-item outcomes:
@@ -163,7 +165,7 @@ The Tactical domain produces:
   - Alarm/stealth summary:
     - Whether/when alarms were triggered, how loud the mission was.
   - Optional per-mission flags:
-    - “Notorious incident”, “silent success”, “hostages killed”, etc.
+    - "Notorious incident", "silent success", "hostages killed", etc.
 
 - **Tactical events** (via event bus):
   - “UnitDied”, “UnitDowned”, “AlarmRaised”, “DoorOpened”, “TerminalHacked”, “ObjectiveCompleted”, etc.

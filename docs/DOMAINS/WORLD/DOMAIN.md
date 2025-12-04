@@ -1,5 +1,7 @@
 # World Domain
 
+**Dependencies**: CAMPAIGN_FOUNDATIONS.md sections 2 (Contracts), 4 (World Metrics), 5 (Time), 6 (RNG).
+
 ## Purpose
 
 The World domain owns the canonical representation of the galaxy: its topology, locations, factions’ territorial control, and attached stateful metadata. It is the “single source of truth” for where things are and who owns what at any given time.
@@ -14,8 +16,9 @@ The World domain owns the canonical representation of the galaxy: its topology, 
 - Track **territorial control**:
   - Which faction owns which system/station.
   - Occupation states (contested, occupied, neutral).
-- Store **world-attached metrics and tags**:
-  - Security level, wealth, pirate activity, unrest (as fields).
+- Store **world-attached metrics and tags** (see CAMPAIGN_FOUNDATIONS.md 4.1):
+  - System-level: stability, security_level, law_enforcement_presence, criminal_activity, economic_activity.
+  - Faction-level: military_strength, economic_power, influence, desperation, corruption.
   - Tags/flags describing characteristics: frontier, core, industrial, lawless.
 - Provide **query APIs** for other domains:
   - “What stations are in this system?”
@@ -40,7 +43,7 @@ The World domain owns the canonical representation of the galaxy: its topology, 
 
 - **Initialization data**:
   - Either from Generation (procedural galaxy) or from static config (for development/testing).
-- **Updates from Simulation**:
+- **Updates from Simulation** (see CAMPAIGN_FOUNDATIONS.md 4.1):
   - New values for world metrics (security, trade, activity, etc.).
   - Faction control changes.
 - **Updates from other domains via events**:
@@ -56,8 +59,8 @@ The World domain owns the canonical representation of the galaxy: its topology, 
   - Paths (or data for pathfinding) between systems.
 - **Location queries**:
   - Stations in a system, their facilities, their owning faction.
-- **Metric and tag queries**:
-  - Security level, wealth, pirate activity, unrest, tags.
+- **Metric and tag queries** (see CAMPAIGN_FOUNDATIONS.md 4.1):
+  - Security level, economic activity, pirate activity, unrest, tags.
 - **Faction territory information**:
   - Systems per faction.
   - Regions with mixed control or contested states.
@@ -66,11 +69,11 @@ The World domain owns the canonical representation of the galaxy: its topology, 
 
 ## Key Concepts & Data
 
-- **System**:
+- **System** (see CAMPAIGN_FOUNDATIONS.md 4.1):
   - Stable ID.
   - Position (for map layout).
   - Connections to other systems.
-  - Metrics: security, trade, pirate_activity, unrest (owned but often written by Simulation).
+  - Metrics: stability, security_level, law_enforcement_presence, criminal_activity, economic_activity.
   - Tags: frontier, hub, border, etc.
 - **Route**:
   - Edge between systems.

@@ -1,5 +1,7 @@
 # Travel Domain
 
+**Dependencies**: CAMPAIGN_FOUNDATIONS.md sections 1 (Resources, cargo), 4 (World Metrics), 5 (Time).
+
 ## Purpose
 
 The Travel domain handles movement of the player’s ship across the galaxy map and the passage of time associated with that movement. It turns route choices and movement commands into time costs, resource consumption, and potential encounters.
@@ -9,10 +11,10 @@ The Travel domain handles movement of the player’s ship across the galaxy map 
 - **Route planning and validation**:
   - Compute viable paths between systems based on world topology.
   - Respect blocked routes, range limits, and special constraints.
-- **Travel execution**:
+- **Travel execution** (see CAMPAIGN_FOUNDATIONS.md 5.1):
   - Turn a chosen route into a sequence of travel segments.
-  - Advance time along these segments.
-  - Consume travel-related resources (fuel, supplies, etc.).
+  - Advance time along these segments (time only passes during actions).
+  - Consume travel-related resources (fuel, supplies, etc.) per resource model.
 - **Risk and encounter hooks**:
   - For each travel segment, compute:
     - Encounter risk based on Simulation-provided probabilities.
@@ -41,7 +43,7 @@ The Travel domain handles movement of the player’s ship across the galaxy map 
   - Systems, routes, distances, route tags.
 - **Simulation metrics**:
   - Security level, pirate activity, patrol intensity per system/route.
-- **Management data**:
+- **Management data** (see CAMPAIGN_FOUNDATIONS.md 1):
   - Current ship status (fuel, speed modifiers, cargo load).
   - Travel-related upgrades (better engines, stealth drives).
 - **Player intent**:

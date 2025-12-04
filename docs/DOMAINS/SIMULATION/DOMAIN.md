@@ -1,14 +1,16 @@
 # Simulation Domain
 
+**Dependencies**: CAMPAIGN_FOUNDATIONS.md sections 4 (World Metrics), 5 (Time), 6 (RNG).
+
 ## Purpose
 
 The Simulation domain evolves the strategic state of the galaxy over time. It models faction behaviour, economy changes, security levels, and activity probabilities in a fully systemic way.
 
 ## Responsibilities
 
-- Maintain and update the **macro-state** of the galaxy:
+- Maintain and update the **macro-state** of the galaxy (see CAMPAIGN_FOUNDATIONS.md 4.1):
   - Faction wealth, strength, and influence.
-  - System-level metrics: security, pirate activity, trade volume, unrest.
+  - System-level metrics: stability, security_level, law_enforcement_presence, criminal_activity, economic_activity.
 - Run discrete or continuous **simulation ticks** to evolve the world based on:
   - Current world state.
   - Player actions (missions, piracy, trade).
@@ -45,8 +47,8 @@ The Simulation domain evolves the strategic state of the galaxy over time. It mo
 
 ## Outputs
 
-- Updated **World metrics** per system/station:
-  - `security_level`, `pirate_activity`, `trade_volume`, `unrest`, etc.
+- Updated **World metrics** per system/station (see CAMPAIGN_FOUNDATIONS.md 4.1):
+  - `stability`, `security_level`, `law_enforcement_presence`, `criminal_activity`, `economic_activity`, etc.
 - Updated **faction state**:
   - Wealth, fleet strength (abstract), aggression, war states.
 - **Probability fields** for:
@@ -59,11 +61,12 @@ The Simulation domain evolves the strategic state of the galaxy over time. It mo
 ## Key Concepts & Data
 
 - **SimulationTick**: A function that consumes events + current state and produces a new state.
-- **SystemMetrics**:
+- **SystemMetrics** (see CAMPAIGN_FOUNDATIONS.md 4.1):
+  - `stability: float`
   - `security_level: float`
-  - `pirate_activity: float`
-  - `trade_volume: float`
-  - `instability: float`
+  - `law_enforcement_presence: float`
+  - `criminal_activity: float`
+  - `economic_activity: float`
 - **FactionState**:
   - `wealth`, `military_power`, `desperation`, `policy` flags.
 - **Response Curves**:

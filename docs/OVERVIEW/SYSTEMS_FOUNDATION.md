@@ -4,21 +4,23 @@
 
 The Systems Foundation domain provides core infrastructural services shared across all other domains: time, randomness, configuration, events, and persistence. It is the layer everything else stands on, but it should know as little as possible about game-specific logic.
 
+**Dependencies**: Treats `CAMPAIGN_FOUNDATIONS.md` sections 5 (Time), 6 (RNG), and 7 (Mission I/O) as imported foundations and only adds cross-system patterns on top.
+
 ## Responsibilities
 
-- **Time system**:
-  - Track current game time.
-  - Provide APIs for advancing time in discrete steps.
-  - Support “scaled” time (strategic vs tactical vs paused).
-- **Randomness**:
+- **Time system** (see CAMPAIGN_FOUNDATIONS.md 5.1):
+  - Track current game time in days at campaign level.
+  - Provide APIs for advancing time in discrete steps during actions.
+  - Support "scaled" time (strategic vs tactical vs paused).
+- **Randomness** (see CAMPAIGN_FOUNDATIONS.md 6.1):
   - Provide deterministic RNG services with seeding.
-  - Offer scoped RNG streams for different systems (simulation, generation, encounters).
+  - Offer scoped RNG streams for different systems (campaign_rng, economy_rng, tactical_rng).
+  - Support player-visible campaign seed for replayability.
 - **Event system**:
   - Provide an event bus / message system for domain-to-domain communication.
   - Ensure decoupling between producers and consumers of events.
 - **Configuration and data loading**:
   - Load, validate, and expose configuration and content data.
-  - Provide tools for reloading data in development.
 - **Persistence**:
   - Save and load game state.
   - Versioning and migration for save formats.

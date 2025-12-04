@@ -1,5 +1,7 @@
 # Generation Domain
 
+**Dependencies**: CAMPAIGN_FOUNDATIONS.md sections 2 (Contracts), 4 (World Metrics), 6 (RNG).
+
 ## Purpose
 
 The Generation domain creates concrete content instances (missions, encounters, maps, contracts) from systemic state and reusable templates. It is the main bridge between raw simulation/world data and the actual playable content presented to the player.
@@ -8,7 +10,7 @@ The Generation domain creates concrete content instances (missions, encounters, 
 
 - **Galaxy and world initialization**:
   - Generate the initial galaxy layout, systems, stations, and factions based on seeds and configuration.
-- **Mission generation**:
+- **Mission generation** (see CAMPAIGN_FOUNDATIONS.md 2):
   - Create mission offers (contracts) based on:
     - World metrics (security, trade, instability).
     - Faction needs and relationships.
@@ -18,7 +20,7 @@ The Generation domain creates concrete content instances (missions, encounters, 
   - Place objectives, enemies, civilians, and props.
 - **Encounter template selection and instantiation**:
   - For non-combat events, map simulation and travel context to encounter templates.
-- **Contract generation**:
+- **Contract generation** (see CAMPAIGN_FOUNDATIONS.md 2.2):
   - Define rewards, risks, constraints, and failure conditions.
 - Remain as **pure as possible**:
   - Input: world/simulation snapshot + RNG seed.
@@ -51,7 +53,7 @@ The Generation domain creates concrete content instances (missions, encounters, 
 
 - **Galaxy definition** at campaign start:
   - Systems, stations, routes, initial metrics.
-- **Mission offers / contracts**:
+- **Mission offers / contracts** (see CAMPAIGN_FOUNDATIONS.md 2.2):
   - Structured data describing objectives, rewards, factions involved, time limits, difficulty.
 - **Tactical mission instances**:
   - Map layout data.

@@ -1,5 +1,7 @@
 # Encounter Domain
 
+**Dependencies**: CAMPAIGN_FOUNDATIONS.md sections 2 (Contracts), 3 (Traits), 4 (World Metrics), 6 (RNG).
+
 ## Purpose
 
 The Encounter domain handles non-combat events and lightweight interactive scenes: text-based choices, skill checks, emergent narrative beats during travel or station life. It’s the layer that turns systemic state into specific narrative moments, without owning the simulation or the world itself.
@@ -10,9 +12,9 @@ The Encounter domain handles non-combat events and lightweight interactive scene
   - Present an encounter’s structure (internally, not UI).
   - Process player choices and resolve outcomes.
 - **Apply systemic context to encounters**:
-  - Use world metrics (security, unrest, faction control).
+  - Use world metrics (see CAMPAIGN_FOUNDATIONS.md 4.1) (security, unrest, faction control).
   - Use simulation-derived probabilities.
-  - Use crew traits and ship stats from Management.
+  - Use crew traits (see CAMPAIGN_FOUNDATIONS.md 3.2) and ship stats from Management.
 - **Perform skill/trait checks**:
   - Determine which options are available or succeed.
   - Factor in crew stats, ship systems, and personality traits.
@@ -41,7 +43,7 @@ The Encounter domain handles non-combat events and lightweight interactive scene
   - Embedded conditions and outcome definitions.
 - **Context**:
   - Current system, station, route (from World/Travel).
-  - Local metrics (security, pirate activity, unrest) from Simulation.
+  - Local metrics (see CAMPAIGN_FOUNDATIONS.md 4.1) (security, pirate activity, unrest) from Simulation.
   - Crew, ship, and resource state from Management.
   - Player reputation and faction relationships.
 - **Player choices**:
@@ -71,7 +73,7 @@ The Encounter domain handles non-combat events and lightweight interactive scene
 - **EncounterNode**:
   - One “step” of the encounter.
   - Has descriptive content (via keys), choice options, and optional automatic transitions.
-- **EncounterOption**:
+- **EncounterOption** (see CAMPAIGN_FOUNDATIONS.md 3.2):
   - A possible choice with:
     - Conditions (traits, stats, resources, world state).
     - Optional skill checks or RNG tests.

@@ -1,23 +1,25 @@
 # Management Domain
 
+**Dependencies**: CAMPAIGN_FOUNDATIONS.md sections 1 (Resources), 3 (Crew), 5 (Time).
+
 ## Purpose
 
 The Management domain handles all player-facing strategic assets: crew, ship(s), resources, and inventory. It turns world/simulation consequences and tactical results into concrete changes to the player’s party and capabilities, without caring about presentation.
 
 ## Responsibilities
 
-- **Crew management**:
+- **Crew management** (see CAMPAIGN_FOUNDATIONS.md 3):
   - Track crew members, their stats, traits, injuries, experience, and roles.
   - Apply personality traits as modifiers to stats, growth, and reactions.
   - Handle leveling, skill gains, and long-term progression.
 - **Ship management**:
   - Track ship hull, subsystems, upgrades, and damage.
   - Process repairs, refits, and upgrades (subject to resources and facilities).
-- **Inventory & cargo management**:
+- **Inventory & cargo management** (see CAMPAIGN_FOUNDATIONS.md 1.2):
   - Track items, equipment, and cargo.
   - Enforce capacity constraints (no Tetris, but limits on totals).
   - Handle equipping, unequipping, selling, and buying.
-- **Resource management**:
+- **Resource management** (see CAMPAIGN_FOUNDATIONS.md 1):
   - Track abstracted resources (credits, fuel, supplies, repair parts, etc.).
   - Apply costs and rewards from missions, encounters, and trade.
 - **Apply consequences**:
@@ -68,19 +70,19 @@ The Management domain handles all player-facing strategic assets: crew, ship(s),
 
 ## Key Concepts & Data
 
-- **CrewMember**:
-  - Stats: combat ability, technical skills, social, etc.
-  - Traits/personality: brave, cowardly, opportunistic, loyal, etc.
+- **CrewMember** (see CAMPAIGN_FOUNDATIONS.md 3.1-3.2):
+  - Stats: Grit, Reflexes, Aim, Tech, Savvy, Resolve (per campaign foundations).
+  - Traits/personality: binary flags with mechanical impact.
   - Status: active, injured, dead, missing.
   - Progression: level, XP, abilities.
 - **Ship**:
   - Base chassis type.
   - Modules: weapons, engines, sensors, cargo, special systems.
   - Stats: hull, speed, detection, cargo capacity, fuel efficiency.
-- **Inventory**:
+- **Inventory** (see CAMPAIGN_FOUNDATIONS.md 1.2):
   - Items with categories (weapon, armor, module, commodity, quest item).
   - Capacity model: simple limits (e.g., cargo units, equipment slots).
-- **Resources**:
+- **Resources** (see CAMPAIGN_FOUNDATIONS.md 1):
   - Currency and consumables, with clear units and sinks.
 
 ### Invariants

@@ -1,0 +1,312 @@
+# GLOBAL_ROADMAP
+
+## 1. Global milestone map (end-to-end, domain-aware)
+
+Think of this as the “campaign roadmap” that Tactical slots into:
+
+1. **G0 – Foundations + Tactical Core in a Vacuum**
+2. **G1 – Single-System Jobbing Loop (no real galaxy yet)**
+3. **G2 – Sector Map, Travel, and Encounters (no full sim yet)**
+4. **G3 – Simulation-Driven Sector (probabilities become systemic)**
+5. **G4 – Depth & Personality (crew, factions, richer generation)**
+
+Tactical’s own milestones M0–M8 are mostly inside G0–G2, culminating with M7 “Session I/O & Retreat”, which is where Tactical truly joins the campaign layer.
+
+I’ll walk each global milestone with domain focus, what’s playable, and what you intentionally leave out.
+
+---
+
+## 3. G0 – Foundations + Tactical Core in a Vacuum
+
+### Goal
+
+Have a robust RTwP tactical sandbox running in isolation, plus core Systems Foundation, so you can iterate on combat feel and test mission specs without worrying about the campaign yet.
+
+### Domains to focus
+
+* **Systems Foundation**
+
+  * Time system (support both tactical ticks and future strategic time).
+  * RNG streams (separate tactical from future generation/sim).
+  * Basic event bus.
+  * Minimal data/config loading (weapon defs, unit archetypes, test maps). 
+
+* **Tactical**
+
+  * Basically drive your existing Tactical roadmap from M0 through M6/M7: skeleton, multi-unit control, FoW, basic combat, cover, interactables & hacking, stealth/alarm foundations, and the mission I/O contract.
+
+* **Concepts** (docs only, not systems yet)
+
+  * Resources, Crew, Contracts, Factions, World Metrics: first pass of those concept docs, as discussed above.
+
+### Playable state
+
+* You can load a mission spec by hand (or from a test harness), play through a lethal firefight or a “escort hacker to console” style mission, and get a mission result struct back.
+* All tuning is local: no campaign, no money, no fuel, no galaxy.
+
+### What you deliberately postpone
+
+* WORLD, SIMULATION, GENERATION, TRAVEL, ENCOUNTER, MANAGEMENT as *implemented* systems.
+* Campaign UI, node map, job boards.
+
+### Why this order
+
+* Tactical is technically dense; you already have a detailed roadmap and design. Getting it stable early de-risks the most complex simulation you have, and the mission I/O contract becomes the anchor for everything else.
+
+---
+
+## 4. G1 – Single-System Jobbing Loop (no real galaxy yet)
+
+This is your first real *campaign* loop, but constrained to a single “hub”.
+
+### Goal
+
+Let the player:
+
+1. Sit at a station.
+2. Pick from a small job list.
+3. Play a tactical mission.
+4. Get paid, repair, heal, level up.
+5. Repeat until they run themselves into the ground.
+
+Basically Battle Brothers on one town, no overworld.
+
+### Domains to bring online
+
+* **WORLD (minimal)**
+
+  * Exactly one system and one station, but represented through the real World domain structures: ownership, facilities, and world-attached metrics (even if most are fixed constants right now). 
+
+* **MANAGEMENT (minimal but real)**
+
+  * PlayerState: one ship, a handful of crew, inventory, resources.
+  * Basic operations: pay costs, receive rewards, apply tactical results (injuries, deaths, ammo usage, ship damage as a simple “hull” resource).
+
+* **GENERATION (thin)**
+
+  * No galaxy gen yet.
+  * Just: given (player state, world metrics at the hub), generate 3–5 contracts using templates, with difficulty and reward roughly matched to player power. All from a single hub. 
+
+* **TACTICAL**
+
+  * Used via the M7 session I/O: Management passes in the crew snapshot, Tactical runs the mission, returns mission result; Management applies it.
+
+* **SYSTEMS FOUNDATION**
+
+  * Now also owns save/load of CampaignState + Tactical results, not just tactical tests.
+
+### Playable loop
+
+From the player’s perspective (and roughly matching GAME_DESIGN core loop):
+
+1. Docked at “Nowhere Station”.
+2. Open a job board (list of generated contracts).
+3. Accept a job.
+4. (Strategic) Start mission → Tactical runs.
+5. Tactical result applied: crew injuries/deaths, ammo consumed, resources paid out.
+6. Use station facilities: basic shop (buy ammo/meds), repair ship, hire/fire crew.
+7. Repeat.
+
+### Things you *don’t* do yet
+
+* No travel between systems.
+* No Simulation: world metrics are static or hand-tweaked.
+* No Encounters domain or text events.
+* No dynamic sector map at all.
+
+### Why this order
+
+* It gives you a full vertical slice: Systems Foundation ↔ Management ↔ Tactical ↔ Generation ↔ a tiny sliver of World.
+* You validate contract schema, mission I/O, and the Management consequences loop without touching the complexity of travel or sim.
+* You already exercise the crew/trait model (through Tactical) and resource flows (through rewards/repairs).
+
+---
+
+## 5. G2 – Sector Map, Travel, and Encounters (no full sim yet)
+
+Now you turn “one hub with jobs” into a small systemic sandbox: multiple nodes, travel, and emergent non-combat events. Still no heavy Simulation.
+
+### Goal
+
+Let the player roam a small sector, choose routes, consume fuel, risk encounters, and feel that jobs, prices, and events differ by place.
+
+### Domains to focus
+
+* **WORLD (real sector)**
+
+  * Actual galaxy/sector graph: multiple systems, stations, routes, tags (dangerous route, core/border, pirate space, etc.).
+  * World metrics per system/station present but still mostly driven by scripted rules or by direct consequences of jobs, not by a ticking Simulation yet.
+
+* **TRAVEL (v1)**
+
+  * Route planning over World topology.
+  * Travel plans: time + fuel/supplies cost + a simple risk profile.
+  * Execution: advance time, consume resources, roll for encounters along segments.
+
+* **ENCOUNTER (v1 runtime)**
+
+  * Implement the encounter state machine runtime: EncounterInstance, nodes, options, conditions, outcomes.
+  * Skill/trait checks that actually look at crew state.
+  * Output: structured outcome payloads (resource deltas, injuries, time delays, flags).
+
+* **GENERATION (galaxy + encounter hooks)**
+
+  * Galaxy generation at campaign start: generate the initial sector graph, systems, stations, ownership, initial metrics, using the concept of archetypes and tags.
+  * Mission generation now respects region/faction/world metrics (even if those are still rule-based).
+  * Encounter template selection and instantiation based on TravelContext and system tags (border, pirate, corporate, backwater).
+
+* **MANAGEMENT**
+
+  * Now integrated into Travel (fuel/supplies consumption) and Encounter consequences as well as Tactical.
+
+### Playable loop
+
+Now a typical 30–60 minute session starts looking like your intended experience: 
+
+1. At station A, choose a contract to B or C.
+2. Plan a route (fast and dangerous vs long and safer).
+3. Travel: fuel ticks down, maybe an encounter fires (pirates, patrols, anomaly).
+4. Encounter resolves via the Encounter domain; some may branch into Tactical, others are purely narrative/skill-check.
+5. Arrive at B, run the job tactically, get paid (or limp away).
+6. Manage aftermath: injuries, resources, ship condition.
+7. Decide where to go next.
+
+### Still missing / postponed
+
+* **SIMULATION**: there is still no autonomous, ticking simulation of factions and economy. World metrics may be tweaked by simple rules (e.g., “complete security contract in system → +security, -pirate_activity”), but they don’t evolve on their own. 
+* Deep faction AI, wars, or region-wide events.
+* Complex economic feedback into prices everywhere.
+
+### Why this order
+
+* You get “space-opera jobbing around a sector” *feeling* emergent before tackling the complexity of a full sim.
+* Encounters and Travel are inherently about *moment-to-moment* play; they don’t actually need the sim at first if you’re willing to author simple rules and probabilities.
+* You can test whether the campaign pacing (time, fuel, job density) feels good *before* you let metrics drift systemically.
+
+---
+
+## 6. G3 – Simulation-Driven Sector
+
+This is where you make the world truly systemic rather than “set-dressing with some rules”.
+
+### Goal
+
+Bring Simulation online so:
+
+* System metrics (security, piracy, trade, unrest) evolve over time based on events and faction policies.
+* Travel risk, mission offers, encounter types, and prices all shift according to that evolving state.
+
+### Domains to focus
+
+* **SIMULATION (v1)**
+
+  * Core macro state representation (SystemMetrics, FactionState).
+  * SimulationTick that consumes event stream + Δt and updates metrics in deterministic way.
+  * Simple response curves: more piracy → more security investment with delay; success/failure of security contracts feed into those curves. 
+
+* **SYSTEMS FOUNDATION**
+
+  * Event bus is now properly used: Tactical, Travel, Encounter, Management emit events; Simulation subscribes.
+
+* **WORLD**
+
+  * Becomes the shared storage for metrics and faction ownership that Simulation reads/writes and that everyone else queries.
+
+* **GENERATION / TRAVEL / ENCOUNTER / MANAGEMENT integration**
+
+  * Generation: uses simulation metrics to bias mission types/frequencies (e.g. more pirate hunting contracts where piracy is high).
+  * Travel: uses Simulation’s probability fields to compute risk profiles and encounter intensities.
+  * Encounter: uses local unrest/security/piracy for template selection and flavor; sends back macro-relevant events (sabotage, political actions).
+  * Management: prices and availability draw from Simulation/World (wealth and trade_volume), at least in a coarse way.
+
+### Playable loop
+
+Now, without changing the player-facing UI much, runs start to feel different:
+
+* If you prey on traders in a region, trade_volume drops, prices spike, security ramps up, and pirate/patrol encounter probabilities shift meaningfully.
+* If you accept security contracts for a faction, you gradually stabilize their space, which changes job offerings and travel risk.
+
+You get “my actions shape the sector” without ever having a 4X AI.
+
+### What you still postpone
+
+* Sophisticated faction “brains” (explicit strategies, coalition politics). You can get a lot of emergent behavior using response curves and thresholds alone. 
+* Big story-like region events (plagues, wars) can wait; just keep hooks for them in Simulation and World.
+
+### Why here
+
+* Only now do you have enough data and event streams to justify a simulation pass: Tactical, Travel, Encounter, Management, and World all produce the events Simulation needs.
+* If you’d tried to do Simulation earlier, you’d be tuning in a vacuum.
+
+---
+
+## 7. G4 – Depth & Personality (crew, factions, richer generation)
+
+At this point, your baseline systemic loop works. G4 is about making it *interesting for 50+ hour campaigns* rather than “solid 10-hour prototype”.
+
+### Goal
+
+Increase expressive richness and replayability without breaking abstractions.
+
+### Places to deepen
+
+* **MANAGEMENT / CREW**
+
+  * More nuanced traits and their systemic hooks (morale, stress, interpersonal relationships as a later extension).
+  * Injuries that feed back more cleanly into tactical stats and encounter options (even if Tactical stays on a simple HP model for now).
+
+* **FACTIONS & WORLD**
+
+  * Faction-specific mission flavors and encounter tables.
+  * Soft arcs: “this region is sliding into lawlessness unless you intervene”.
+
+* **GENERATION / ENCOUNTER**
+
+  * Longer micro-stories as chains of encounters and missions driven by flags rather than scripts.
+  * Region-specific mission archetypes and tones.
+
+* **TACTICAL polish**
+
+  * M8 UX & feel passes, more ability variety, better AI behaviors, etc.
+
+### Tradeoffs
+
+* It’s tempting to start here (crew drama, fancy encounters) but they’re multiplied by how solid your underlying loops are. By pushing this to G4, you ensure you’re building on a stable systemic bedrock.
+
+---
+
+## 8. Domain bring-up order (condensed)
+
+If you want a simple checklist view:
+
+1. **G0 – Foundations + Tactical**
+
+   * Systems Foundation (time, RNG, events, minimal config).
+   * Tactical M0–M7.
+   * Concept docs for Resources, Crew, Contracts, Factions, WorldMetrics.
+
+2. **G1 – Single-System Jobbing**
+
+   * World (one system, one station).
+   * Management (PlayerState + crew/ship/resources).
+   * Generation (contracts for a single hub).
+   * Tactical integrated via mission I/O.
+   * Persistence for campaign.
+
+3. **G2 – Sector + Travel + Encounters**
+
+   * World (real sector topology).
+   * Travel (planning, execution, risk).
+   * Encounter runtime + initial templates.
+   * Generation (galaxy init, region-aware jobs, encounter instantiation).
+   * Management extended to travel/encounter costs & consequences.
+
+4. **G3 – Simulation**
+
+   * Simulation domain with metrics & response curves.
+   * Integration: World (metrics), Travel (risk), Generation (job distributions), Encounter (context + events), Management (prices).
+
+5. **G4 – Depth**
+
+   * Crew depth, faction personality, micro-stories, more content, plus Tactical UX/feel and extended tools.
+
