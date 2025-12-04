@@ -43,9 +43,23 @@ public class RngService
         CreateStream(TacticalStream, DeriveStreamSeed(TacticalStream));
     }
 
+    /// <summary>
+    /// Derive a deterministic seed for a stream using FNV-1a hash.
+    /// This is stable across .NET versions (unlike string.GetHashCode).
+    /// </summary>
     private int DeriveStreamSeed(string streamName)
     {
-        return MasterSeed ^ streamName.GetHashCode();
+        unchecked
+        {
+            const int fnvPrime = 16777619;
+            int hash = (int)2166136261 ^ MasterSeed;
+            foreach (char c in streamName)
+            {
+                hash ^= c;
+                hash *= fnvPrime;
+            }
+            return hash;
+        }
     }
 
     private void CreateStream(string name, int seed)
