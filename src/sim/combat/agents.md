@@ -15,11 +15,12 @@ Real-time with pause (RTwP) tactical combat logic.
 - **AttackSystem.cs** - Processes attacks each tick: manual attacks, auto-defend. Emits AttackResolved, ActorDied events.
 - **MovementSystem.cs** - Stateless movement utilities: collision resolution, pathfinding around obstacles
 - **CombatResolver.cs** - Stateless attack resolution: range, LOS, hit chance, damage
-- **AIController.cs** - Simple enemy AI: every N ticks, pick closest visible player, move toward range, attack if able
+- **AIController.cs** - Simple enemy AI: every N ticks, pick closest visible player, move toward range, attack if able. Respects detection state (Idle enemies don't act)
 - **AbilitySystem.cs** - Ability execution: cooldowns, delayed effects, AoE damage, status effects
 - **VisibilitySystem.cs** - Fog of war: tracks per-tile visibility (Unknown/Revealed/Visible), LOS from crew positions
 - **InteractionSystem.cs** - Interactable management: doors, terminals, hazards; channeled actions (M5)
-- **MissionFactory.cs** - Builds CombatState from MissionConfig + CampaignState
+- **PerceptionSystem.cs** - Enemy perception and alarm state: tracks per-enemy detection (Idle/Alerted), global AlarmState (Quiet/Alerted), LOS-based detection (M6)
+- **MissionFactory.cs** - Builds CombatState from MissionConfig + CampaignState. Initializes perception system after spawning actors (M6)
 - **CombatSimulator.cs** - Headless battle simulator for testing/balancing
 - **FormationCalculator.cs** - Stateless utility for group movement: calculates spread destinations maintaining relative formation
 
@@ -35,6 +36,7 @@ Real-time with pause (RTwP) tactical combat logic.
 - **Interactable.cs** - Interactable entity: doors, terminals, hazards with state machine (M5)
 - **ChanneledAction.cs** - Channeled action data: type, target, duration, progress tracking (M5)
 - **StatModifier.cs** - Stat modifier system: StatType enum, StatModifier class, ModifierCollection for calculating effective stats
+- **EnemyPerception.cs** - Per-enemy detection state: Idle/Alerted, last known positions of detected crew (M6)
 
 ### Utilities
 - **ActorTypes.cs** - Constants for actor type strings: Crew, Enemy, Drone
@@ -50,6 +52,8 @@ Real-time with pause (RTwP) tactical combat logic.
 - Run enemy AI decisions
 - Execute abilities with delayed effects and AoE
 - Track fog of war visibility per tile
+- Track enemy perception and detection states (M6)
+- Manage global alarm state (M6)
 
 ## Dependencies
 

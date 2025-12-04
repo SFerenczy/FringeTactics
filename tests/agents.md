@@ -12,7 +12,8 @@ tests/
         ├── M1Tests.cs    # M1 milestone tests (formation, collision, group movement)
         ├── M3Tests.cs    # M3 milestone tests (hit chance, ammo, auto-defend, combat)
         ├── M4Tests.cs    # M4 milestone tests (directional cover, cover heights, flanking, balance)
-        └── M5Tests.cs    # M5 milestone tests (interactables, channeled actions, doors, terminals, hazards)
+        ├── M5Tests.cs    # M5 milestone tests (interactables, channeled actions, doors, terminals, hazards)
+        └── M6Tests.cs    # M6 milestone tests (stealth, detection, alarm, perception, door/LOS integration)
 ```
 
 ## Running Tests
@@ -61,6 +62,9 @@ or from project folder (adjust to your local setup)
 - `Interactable` - State transitions, property helpers
 - `ChanneledAction` - Progress tracking, completion
 - `InteractionSystem` - Interaction execution, door/terminal/hazard logic
+- `EnemyPerception` - Detection state, last known positions
+- `PerceptionSystem` - LOS detection, alarm state, manual alerts
+- `MissionFactory` - Perception initialization
 
 **Not ideal for unit tests:**
 - Scene rendering (use manual testing)

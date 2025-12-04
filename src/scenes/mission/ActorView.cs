@@ -18,6 +18,7 @@ public partial class ActorView : Node2D
     private ColorRect hpBarFill;
     private Label ammoLabel;
     private ColorRect reloadIndicator;
+    private ColorRect detectionIndicator;
 
     private float hitFlashTimer = 0f;
     private bool isFlashing = false;
@@ -36,6 +37,7 @@ public partial class ActorView : Node2D
 
         CreateAmmoLabel();
         CreateReloadIndicator();
+        CreateDetectionIndicator();
 
         if (actor != null)
         {
@@ -66,6 +68,16 @@ public partial class ActorView : Node2D
         reloadIndicator.Color = new Color(0.3f, 0.6f, 1.0f); // Blue for reload
         reloadIndicator.Visible = false;
         AddChild(reloadIndicator);
+    }
+    
+    private void CreateDetectionIndicator()
+    {
+        detectionIndicator = new ColorRect();
+        detectionIndicator.Size = new Vector2(8, 8);
+        detectionIndicator.Position = new Vector2((TileSize - 8) / 2, -10);
+        detectionIndicator.Color = new Color(0.5f, 0.5f, 0.5f, 0.8f);
+        detectionIndicator.Visible = false;
+        AddChild(detectionIndicator);
     }
 
     public void Setup(Actor actorData, Color color)
@@ -137,6 +149,7 @@ public partial class ActorView : Node2D
         hpBarFill.Visible = false;
         ammoLabel.Visible = false;
         reloadIndicator.Visible = false;
+        detectionIndicator.Visible = false;
     }
 
     private void UpdateAmmoDisplay()
@@ -272,6 +285,33 @@ public partial class ActorView : Node2D
     public Actor GetActor()
     {
         return actor;
+    }
+    
+    public void UpdateDetectionState(DetectionState state)
+    {
+        if (actor == null || actor.Type != ActorTypes.Enemy)
+        {
+            detectionIndicator.Visible = false;
+            return;
+        }
+        
+        if (actor.State != ActorState.Alive)
+        {
+            detectionIndicator.Visible = false;
+            return;
+        }
+        
+        detectionIndicator.Visible = true;
+        
+        switch (state)
+        {
+            case DetectionState.Idle:
+                detectionIndicator.Color = CombatColors.DetectionIdle;
+                break;
+            case DetectionState.Alerted:
+                detectionIndicator.Color = CombatColors.DetectionAlerted;
+                break;
+        }
     }
 
     public override void _ExitTree()

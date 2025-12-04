@@ -71,6 +71,7 @@ public partial class TestMissionSelect : Control
         AddMissionButton(grid, "M4 - Cover", "Directional cover testing\nWall-based cover", OnM4Pressed);
         AddMissionButton(grid, "M4.1 - Cover Heights", "Low/Half/High cover\nCover height mechanics", OnM4_1Pressed);
         AddMissionButton(grid, "M5 - Interactables", "Doors, terminals, hazards\nChanneled hacking", OnM5Pressed);
+        AddMissionButton(grid, "M6 - Stealth & Alarm", "Enemy detection & alarm\nIdle vs alerted enemies", OnM6Pressed);
         
         // Bottom spacer
         var bottomSpacer = new Control();
@@ -172,6 +173,12 @@ public partial class TestMissionSelect : Control
     {
         GD.Print("[TestMissionSelect] Starting M5 test mission...");
         GameState.Instance.StartM5TestMission();
+    }
+    
+    private void OnM6Pressed()
+    {
+        GD.Print("[TestMissionSelect] Starting M6 test mission...");
+        GameState.Instance.StartM6TestMission();
     }
     
     private void OnBackPressed()

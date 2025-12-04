@@ -223,6 +223,15 @@ public partial class GameState : Node
         StartSandboxWithConfig(config);
     }
 
+    /// <summary>
+    /// Start the M6 test mission for testing stealth and alarm mechanics.
+    /// </summary>
+    public void StartM6TestMission()
+    {
+        var config = MissionConfig.CreateM6TestMission();
+        StartSandboxWithConfig(config);
+    }
+
     public void EndMission(bool victory, CombatState combatState)
     {
         if (Campaign == null)

@@ -455,6 +455,61 @@ public class MissionConfig
     }
 
     /// <summary>
+    /// M6 test mission - stealth and alarm testing.
+    /// Features patrol routes and detection scenarios.
+    /// Enemies start idle and only become aggressive when they detect crew.
+    /// </summary>
+    public static MissionConfig CreateM6TestMission()
+    {
+        return new MissionConfig
+        {
+            Id = "m6_test",
+            Name = "M6 Test - Stealth & Alarm",
+            GridSize = new Vector2I(22, 18),
+            MapTemplate = new string[]
+            {
+                "######################",
+                "#EE..................#",
+                "#EE..###.....###.....#",
+                "#....#.#.....#.#.....#",
+                "#....#D#.....#D#.....#",
+                "#....###.....###.....#",
+                "#....................#",
+                "#....................#",
+                "#....###.....###.....#",
+                "#....#.#.....#.#.....#",
+                "#....#D#.....#D#.....#",
+                "#....###.....###.....#",
+                "#....................#",
+                "#....................#",
+                "#.............###....#",
+                "#.............#T#....#",
+                "#.............###....#",
+                "######################"
+            },
+            CrewWeaponId = "rifle",
+            CrewSpawnPositions = new List<Vector2I>
+            {
+                new Vector2I(1, 1),
+                new Vector2I(2, 1),
+                new Vector2I(1, 2),
+                new Vector2I(2, 2)
+            },
+            EnemySpawns = new List<EnemySpawn>
+            {
+                // Guard in top-right room - avoidable via doors
+                new EnemySpawn("grunt", new Vector2I(17, 3)),
+                // Guard in middle corridor - patrols open area
+                new EnemySpawn("grunt", new Vector2I(10, 7)),
+                // Guard near bottom rooms
+                new EnemySpawn("grunt", new Vector2I(7, 13)),
+                // Guard protecting terminal
+                new EnemySpawn("gunner", new Vector2I(17, 15))
+            }
+        };
+    }
+
+    /// <summary>
     /// Harder mission with more enemies and interior walls.
     /// </summary>
     public static MissionConfig CreateHardMission()

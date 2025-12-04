@@ -46,6 +46,13 @@ public class AIController
 
     private void Think(Actor enemy)
     {
+        // Idle enemies don't actively hunt - they stand guard
+        var detectionState = combatState.Perception.GetDetectionState(enemy.Id);
+        if (detectionState == DetectionState.Idle)
+        {
+            return;
+        }
+        
         // If already attacking a valid target in range, consider switching to better target
         if (enemy.AttackTargetId.HasValue)
         {

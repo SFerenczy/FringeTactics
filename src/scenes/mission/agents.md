@@ -10,14 +10,15 @@ Visual representation of tactical combat. Renders CombatState and handles player
 - **TimeStateWidget.tscn** - Pause/time display widget
 
 ### Scripts
-- **MissionView.cs** - Main view: spawns actors, renders fog of war, cover indicators, interactable views. Subscribes to MissionInputController events.
+- **MissionView.cs** - Main view: spawns actors, renders fog of war, cover indicators, interactable views. Subscribes to MissionInputController events. Auto-pauses on alarm state change (M6).
 - **MissionInputController.cs** - Handles all input: selection, movement orders, attack orders, ability targeting, box selection. Owns SelectionManager.
 - **SelectionManager.cs** - Manages selection state and control groups. Pure C# class (no Node).
-- **ActorView.cs** - Actor visual: position sync, HP bar, hit flash, death state
+- **ActorView.cs** - Actor visual: position sync, HP bar, hit flash, death state, detection state indicator for enemies (M6)
 - **InteractableView.cs** - Interactable visual: color-coded by type/state, channel progress bar (M5)
 - **TimeStateWidget.cs** - Displays pause state and current time
 - **TacticalCamera.cs** - Camera controller: pan (WASD/edge), zoom (scroll), follow selected unit
 - **CoverIndicator.cs** - Displays directional cover indicators for selected units
+- **AlarmStateWidget.cs** - UI widget showing current alarm state (Quiet/Alerted) (M6)
 
 ## Architecture
 
@@ -43,6 +44,7 @@ The mission view follows a Controller → View pattern:
 - Show cover indicators for selected units
 - Show movement target markers
 - Issue orders to CombatState when receiving events from input controller
+- Auto-pause and show notification when alarm state changes (M6)
 
 ## Dependencies
 

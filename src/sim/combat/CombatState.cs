@@ -48,6 +48,9 @@ public partial class CombatState
     // Interaction system (doors, terminals, hazards)
     public InteractionSystem Interactions { get; private set; }
 
+    // Perception system (enemy detection, alarm state)
+    public PerceptionSystem Perception { get; private set; }
+
     // C# Events
     public event Action<Actor> ActorAdded;
     public event Action<Actor> ActorRemoved;
@@ -72,6 +75,7 @@ public partial class CombatState
         AbilitySystem = new AbilitySystem(this);
         Visibility = new VisibilitySystem(MapState);
         Interactions = new InteractionSystem(this);
+        Perception = new PerceptionSystem(this);
         
         attackSystem = new AttackSystem(GetActorById);
         attackSystem.AttackResolved += OnAttackResolved;
@@ -89,6 +93,16 @@ public partial class CombatState
         Visibility = new VisibilitySystem(MapState);
         MapState.SetInteractionSystem(Interactions);
         SimLog.Log("[CombatState] Visibility and interaction systems initialized");
+    }
+
+    /// <summary>
+    /// Initialize the perception system after actors are spawned.
+    /// Called by MissionFactory after spawning enemies.
+    /// </summary>
+    public void InitializePerception()
+    {
+        Perception.Initialize();
+        SimLog.Log("[CombatState] Perception system initialized");
     }
 
     public void Update(float dt)
@@ -113,6 +127,9 @@ public partial class CombatState
         {
             actor.UpdateModifiers(currentTick);
         }
+
+        // Process enemy perception (before AI so AI can use detection state)
+        Perception.Tick();
 
         // Run AI decisions
         aiController.Tick();

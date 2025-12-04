@@ -52,6 +52,12 @@ public partial class MissionView : Node2D
     // Mission result tracking
     private bool missionVictory = false;
 
+    // Alarm state UI
+    private Label alarmNotificationLabel;
+    private float alarmNotificationTimer = 0f;
+    private const float AlarmNotificationDuration = 3.0f;
+    private AlarmStateWidget alarmStateWidget;
+
     [ExportGroup("Node Paths")]
     [Export] private Node2D gridDisplayPath;
     [Export] private Node2D actorsContainerPath;
@@ -152,6 +158,8 @@ public partial class MissionView : Node2D
 
         // Subscribe to events
         CombatState.MissionEnded += OnMissionEnded;
+        CombatState.Perception.AlarmStateChanged += OnAlarmStateChanged;
+        CombatState.Perception.EnemyDetectedCrew += OnEnemyDetectedCrew;
     }
 
     private void SetupUI()
@@ -184,6 +192,15 @@ public partial class MissionView : Node2D
 
         // Create mission end panel (hidden initially)
         CreateMissionEndPanel();
+        
+        // Create alarm notification label (hidden initially)
+        CreateAlarmNotificationLabel();
+        
+        // Create left panel container for stacked widgets
+        CreateLeftPanelContainer();
+        
+        // Create alarm state widget
+        CreateAlarmStateWidget();
     }
     
     private void CreateSelectionBox()
@@ -305,6 +322,90 @@ public partial class MissionView : Node2D
         GD.Print("========================\n");
 
         missionEndPanel.Visible = true;
+    }
+    
+    private void CreateAlarmNotificationLabel()
+    {
+        alarmNotificationLabel = new Label();
+        alarmNotificationLabel.Text = "⚠️ DETECTED!";
+        alarmNotificationLabel.HorizontalAlignment = HorizontalAlignment.Center;
+        alarmNotificationLabel.AddThemeFontSizeOverride("font_size", 32);
+        alarmNotificationLabel.AddThemeColorOverride("font_color", new Color(1.0f, 0.3f, 0.3f));
+        alarmNotificationLabel.Visible = false;
+        
+        // Position at top center of screen
+        alarmNotificationLabel.SetAnchorsPreset(Control.LayoutPreset.CenterTop);
+        alarmNotificationLabel.Position = new Vector2(-100, 80);
+        alarmNotificationLabel.Size = new Vector2(200, 40);
+        
+        uiLayer.AddChild(alarmNotificationLabel);
+    }
+    
+    private void CreateLeftPanelContainer()
+    {
+        leftPanelContainer = new VBoxContainer();
+        leftPanelContainer.Position = new Vector2(10, 45);
+        leftPanelContainer.AddThemeConstantOverride("separation", 5);
+        uiLayer.AddChild(leftPanelContainer);
+    }
+    
+    private void CreateAlarmStateWidget()
+    {
+        alarmStateWidget = new AlarmStateWidget();
+        leftPanelContainer.AddChild(alarmStateWidget);
+        
+        // Initialize with current state
+        alarmStateWidget.UpdateDisplay(CombatState.Perception.AlarmState);
+    }
+    
+    private void OnAlarmStateChanged(AlarmState oldState, AlarmState newState)
+    {
+        // Update alarm state widget
+        alarmStateWidget?.UpdateDisplay(newState);
+        
+        if (newState == AlarmState.Alerted && oldState == AlarmState.Quiet)
+        {
+            // Auto-pause on first alarm
+            CombatState.TimeSystem.Pause();
+            
+            // Show notification
+            ShowAlarmNotification();
+            
+            SimLog.Log("[MissionView] Auto-paused: Alarm raised!");
+        }
+    }
+    
+    private void OnEnemyDetectedCrew(Actor enemy, Actor crew)
+    {
+        SimLog.Log($"[MissionView] Enemy#{enemy.Id} detected Crew#{crew.Id}");
+    }
+    
+    private void ShowAlarmNotification()
+    {
+        alarmNotificationLabel.Visible = true;
+        alarmNotificationTimer = AlarmNotificationDuration;
+    }
+    
+    private void UpdateAlarmNotification(float delta)
+    {
+        if (!alarmNotificationLabel.Visible)
+        {
+            return;
+        }
+        
+        alarmNotificationTimer -= delta;
+        
+        if (alarmNotificationTimer <= 0)
+        {
+            alarmNotificationLabel.Visible = false;
+        }
+        else if (alarmNotificationTimer < 1.0f)
+        {
+            // Fade out in the last second
+            var alpha = alarmNotificationTimer;
+            var color = alarmNotificationLabel.GetThemeColor("font_color");
+            alarmNotificationLabel.AddThemeColorOverride("font_color", new Color(color.R, color.G, color.B, alpha));
+        }
     }
 
     private void OnRestartPressed()
@@ -739,6 +840,8 @@ public partial class MissionView : Node2D
         if (CombatState != null)
         {
             CombatState.MissionEnded -= OnMissionEnded;
+            CombatState.Perception.AlarmStateChanged -= OnAlarmStateChanged;
+            CombatState.Perception.EnemyDetectedCrew -= OnEnemyDetectedCrew;
             CombatState.AbilitySystem.AbilityDetonated -= OnAbilityDetonated;
             CombatState.Visibility.VisibilityChanged -= OnVisibilityChanged;
             CombatState.Interactions.InteractableAdded -= OnInteractableAdded;
@@ -799,12 +902,35 @@ public partial class MissionView : Node2D
         // Update interactable channel progress displays
         UpdateInteractableChannelProgress();
         
+        // Update alarm notification timer
+        UpdateAlarmNotification((float)delta);
+        
+        // Update enemy detection indicators
+        UpdateDetectionIndicators();
+        
         // Update box selection drag
         if (inputController != null)
         {
             var currentScreen = GetViewport().GetMousePosition();
             var currentWorld = ScreenToWorld(currentScreen);
             inputController.UpdateDragSelection(currentScreen, currentWorld);
+        }
+    }
+    
+    private void UpdateDetectionIndicators()
+    {
+        foreach (var kvp in actorViews)
+        {
+            var actorView = kvp.Value;
+            var actor = actorView.GetActor();
+            
+            if (actor == null || actor.Type != ActorTypes.Enemy)
+            {
+                continue;
+            }
+            
+            var detectionState = CombatState.Perception.GetDetectionState(actor.Id);
+            actorView.UpdateDetectionState(detectionState);
         }
     }
     

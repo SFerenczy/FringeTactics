@@ -56,6 +56,9 @@ public static class MissionFactory
         // Spawn enemies from definitions
         SpawnEnemies(combat, config);
 
+        // Initialize perception system after all actors are spawned
+        combat.InitializePerception();
+
         // Calculate initial visibility so entry zone is visible at start
         combat.Visibility.UpdateVisibility(combat.Actors);
 
@@ -90,6 +93,9 @@ public static class MissionFactory
 
         // Spawn enemies from definitions
         SpawnEnemies(combat, config);
+
+        // Initialize perception system after all actors are spawned
+        combat.InitializePerception();
 
         // Calculate initial visibility so entry zone is visible at start
         combat.Visibility.UpdateVisibility(combat.Actors);
