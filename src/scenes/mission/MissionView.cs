@@ -56,6 +56,7 @@ public partial class MissionView : Node2D
     private Label alarmNotificationLabel;
     private float alarmNotificationTimer = 0f;
     private const float AlarmNotificationDuration = 3.0f;
+    private VBoxContainer leftPanelContainer;
     private AlarmStateWidget alarmStateWidget;
     
     // Retreat UI (M7)
