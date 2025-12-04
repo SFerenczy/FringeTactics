@@ -255,9 +255,9 @@ public class JobDeadlineTests
     [TestCase]
     public void JobSystem_GeneratesJobsWithDeadlines()
     {
-        var sector = Sector.GenerateTestSector(12345);
+        var campaign = CampaignState.CreateNew(12345);
         var rng = new System.Random(12345);
-        var jobs = JobSystem.GenerateJobsForNode(sector, 0, rng);
+        var jobs = JobSystem.GenerateJobsForNode(campaign, 0, rng);
 
         AssertBool(jobs.Count > 0).IsTrue();
         foreach (var job in jobs)

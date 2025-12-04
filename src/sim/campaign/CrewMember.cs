@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 
 namespace FringeTactics;
@@ -112,5 +113,46 @@ public class CrewMember
         if (IsDead) return "DEAD";
         if (Injuries.Count > 0) return $"Injured ({Injuries.Count})";
         return "Ready";
+    }
+
+    /// <summary>
+    /// Get state for serialization.
+    /// </summary>
+    public CrewMemberData GetState()
+    {
+        return new CrewMemberData
+        {
+            Id = Id,
+            Name = Name,
+            Role = Role.ToString(),
+            IsDead = IsDead,
+            Injuries = new List<string>(Injuries),
+            Level = Level,
+            Xp = Xp,
+            Aim = Aim,
+            Toughness = Toughness,
+            Reflexes = Reflexes,
+            PreferredWeaponId = PreferredWeaponId
+        };
+    }
+
+    /// <summary>
+    /// Restore from saved state.
+    /// </summary>
+    public static CrewMember FromState(CrewMemberData data)
+    {
+        var crew = new CrewMember(data.Id, data.Name)
+        {
+            Role = Enum.TryParse<CrewRole>(data.Role, out var role) ? role : CrewRole.Soldier,
+            IsDead = data.IsDead,
+            Injuries = new List<string>(data.Injuries ?? new List<string>()),
+            Level = data.Level,
+            Xp = data.Xp,
+            Aim = data.Aim,
+            Toughness = data.Toughness,
+            Reflexes = data.Reflexes,
+            PreferredWeaponId = data.PreferredWeaponId ?? "rifle"
+        };
+        return crew;
     }
 }

@@ -34,6 +34,7 @@ public class CampaignState
     // Jobs
     public List<Job> AvailableJobs { get; set; } = new();
     public Job CurrentJob { get; set; } = null;
+    private int nextJobId = 0;
 
     // Faction reputation (factionId -> rep, 0-100, 50 = neutral)
     public Dictionary<string, int> FactionRep { get; set; } = new();
@@ -68,13 +69,18 @@ public class CampaignState
     }
 
     /// <summary>
+    /// Generate a unique job ID for this campaign.
+    /// </summary>
+    public string GenerateJobId()
+    {
+        return $"job_{nextJobId++}";
+    }
+
+    /// <summary>
     /// Create a new campaign with starting crew and resources.
     /// </summary>
     public static CampaignState CreateNew(int sectorSeed = 12345)
     {
-        // Reset static counters for fresh campaign
-        JobSystem.ResetJobIdCounter();
-
         var campaign = new CampaignState
         {
             Money = 200,
@@ -114,7 +120,7 @@ public class CampaignState
     public void RefreshJobsAtCurrentNode()
     {
         var rng = CreateSeededRandom();
-        AvailableJobs = JobSystem.GenerateJobsForNode(Sector, CurrentNodeId, rng);
+        AvailableJobs = JobSystem.GenerateJobsForNode(this, CurrentNodeId, rng);
         SimLog.Log($"[Campaign] Generated {AvailableJobs.Count} jobs at {GetCurrentNode()?.Name}");
     }
 
@@ -154,7 +160,9 @@ public class CampaignState
         }
 
         // Generate mission config for the job using campaign RNG
-        CurrentJob.MissionConfig = JobSystem.GenerateMissionConfig(job, CreateSeededRandom());
+        // Store the seed so we can regenerate identically on load
+        CurrentJob.MissionConfigSeed = Rng?.Campaign?.NextInt(int.MaxValue) ?? Environment.TickCount;
+        CurrentJob.MissionConfig = JobSystem.GenerateMissionConfig(job, new Random(CurrentJob.MissionConfigSeed));
 
         SimLog.Log($"[Campaign] Accepted job: {job.Title} at {Sector.GetNode(job.TargetNodeId)?.Name}");
         
@@ -536,5 +544,140 @@ public class CampaignState
             }
         }
         return null;
+    }
+
+    /// <summary>
+    /// Get state for serialization.
+    /// </summary>
+    public CampaignStateData GetState()
+    {
+        var data = new CampaignStateData
+        {
+            Time = Time.GetState(),
+            Rng = Rng?.GetState(),
+            CurrentNodeId = CurrentNodeId,
+            NextCrewId = nextCrewId,
+            NextJobId = nextJobId,
+            FactionRep = new Dictionary<string, int>(FactionRep),
+            Resources = new ResourcesData
+            {
+                Money = Money,
+                Fuel = Fuel,
+                Parts = Parts,
+                Meds = Meds,
+                Ammo = Ammo
+            },
+            Stats = new CampaignStatsData
+            {
+                MissionsCompleted = MissionsCompleted,
+                MissionsFailed = MissionsFailed,
+                TotalMoneyEarned = TotalMoneyEarned,
+                TotalCrewDeaths = TotalCrewDeaths
+            },
+            Sector = Sector?.GetState()
+        };
+
+        // Serialize crew
+        foreach (var crew in Crew)
+        {
+            data.Crew.Add(crew.GetState());
+        }
+
+        // Serialize available jobs
+        foreach (var job in AvailableJobs)
+        {
+            data.AvailableJobs.Add(job.GetState());
+        }
+
+        // Serialize current job
+        data.CurrentJob = CurrentJob?.GetState();
+
+        return data;
+    }
+
+    /// <summary>
+    /// Restore campaign from saved state.
+    /// </summary>
+    public static CampaignState FromState(CampaignStateData data)
+    {
+        var campaign = new CampaignState();
+
+        // Restore time
+        campaign.Time = new CampaignTime();
+        if (data.Time != null)
+        {
+            campaign.Time.RestoreState(data.Time);
+        }
+
+        // Restore RNG
+        if (data.Rng != null)
+        {
+            campaign.Rng = new RngService(data.Rng.MasterSeed);
+            campaign.Rng.RestoreState(data.Rng);
+        }
+        else
+        {
+            campaign.Rng = new RngService();
+        }
+
+        // Restore resources
+        if (data.Resources != null)
+        {
+            campaign.Money = data.Resources.Money;
+            campaign.Fuel = data.Resources.Fuel;
+            campaign.Parts = data.Resources.Parts;
+            campaign.Meds = data.Resources.Meds;
+            campaign.Ammo = data.Resources.Ammo;
+        }
+
+        // Restore location
+        campaign.CurrentNodeId = data.CurrentNodeId;
+
+        // Restore crew
+        campaign.Crew.Clear();
+        foreach (var crewData in data.Crew ?? new List<CrewMemberData>())
+        {
+            campaign.Crew.Add(CrewMember.FromState(crewData));
+        }
+        campaign.nextCrewId = data.NextCrewId;
+        campaign.nextJobId = data.NextJobId;
+
+        // Restore sector
+        if (data.Sector != null)
+        {
+            campaign.Sector = Sector.FromState(data.Sector);
+        }
+
+        // Restore jobs
+        campaign.AvailableJobs.Clear();
+        foreach (var jobData in data.AvailableJobs ?? new List<JobData>())
+        {
+            campaign.AvailableJobs.Add(Job.FromState(jobData));
+        }
+
+        if (data.CurrentJob != null)
+        {
+            campaign.CurrentJob = Job.FromState(data.CurrentJob);
+            // Regenerate MissionConfig using the stored seed for deterministic results
+            if (campaign.CurrentJob != null && campaign.CurrentJob.MissionConfigSeed != 0)
+            {
+                var rng = new Random(campaign.CurrentJob.MissionConfigSeed);
+                campaign.CurrentJob.MissionConfig = JobSystem.GenerateMissionConfig(campaign.CurrentJob, rng);
+            }
+        }
+
+        // Restore faction rep
+        campaign.FactionRep = new Dictionary<string, int>(data.FactionRep ?? new Dictionary<string, int>());
+
+        // Restore stats
+        if (data.Stats != null)
+        {
+            campaign.MissionsCompleted = data.Stats.MissionsCompleted;
+            campaign.MissionsFailed = data.Stats.MissionsFailed;
+            campaign.TotalMoneyEarned = data.Stats.TotalMoneyEarned;
+            campaign.TotalCrewDeaths = data.Stats.TotalCrewDeaths;
+        }
+
+        return campaign;
     }
 }

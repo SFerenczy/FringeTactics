@@ -18,22 +18,15 @@ public static class JobSystem
         "Combat Sweep"
     };
 
-    private static int nextJobId = 0;
-
-    /// <summary>
-    /// Reset the job ID counter. Call when starting a new campaign.
-    /// </summary>
-    public static void ResetJobIdCounter()
-    {
-        nextJobId = 0;
-    }
-
     /// <summary>
     /// Generate job offers for a given node.
     /// </summary>
-    public static List<Job> GenerateJobsForNode(Sector sector, int nodeId, Random rng, int count = 3)
+    public static List<Job> GenerateJobsForNode(CampaignState campaign, int nodeId, Random rng, int count = 3)
     {
         var jobs = new List<Job>();
+        var sector = campaign.Sector;
+        if (sector == null) return jobs;
+
         var originNode = sector.GetNode(nodeId);
         if (originNode == null) return jobs;
 
@@ -43,7 +36,7 @@ public static class JobSystem
 
         for (int i = 0; i < count; i++)
         {
-            var job = GenerateSingleJob(sector, originNode, potentialTargets, rng);
+            var job = GenerateSingleJob(campaign, sector, originNode, potentialTargets, rng);
             if (job != null)
             {
                 jobs.Add(job);
@@ -91,7 +84,7 @@ public static class JobSystem
         return targets;
     }
 
-    private static Job GenerateSingleJob(Sector sector, SectorNode origin, List<int> potentialTargets, Random rng)
+    private static Job GenerateSingleJob(CampaignState campaign, Sector sector, SectorNode origin, List<int> potentialTargets, Random rng)
     {
         if (potentialTargets.Count == 0) return null;
 
@@ -117,8 +110,8 @@ public static class JobSystem
         // Target faction is whoever controls the target, or pirates by default
         var targetFaction = targetNode.FactionId ?? "pirates";
 
-        // Generate job
-        var job = new Job($"job_{nextJobId++}")
+        // Generate job using campaign's ID generator
+        var job = new Job(campaign.GenerateJobId())
         {
             Title = AssaultTitles[rng.Next(AssaultTitles.Length)],
             Description = $"Assault operation at {targetNode.Name}",

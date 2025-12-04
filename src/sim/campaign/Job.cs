@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 
 namespace FringeTactics;
@@ -52,6 +53,35 @@ public class JobReward
         if (Ammo > 0) parts.Add($"{Ammo} ammo");
         return string.Join(", ", parts);
     }
+
+    /// <summary>
+    /// Get state for serialization.
+    /// </summary>
+    public JobRewardData GetState()
+    {
+        return new JobRewardData
+        {
+            Money = Money,
+            Parts = Parts,
+            Fuel = Fuel,
+            Ammo = Ammo
+        };
+    }
+
+    /// <summary>
+    /// Restore from saved state.
+    /// </summary>
+    public static JobReward FromState(JobRewardData data)
+    {
+        if (data == null) return new JobReward();
+        return new JobReward
+        {
+            Money = data.Money,
+            Parts = data.Parts,
+            Fuel = data.Fuel,
+            Ammo = data.Ammo
+        };
+    }
 }
 
 /// <summary>
@@ -99,6 +129,11 @@ public class Job
     // Mission config (generated when job is accepted)
     public MissionConfig MissionConfig { get; set; } = null;
 
+    /// <summary>
+    /// Seed used to generate MissionConfig. Stored for deterministic regeneration on load.
+    /// </summary>
+    public int MissionConfigSeed { get; set; } = 0;
+
     public Job(string jobId)
     {
         Id = jobId;
@@ -116,5 +151,57 @@ public class Job
             JobDifficulty.Hard => "Hard",
             _ => "Unknown"
         };
+    }
+
+    /// <summary>
+    /// Get state for serialization.
+    /// </summary>
+    public JobData GetState()
+    {
+        return new JobData
+        {
+            Id = Id,
+            Title = Title,
+            Description = Description,
+            Type = Type.ToString(),
+            Difficulty = Difficulty.ToString(),
+            OriginNodeId = OriginNodeId,
+            TargetNodeId = TargetNodeId,
+            EmployerFactionId = EmployerFactionId,
+            TargetFactionId = TargetFactionId,
+            Reward = Reward?.GetState(),
+            RepGain = RepGain,
+            RepLoss = RepLoss,
+            FailureRepLoss = FailureRepLoss,
+            DeadlineDays = DeadlineDays,
+            DeadlineDay = DeadlineDay,
+            MissionConfigSeed = MissionConfigSeed
+        };
+    }
+
+    /// <summary>
+    /// Restore from saved state.
+    /// </summary>
+    public static Job FromState(JobData data)
+    {
+        var job = new Job(data.Id)
+        {
+            Title = data.Title ?? "Unknown Job",
+            Description = data.Description ?? "",
+            Type = Enum.TryParse<JobType>(data.Type, out var type) ? type : JobType.Assault,
+            Difficulty = Enum.TryParse<JobDifficulty>(data.Difficulty, out var diff) ? diff : JobDifficulty.Easy,
+            OriginNodeId = data.OriginNodeId,
+            TargetNodeId = data.TargetNodeId,
+            EmployerFactionId = data.EmployerFactionId,
+            TargetFactionId = data.TargetFactionId,
+            Reward = JobReward.FromState(data.Reward),
+            RepGain = data.RepGain,
+            RepLoss = data.RepLoss,
+            FailureRepLoss = data.FailureRepLoss,
+            DeadlineDays = data.DeadlineDays,
+            DeadlineDay = data.DeadlineDay,
+            MissionConfigSeed = data.MissionConfigSeed
+        };
+        return job;
     }
 }

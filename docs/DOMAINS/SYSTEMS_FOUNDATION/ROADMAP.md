@@ -155,16 +155,29 @@ Persist and restore campaign state.
   - RNG stream states.
   - Time state.
   - Player state (crew, ship, resources).
-  - World state (when implemented).
+  - World state (sector, jobs, faction rep).
 - Version field for future migration.
+- Slot-based saves (3-5 slots) plus autosave.
 
 **Why here:**  
 Required for G1 when the campaign loop exists. Not needed for G0 tactical-only testing.
 
 **Deliverables:**
-- `SaveManager` with `Save()` and `Load()`.
-- Save file format documentation.
+- `SaveData` envelope with versioning.
+- `CampaignStateData` and nested state classes.
+- `SaveManager` (sim layer) for serialization logic.
+- `SaveFileAdapter` (Godot layer) for file I/O.
+- `GameState` integration (`SaveGame()`, `LoadGame()`, `Autosave()`).
 - Unit tests for round-trip serialization.
+
+**Status:** ✅ Complete
+
+**Implementation:** See `SF3_IMPLEMENTATION.md` for detailed breakdown.
+- `SaveData.cs` - State classes for serialization
+- `SaveManager.cs` - Serialization logic (sim layer)
+- `SaveFileAdapter.cs` - File I/O (Godot layer)
+- `GameState.cs` - Save/Load integration
+- Unit tests in `SF3SerializationTests.cs` (29 tests)
 
 ---
 

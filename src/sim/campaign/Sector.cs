@@ -37,6 +37,43 @@ public class SectorNode
         Type = type;
         Position = position;
     }
+
+    /// <summary>
+    /// Get state for serialization.
+    /// </summary>
+    public SectorNodeData GetState()
+    {
+        return new SectorNodeData
+        {
+            Id = Id,
+            Name = Name,
+            Type = Type.ToString(),
+            FactionId = FactionId,
+            PositionX = Position.X,
+            PositionY = Position.Y,
+            Connections = new List<int>(Connections),
+            HasJob = HasJob
+        };
+    }
+
+    /// <summary>
+    /// Restore from saved state.
+    /// </summary>
+    public static SectorNode FromState(SectorNodeData data)
+    {
+        var node = new SectorNode(
+            data.Id,
+            data.Name,
+            Enum.TryParse<NodeType>(data.Type, out var type) ? type : NodeType.Station,
+            new Vector2(data.PositionX, data.PositionY)
+        )
+        {
+            FactionId = data.FactionId,
+            Connections = new List<int>(data.Connections ?? new List<int>()),
+            HasJob = data.HasJob
+        };
+        return node;
+    }
 }
 
 /// <summary>
@@ -196,5 +233,43 @@ public class Sector
         var to = GetNode(toId);
         if (from == null || to == null) return float.MaxValue;
         return from.Position.DistanceTo(to.Position);
+    }
+
+    /// <summary>
+    /// Get state for serialization.
+    /// </summary>
+    public SectorData GetState()
+    {
+        var data = new SectorData
+        {
+            Name = Name,
+            Factions = new Dictionary<string, string>(Factions)
+        };
+
+        foreach (var node in Nodes)
+        {
+            data.Nodes.Add(node.GetState());
+        }
+
+        return data;
+    }
+
+    /// <summary>
+    /// Restore from saved state.
+    /// </summary>
+    public static Sector FromState(SectorData data)
+    {
+        var sector = new Sector
+        {
+            Name = data.Name ?? "Unknown Sector",
+            Factions = new Dictionary<string, string>(data.Factions ?? new Dictionary<string, string>())
+        };
+
+        foreach (var nodeData in data.Nodes ?? new List<SectorNodeData>())
+        {
+            sector.Nodes.Add(SectorNode.FromState(nodeData));
+        }
+
+        return sector;
     }
 }

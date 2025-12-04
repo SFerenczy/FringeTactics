@@ -365,6 +365,77 @@ public partial class GameState : Node
         return Campaign != null;
     }
 
+    // --- Save/Load Methods ---
+
+    /// <summary>
+    /// Save current campaign to a slot.
+    /// </summary>
+    public bool SaveGame(int slot)
+    {
+        if (Campaign == null)
+        {
+            GD.PrintErr("[GameState] No campaign to save");
+            return false;
+        }
+
+        return SaveFileAdapter.Save(Campaign, slot);
+    }
+
+    /// <summary>
+    /// Autosave current campaign.
+    /// </summary>
+    public bool Autosave()
+    {
+        if (Campaign == null) return false;
+        return SaveFileAdapter.Autosave(Campaign);
+    }
+
+    /// <summary>
+    /// Load campaign from a slot.
+    /// </summary>
+    public bool LoadGame(int slot)
+    {
+        var campaign = SaveFileAdapter.Load(slot);
+        if (campaign == null) return false;
+
+        EventBus.Clear();
+        Campaign = campaign;
+        WireEventBus(Campaign);
+        Mode = "sector";
+
+        GD.Print($"[GameState] Loaded campaign from slot {slot}");
+        GoToSectorView();
+        return true;
+    }
+
+    /// <summary>
+    /// Load campaign from autosave.
+    /// </summary>
+    public bool LoadAutosave()
+    {
+        var campaign = SaveFileAdapter.LoadAutosave();
+        if (campaign == null) return false;
+
+        EventBus.Clear();
+        Campaign = campaign;
+        WireEventBus(Campaign);
+        Mode = "sector";
+
+        GD.Print("[GameState] Loaded campaign from autosave");
+        GoToSectorView();
+        return true;
+    }
+
+    /// <summary>
+    /// Check if a save slot exists.
+    /// </summary>
+    public bool HasSave(int slot) => SaveFileAdapter.SaveExists(slot);
+
+    /// <summary>
+    /// Check if autosave exists.
+    /// </summary>
+    public bool HasAutosave() => SaveFileAdapter.AutosaveExists();
+
     // --- Time Query Accessors ---
 
     /// <summary>
