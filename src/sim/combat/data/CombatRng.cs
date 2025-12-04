@@ -6,6 +6,7 @@ namespace FringeTactics;
 /// Seeded RNG wrapper for deterministic combat simulation.
 /// All random decisions in combat should go through this.
 /// </summary>
+[Obsolete("Use RngStream from RngService instead. This class will be removed in a future version.")]
 public class CombatRng
 {
     private readonly Random random;

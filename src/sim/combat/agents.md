@@ -33,7 +33,7 @@ Real-time with pause (RTwP) tactical combat logic.
 - **WeaponData.cs** - Weapon stats: range, damage, cooldown ticks, magazine size, reload time
 - **CombatStats.cs** - Combat statistics: shots fired, hits, misses for player and enemy
 - **AbilityData.cs** - Ability definitions: targeting type, range, cooldown, delay, radius, damage, effects
-- **CombatRng.cs** - Seeded RNG wrapper for deterministic simulation
+- **CombatRng.cs** - [DEPRECATED] Legacy RNG wrapper, use RngStream from RngService instead
 - **VisibilityState.cs** - Enum for tile visibility: Unknown, Revealed, Visible
 - **CoverDirection.cs** - CoverHeight enum (None/Low/Half/High/Full), CoverDirection flags enum, and helper methods for direction calculations
 - **CombatBalance.cs** - Centralized combat balance constants, cover height reduction values, and GetCoverReduction() helper
@@ -72,7 +72,7 @@ Real-time with pause (RTwP) tactical combat logic.
 - **Order-based control**: Actors receive orders (SetTarget, SetAttackTarget), execute over time
 - **Stateless resolution**: CombatResolver takes all inputs explicitly, returns results
 - **Event-driven updates**: Actors emit DamageTaken, Died; CombatState emits AttackResolved, PhaseChanged
-- **Seeded RNG**: All randomness through CombatRng for reproducible battles
+- **Seeded RNG**: All randomness through RngStream (from RngService) for reproducible battles
 - **Headless simulation**: CombatSimulator can run battles without UI for testing
 - **Conditional victory**: Mission only auto-wins if hasEnemyObjective is true (set by MissionFactory)
 

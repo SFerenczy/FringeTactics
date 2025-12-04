@@ -5,6 +5,8 @@ Pure game logic. The "inside" of the hexagonal architecture.
 ## Files
 
 - **SimLog.cs** - Logging abstraction: adapter layer subscribes to receive log messages
+- **RngStream.cs** - Single seeded RNG stream with serializable state for save/load
+- **RngService.cs** - Multi-stream RNG manager with isolated campaign/tactical streams
 
 ## Subdirectories
 
@@ -29,7 +31,7 @@ Pure game logic. The "inside" of the hexagonal architecture.
 - No Node, SceneTree, Control, or UI references
 - No GD.Print - use SimLog.Log() instead
 - Godot math types (Vector2, Vector2I, Mathf) are allowed
-- All randomness through CombatRng (seeded) for reproducible simulation
+- All randomness through RngService streams (seeded) for reproducible simulation
 - Stateless services where possible (take state as parameter, return results)
 - Single source of truth: one CampaignState, one CombatState
 

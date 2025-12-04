@@ -22,13 +22,13 @@ public class AttackSystem
     /// <summary>
     /// Process all attacks for this tick.
     /// </summary>
-    public void ProcessTick(IReadOnlyList<Actor> actors, MapState map, CombatRng rng, CombatStats stats)
+    public void ProcessTick(IReadOnlyList<Actor> actors, MapState map, RngStream rng, CombatStats stats)
     {
         ProcessManualAttacks(actors, map, rng, stats);
         ProcessAutoDefend(actors, map, rng, stats);
     }
 
-    private void ProcessManualAttacks(IReadOnlyList<Actor> actors, MapState map, CombatRng rng, CombatStats stats)
+    private void ProcessManualAttacks(IReadOnlyList<Actor> actors, MapState map, RngStream rng, CombatStats stats)
     {
         foreach (var attacker in actors)
         {
@@ -65,7 +65,7 @@ public class AttackSystem
         }
     }
 
-    private void ProcessAutoDefend(IReadOnlyList<Actor> actors, MapState map, CombatRng rng, CombatStats stats)
+    private void ProcessAutoDefend(IReadOnlyList<Actor> actors, MapState map, RngStream rng, CombatStats stats)
     {
         foreach (var defender in actors)
         {
@@ -108,7 +108,7 @@ public class AttackSystem
         }
     }
 
-    private void ExecuteAttack(Actor attacker, Actor target, MapState map, CombatRng rng, CombatStats stats, bool isAutoDefend)
+    private void ExecuteAttack(Actor attacker, Actor target, MapState map, RngStream rng, CombatStats stats, bool isAutoDefend)
     {
         var result = CombatResolver.ResolveAttack(attacker, target, attacker.EquippedWeapon, map, rng.GetRandom());
         attacker.StartCooldown();

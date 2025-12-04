@@ -40,7 +40,7 @@ public partial class CombatState
     public MissionOutcome? FinalOutcome { get; private set; } = null;
 
     // Seeded RNG for deterministic simulation
-    public CombatRng Rng { get; private set; }
+    public RngStream Rng { get; private set; }
 
     // Combat statistics
     public CombatStats Stats { get; private set; } = new();
@@ -74,7 +74,7 @@ public partial class CombatState
 
     public CombatState(int seed)
     {
-        Rng = new CombatRng(seed);
+        Rng = new RngStream(RngService.TacticalStream, seed);
         MissionConfig = null;
         Actors = new List<Actor>();
         MapState = new MapState();

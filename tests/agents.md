@@ -7,6 +7,7 @@ Unit and integration tests using GdUnit4.
 ```
 tests/
 └── sim/
+    ├── SF0RngTests.cs    # SF0 milestone tests (RngStream, RngService, determinism, save/restore)
     └── combat/
         ├── M0Tests.cs    # M0 milestone tests (map, movement, time)
         ├── M1Tests.cs    # M1 milestone tests (formation, collision, group movement)
@@ -66,6 +67,8 @@ or from project folder (adjust to your local setup)
 - `EnemyPerception` - Detection state, last known positions
 - `PerceptionSystem` - LOS detection, alarm state, manual alerts
 - `MissionFactory` - Perception initialization
+- `RngStream` - Determinism, state serialization, call count tracking
+- `RngService` - Stream isolation, save/restore, master seed derivation
 
 **Not ideal for unit tests:**
 - Scene rendering (use manual testing)
