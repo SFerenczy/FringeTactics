@@ -32,8 +32,8 @@ public partial class GameState : Node
         Instance = this;
         SimLog.OnLog += message => GD.Print(message);
         
-        // Load game data from JSON files
-        Definitions.Load();
+        // Load game data from JSON files (auto-loads on first access)
+        var _ = Definitions.Weapons;
     }
 
     public void StartNewCampaign()

@@ -7,7 +7,8 @@ Unit and integration tests using GdUnit4.
 ```
 tests/
 └── sim/
-    ├── SF0RngTests.cs    # SF0 milestone tests (RngStream, RngService, determinism, save/restore)
+    ├── SF0RngTests.cs    # SF0 RNG tests (RngStream, RngService, determinism, save/restore)
+    ├── SF0ConfigTests.cs # SF0 config tests (validation, ConfigRegistry, Definitions)
     └── combat/
         ├── M0Tests.cs    # M0 milestone tests (map, movement, time)
         ├── M1Tests.cs    # M1 milestone tests (formation, collision, group movement)
@@ -69,6 +70,11 @@ or from project folder (adjust to your local setup)
 - `MissionFactory` - Perception initialization
 - `RngStream` - Determinism, state serialization, call count tracking
 - `RngService` - Stream isolation, save/restore, master seed derivation
+- `ValidationResult` - Error/warning accumulation, merge
+- `ConfigRegistry` - Config loading, validation, fail-fast mode
+- `WeaponDef.Validate` - Required fields, value ranges
+- `EnemyDef.Validate` - Required fields, weapon reference
+- `AbilityDef.Validate` - Required fields, value ranges
 
 **Not ideal for unit tests:**
 - Scene rendering (use manual testing)

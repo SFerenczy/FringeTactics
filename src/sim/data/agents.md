@@ -4,12 +4,20 @@ Static configuration types and data definitions used across the sim layer.
 
 ## Files
 
-- **Definitions.cs** - Central registry for all game data. Loads from JSON with hardcoded fallbacks:
+- **Definitions.cs** - Static facade for game data. Delegates to ConfigRegistry:
   - `Definitions.Weapons` - WeaponDef lookup by ID (rifle, pistol, smg, shotgun)
   - `Definitions.Enemies` - EnemyDef lookup by ID (grunt, gunner, sniper, heavy)
   - `Definitions.Abilities` - AbilityDef lookup by ID (frag_grenade, stun_grenade, stun_shot)
-  - `Definitions.Load()` - Load from JSON files (called by GameState on startup)
   - `Definitions.Reload()` - Hot-reload from JSON (Shift+Alt+D in dev)
+  - `Definitions.GetLastLoadResult()` - Get validation result from last load
+  - `Definitions.GetRegistry()` - Get underlying ConfigRegistry
+- **ConfigRegistry.cs** - Config loading with validation:
+  - Loads weapons, enemies, abilities from JSON
+  - Validates each definition (required fields, value ranges)
+  - Cross-reference validation (enemy weapon exists)
+  - `FailFastOnErrors` flag for development mode
+  - `LastLoadResult` with errors/warnings
+- **ValidationResult.cs** - Validation result accumulator for errors and warnings
 - **DataLoader.cs** - JSON loading utility. Uses Godot FileAccess for res:// paths.
 - **MissionConfig.cs** - Mission setup: grid size, map template, entry zone, crew spawns, enemy spawns.
 
@@ -31,10 +39,7 @@ Located in `data/` folder at project root:
 ## Usage
 
 ```csharp
-// Ensure data is loaded (done automatically by GameState)
-Definitions.EnsureLoaded();
-
-// Look up enemy definition
+// Look up enemy definition (auto-loads on first access)
 var enemyDef = Definitions.Enemies.Get("grunt");
 
 // Create weapon from definition
@@ -45,6 +50,18 @@ var ability = Definitions.Abilities.Get("frag_grenade")?.ToAbilityData();
 
 // Hot-reload during development
 Definitions.Reload();
+
+// Check for validation errors
+var result = Definitions.GetLastLoadResult();
+if (!result.Success)
+{
+    foreach (var error in result.Errors)
+        SimLog.Log($"ERROR: {error}");
+}
+
+// Use ConfigRegistry directly for fail-fast mode
+var registry = new ConfigRegistry { FailFastOnErrors = true };
+registry.Load(); // Throws on validation errors
 ```
 
 ## Dependencies

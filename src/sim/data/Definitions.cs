@@ -5,64 +5,27 @@ namespace FringeTactics;
 
 /// <summary>
 /// Central registry for all game data definitions.
-/// Loads from JSON files in data/ folder, with hardcoded fallbacks.
+/// Static facade that delegates to ConfigRegistry for backward compatibility.
 /// </summary>
 public static class Definitions
 {
-    private const string WeaponsPath = "res://data/weapons.json";
-    private const string EnemiesPath = "res://data/enemies.json";
-    private const string AbilitiesPath = "res://data/abilities.json";
+    private static ConfigRegistry registry;
 
-    private static bool isLoaded = false;
-
-    public static WeaponDefinitions Weapons { get; private set; } = new();
-    public static EnemyDefinitions Enemies { get; private set; } = new();
-    public static AbilityDefinitions Abilities { get; private set; } = new();
+    public static WeaponDefinitions Weapons => EnsureLoaded().Weapons;
+    public static EnemyDefinitions Enemies => EnsureLoaded().Enemies;
+    public static AbilityDefinitions Abilities => EnsureLoaded().Abilities;
 
     /// <summary>
-    /// Load definitions from JSON files. Called automatically on first access.
+    /// Ensure definitions are loaded and return the registry.
     /// </summary>
-    public static void Load()
+    private static ConfigRegistry EnsureLoaded()
     {
-        if (isLoaded)
+        if (registry == null)
         {
-            return;
+            registry = new ConfigRegistry();
+            registry.Load();
         }
-
-        Weapons = new WeaponDefinitions();
-        Enemies = new EnemyDefinitions();
-        Abilities = new AbilityDefinitions();
-
-        // Load from JSON if files exist
-        if (DataLoader.FileExists(WeaponsPath))
-        {
-            var weaponData = DataLoader.LoadDictionary<WeaponDef>(WeaponsPath);
-            if (weaponData.Count > 0)
-            {
-                Weapons = new WeaponDefinitions(weaponData);
-            }
-        }
-
-        if (DataLoader.FileExists(EnemiesPath))
-        {
-            var enemyData = DataLoader.LoadDictionary<EnemyDef>(EnemiesPath);
-            if (enemyData.Count > 0)
-            {
-                Enemies = new EnemyDefinitions(enemyData);
-            }
-        }
-
-        if (DataLoader.FileExists(AbilitiesPath))
-        {
-            var abilityData = DataLoader.LoadDictionary<AbilityDef>(AbilitiesPath);
-            if (abilityData.Count > 0)
-            {
-                Abilities = new AbilityDefinitions(abilityData);
-            }
-        }
-
-        isLoaded = true;
-        GD.Print("[Definitions] Data loaded");
+        return registry;
     }
 
     /// <summary>
@@ -71,20 +34,25 @@ public static class Definitions
     /// </summary>
     public static void Reload()
     {
-        isLoaded = false;
-        Load();
+        registry = new ConfigRegistry();
+        registry.Load();
         GD.Print("[Definitions] Data reloaded");
     }
 
     /// <summary>
-    /// Ensure definitions are loaded. Call this before accessing any definitions.
+    /// Get the last load result for inspection.
     /// </summary>
-    public static void EnsureLoaded()
+    public static ConfigLoadResult GetLastLoadResult()
     {
-        if (!isLoaded)
-        {
-            Load();
-        }
+        return registry?.LastLoadResult;
+    }
+
+    /// <summary>
+    /// Get the underlying ConfigRegistry instance.
+    /// </summary>
+    public static ConfigRegistry GetRegistry()
+    {
+        return EnsureLoaded();
     }
 }
 
@@ -102,6 +70,30 @@ public class WeaponDef
     public float Accuracy { get; set; } = 0.70f;
     public int MagazineSize { get; set; } = 30;
     public int ReloadTicks { get; set; } = 40; // 2 seconds at 20 ticks/sec
+
+    public ValidationResult Validate()
+    {
+        var result = new ValidationResult();
+
+        if (string.IsNullOrEmpty(Id))
+            result.AddError("WeaponDef: Id is required");
+        if (string.IsNullOrEmpty(Name))
+            result.AddError($"WeaponDef[{Id}]: Name is required");
+        if (Damage <= 0)
+            result.AddError($"WeaponDef[{Id}]: Damage must be positive");
+        if (Range <= 0)
+            result.AddError($"WeaponDef[{Id}]: Range must be positive");
+        if (CooldownTicks < 0)
+            result.AddError($"WeaponDef[{Id}]: CooldownTicks cannot be negative");
+        if (Accuracy < 0 || Accuracy > 1)
+            result.AddError($"WeaponDef[{Id}]: Accuracy must be between 0 and 1");
+        if (MagazineSize <= 0)
+            result.AddError($"WeaponDef[{Id}]: MagazineSize must be positive");
+        if (ReloadTicks < 0)
+            result.AddError($"WeaponDef[{Id}]: ReloadTicks cannot be negative");
+
+        return result;
+    }
 }
 
 public class WeaponDefinitions
@@ -140,6 +132,7 @@ public class WeaponDefinitions
     public WeaponDef Get(string id) => weapons.TryGetValue(id, out var w) ? w : weapons.GetValueOrDefault("rifle");
     public bool Has(string id) => weapons.ContainsKey(id);
     public IEnumerable<WeaponDef> All => weapons.Values;
+    public int Count => weapons.Count;
 }
 
 // ============================================================================
@@ -160,6 +153,22 @@ public class EnemyDef
     public int Hp { get; set; }
     public string WeaponId { get; set; }
     public EnemyBehavior Behavior { get; set; }
+
+    public ValidationResult Validate()
+    {
+        var result = new ValidationResult();
+
+        if (string.IsNullOrEmpty(Id))
+            result.AddError("EnemyDef: Id is required");
+        if (string.IsNullOrEmpty(Name))
+            result.AddError($"EnemyDef[{Id}]: Name is required");
+        if (Hp <= 0)
+            result.AddError($"EnemyDef[{Id}]: Hp must be positive");
+        if (string.IsNullOrEmpty(WeaponId))
+            result.AddError($"EnemyDef[{Id}]: WeaponId is required");
+
+        return result;
+    }
 }
 
 public class EnemyDefinitions
@@ -195,6 +204,7 @@ public class EnemyDefinitions
     public EnemyDef Get(string id) => enemies.TryGetValue(id, out var e) ? e : enemies.GetValueOrDefault("grunt");
     public bool Has(string id) => enemies.ContainsKey(id);
     public IEnumerable<EnemyDef> All => enemies.Values;
+    public int Count => enemies.Count;
 }
 
 // ============================================================================
@@ -222,6 +232,26 @@ public class AbilityDef
     public int Damage { get; set; }
     public string EffectId { get; set; }
     public int EffectDuration { get; set; }
+
+    public ValidationResult Validate()
+    {
+        var result = new ValidationResult();
+
+        if (string.IsNullOrEmpty(Id))
+            result.AddError("AbilityDef: Id is required");
+        if (string.IsNullOrEmpty(Name))
+            result.AddError($"AbilityDef[{Id}]: Name is required");
+        if (Range < 0)
+            result.AddError($"AbilityDef[{Id}]: Range cannot be negative");
+        if (Cooldown < 0)
+            result.AddError($"AbilityDef[{Id}]: Cooldown cannot be negative");
+        if (Delay < 0)
+            result.AddError($"AbilityDef[{Id}]: Delay cannot be negative");
+        if (Radius < 0)
+            result.AddError($"AbilityDef[{Id}]: Radius cannot be negative");
+
+        return result;
+    }
 
     /// <summary>
     /// Convert to AbilityData for use with AbilitySystem.
@@ -280,4 +310,5 @@ public class AbilityDefinitions
     public AbilityDef Get(string id) => abilities.TryGetValue(id, out var a) ? a : null;
     public bool Has(string id) => abilities.ContainsKey(id);
     public IEnumerable<AbilityDef> All => abilities.Values;
+    public int Count => abilities.Count;
 }
