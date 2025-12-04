@@ -24,14 +24,14 @@ Have a robust RTwP tactical sandbox running in isolation, plus core Systems Foun
 
 ### Domains to focus
 
-* **Systems Foundation**
+* **Systems Foundation** (see `DOMAINS/SYSTEMS_FOUNDATION/ROADMAP.md`)
 
   * Time system (support both tactical ticks and future strategic time).
   * RNG streams (separate tactical from future generation/sim).
   * Basic event bus.
   * Minimal data/config loading (weapon defs, unit archetypes, test maps). 
 
-* **Tactical**
+* **Tactical** (see `DOMAINS/TACTICAL/ROADMAP.md`)
 
   * Basically drive your existing Tactical roadmap from M0 through M6/M7: skeleton, multi-unit control, FoW, basic combat, cover, interactables & hacking, stealth/alarm foundations, and the mission I/O contract.
 
@@ -39,9 +39,30 @@ Have a robust RTwP tactical sandbox running in isolation, plus core Systems Foun
 
   * Resources, Crew, Contracts, Factions, World Metrics: first pass of those concept docs, as discussed above.
 
+### G0 Checklist
+
+| Item | Status | Notes |
+|------|--------|-------|
+| **Tactical M0–M7** | Complete | Core tactical loop done |
+| **SF0 – RNG & Config** | Partial | Exists ad-hoc, needs formalization |
+| **SF1 – Time System** | Partial | Tactical ticks exist, campaign time needed |
+| **SF2 – Event Bus** | Pending | Interface only for G0 |
+| **Concept: Resources** | Complete | CAMPAIGN_FOUNDATIONS.md §1 |
+| **Concept: Crew** | Complete | CAMPAIGN_FOUNDATIONS.md §3 |
+| **Concept: Contracts** | Complete | CAMPAIGN_FOUNDATIONS.md §2 |
+| **Concept: World Metrics** | Complete | CAMPAIGN_FOUNDATIONS.md §4 |
+| **Concept: Mission I/O** | Complete | CAMPAIGN_FOUNDATIONS.md §7 |
+
+### Remaining G0 Work
+
+1. **SF0 – Formalize RNG Streams**: Extract existing RNG usage into `RngService` with separate streams.
+2. **SF0 – Formalize Config Loading**: Create `ConfigRegistry` for typed access to weapon/ability/enemy data.
+3. **SF1 – Campaign Time**: Add `CampaignDay` to `TimeState` (tactical ticks already exist).
+4. **SF2 – Event Bus Interface**: Define `EventBus` class and initial event types (implementation can be minimal).
+
 ### Playable state
 
-* You can load a mission spec by hand (or from a test harness), play through a lethal firefight or a “escort hacker to console” style mission, and get a mission result struct back.
+* You can load a mission spec by hand (or from a test harness), play through a lethal firefight or a "escort hacker to console" style mission, and get a mission result struct back.
 * All tuning is local: no campaign, no money, no fuel, no galaxy.
 
 ### What you deliberately postpone
