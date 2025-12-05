@@ -134,8 +134,7 @@ public class CampaignState
     /// </summary>
     public void RefreshJobsAtCurrentNode()
     {
-        var rng = CreateSeededRandom();
-        AvailableJobs = JobSystem.GenerateJobsForNode(this, CurrentNodeId, rng);
+        AvailableJobs = JobSystem.GenerateJobsForNode(this, CurrentNodeId);
         SimLog.Log($"[Campaign] Generated {AvailableJobs.Count} jobs at {GetCurrentSystem()?.Name}");
     }
 
@@ -174,10 +173,9 @@ public class CampaignState
             SimLog.Log($"[Campaign] Job deadline: Day {job.DeadlineDay} ({job.DeadlineDays} days from now)");
         }
 
-        // Generate mission config for the job using campaign RNG
-        // Store the seed so we can regenerate identically on load
-        CurrentJob.MissionConfigSeed = Rng?.Campaign?.NextInt(int.MaxValue) ?? Environment.TickCount;
-        CurrentJob.MissionConfig = JobSystem.GenerateMissionConfig(job, new Random(CurrentJob.MissionConfigSeed));
+        // Generate mission config for the job
+        // TODO: Use RNG when MissionConfig generation becomes procedural
+        CurrentJob.MissionConfig = JobSystem.GenerateMissionConfig(job);
 
         SimLog.Log($"[Campaign] Accepted job: {job.Title} at {Sector.GetNode(job.TargetNodeId)?.Name}");
         
@@ -266,31 +264,33 @@ public class CampaignState
     /// <summary>
     /// Get current value of a resource.
     /// </summary>
-    public int GetResource(ResourceTypes type) => type switch
+    public int GetResource(string type) => type switch
     {
         ResourceTypes.Money => Money,
         ResourceTypes.Fuel => Fuel,
         ResourceTypes.Parts => Parts,
+        ResourceTypes.Ammo => Ammo,
         _ => 0
     };
 
     /// <summary>
     /// Set a resource value directly (used internally).
     /// </summary>
-    private void SetResource(ResourceTypes type, int value)
+    private void SetResource(string type, int value)
     {
         switch (type)
         {
             case ResourceTypes.Money: Money = value; break;
             case ResourceTypes.Fuel: Fuel = value; break;
             case ResourceTypes.Parts: Parts = value; break;
+            case ResourceTypes.Ammo: Ammo = value; break;
         }
     }
 
     /// <summary>
     /// Spend a resource. Returns false if insufficient.
     /// </summary>
-    public bool SpendResource(ResourceTypes type, int amount, string reason = "unknown")
+    public bool SpendResource(string type, int amount, string reason = "unknown")
     {
         if (amount <= 0) return false;
         
@@ -309,7 +309,7 @@ public class CampaignState
     /// <summary>
     /// Add a resource.
     /// </summary>
-    public void AddResource(ResourceTypes type, int amount, string reason = "unknown")
+    public void AddResource(string type, int amount, string reason = "unknown")
     {
         if (amount <= 0) return;
 
@@ -1154,11 +1154,10 @@ public class CampaignState
         if (data.CurrentJob != null)
         {
             campaign.CurrentJob = Job.FromState(data.CurrentJob);
-            // Regenerate MissionConfig using the stored seed for deterministic results
-            if (campaign.CurrentJob != null && campaign.CurrentJob.MissionConfigSeed != 0)
+            // Regenerate MissionConfig (currently deterministic by difficulty)
+            if (campaign.CurrentJob != null)
             {
-                var rng = new Random(campaign.CurrentJob.MissionConfigSeed);
-                campaign.CurrentJob.MissionConfig = JobSystem.GenerateMissionConfig(campaign.CurrentJob, rng);
+                campaign.CurrentJob.MissionConfig = JobSystem.GenerateMissionConfig(campaign.CurrentJob);
             }
         }
 

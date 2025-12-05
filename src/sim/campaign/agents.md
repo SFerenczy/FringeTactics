@@ -61,16 +61,15 @@ Campaign/meta-game state: crew management, resources, mission tracking, jobs.
   - Future: ambush encounters
 - **Job.cs** - Job/contract definition:
   - JobDifficulty enum: Easy, Medium, Hard
-  - JobType enum: Assault, Defense, Extraction
   - JobReward: money, parts, fuel, ammo
+  - ContractType (from generation domain)
   - Employer/target faction, rep gains/losses
   - DeadlineDays (relative), DeadlineDay (absolute), HasDeadline
+  - PrimaryObjective, SecondaryObjectives (GN1)
   - Links to target node and MissionConfig
-- **JobSystem.cs** - Stateless job generation:
-  - `GenerateJobsForNode()` creates 2-3 jobs at a location with deadlines
+- **JobSystem.cs** - Stable API for job operations:
+  - `GenerateJobsForNode()` delegates to ContractGenerator (GN1)
   - `GenerateMissionConfig()` creates combat setup from job difficulty
-  - `ResetJobIdCounter()` resets job ID counter for new campaigns
-  - Determines difficulty and deadline based on target node type
 - **Ship.cs** - Full ship implementation (MG2):
   - Hull integrity, max hull
   - Chassis type (Scout, Freighter, Corvette, Gunship)

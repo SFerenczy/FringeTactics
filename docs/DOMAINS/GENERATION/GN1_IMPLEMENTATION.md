@@ -1,6 +1,6 @@
 # GN1 – Contract Generation: Implementation Plan
 
-**Status**: ⏳ Pending  
+**Status**: ✅ Complete  
 **Depends on**: GN0 ✅, MG1 ✅, WD1 🔄  
 **Phase**: G1
 
@@ -35,38 +35,38 @@
 
 ## GN1 Deliverables Checklist
 
-### Phase 1: Contract Type Expansion
-- [ ] **1.1** Create `ContractType` enum (6 archetypes)
-- [ ] **1.2** Migration path from `JobType`
-- [ ] **1.3** Title/description templates per type
+### Phase 1: Contract Type Expansion ✅
+- [x] **1.1** Create `ContractType` enum (6 archetypes)
+- [x] **1.2** Migration path from `JobType`
+- [x] **1.3** Title/description templates per type
 
-### Phase 2: GenerationContext
-- [ ] **2.1** Create `GenerationContext` class
-- [ ] **2.2** `CalculateCrewPower()` helper
-- [ ] **2.3** `FromCampaign()` factory
-- [ ] **2.4** Hub metrics integration
+### Phase 2: GenerationContext ✅
+- [x] **2.1** Create `GenerationContext` class
+- [x] **2.2** `CalculateCrewPower()` helper
+- [x] **2.3** `FromCampaign()` factory
+- [x] **2.4** Hub metrics integration
 
-### Phase 3: Objective System
-- [ ] **3.1** Create `ObjectiveType` enum
-- [ ] **3.2** Create `Objective` class
-- [ ] **3.3** Add objectives to `Job`
+### Phase 3: Objective System ✅
+- [x] **3.1** Extend `ObjectiveType` enum (in MissionInput.cs)
+- [x] **3.2** Create `Objective` class
+- [x] **3.3** Add objectives to `Job`
 
-### Phase 4: ContractGenerator
-- [ ] **4.1** Create `ContractGenerator` class
-- [ ] **4.2** Archetype selection logic
-- [ ] **4.3** Difficulty scaling (player power)
-- [ ] **4.4** Reward calculation formulas
-- [ ] **4.5** Migrate `JobSystem`
+### Phase 4: ContractGenerator ✅
+- [x] **4.1** Create `ContractGenerator` class
+- [x] **4.2** Archetype selection logic
+- [x] **4.3** Difficulty scaling (player power)
+- [x] **4.4** Reward calculation formulas
+- [x] **4.5** Migrate `JobSystem`
 
-### Phase 5: Serialization
-- [ ] **5.1** Update `JobData`
-- [ ] **5.2** Save version increment
+### Phase 5: Serialization ✅
+- [x] **5.1** Update `JobData` (ContractType, PrimaryObjective, SecondaryObjectives)
+- [x] **5.2** Save version increment (v3 → v4)
 
-### Phase 6: Testing
-- [ ] **6.1** GenerationContext tests
-- [ ] **6.2** ContractGenerator tests
-- [ ] **6.3** Determinism tests
-- [ ] **6.4** Serialization tests
+### Phase 6: Testing ✅
+- [x] **6.1** GenerationContext tests (20 tests)
+- [x] **6.2** ContractGenerator tests (18 tests)
+- [x] **6.3** Determinism tests (5 tests)
+- [x] **6.4** Serialization tests (15 tests)
 
 ---
 

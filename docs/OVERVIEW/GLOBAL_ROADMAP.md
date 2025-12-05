@@ -147,8 +147,8 @@ From the player’s perspective (and roughly matching GAME_DESIGN core loop):
 | **MG1 – PlayerState & Crew** | ✅ Complete | See `MG1_IMPLEMENTATION.md` |
 | **WD1 – Single Hub World** | ⏳ Pending | See `WD1_IMPLEMENTATION.md` |
 | **MG2 – Ship & Resources** | ⏳ Pending | See `MG2_IMPLEMENTATION.md` |
-| **GN1 – Contract Generation** | ⏳ Pending | See `GN1_IMPLEMENTATION.md` |
-| **MG3 – Tactical Integration** | ⏳ Pending | `CreateMissionInput` / `ApplyMissionResult` |
+| **GN1 – Contract Generation** | ✅ Complete | See `GN1_IMPLEMENTATION.md` |
+| **MG3 – Tactical Integration** | ⏳ Pending | See `MG3_IMPLEMENTATION.md` |
 
 ### Recommended Implementation Order
 

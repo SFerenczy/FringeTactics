@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace FringeTactics;
 
@@ -14,16 +15,6 @@ public enum JobDifficulty
 }
 
 /// <summary>
-/// Types of jobs available.
-/// </summary>
-public enum JobType
-{
-    Assault,    // Attack enemies at target
-    Defense,    // Defend position (future)
-    Extraction  // Rescue/retrieve (future)
-}
-
-/// <summary>
 /// Reward structure for completing a job.
 /// </summary>
 public class JobReward
@@ -32,17 +23,6 @@ public class JobReward
     public int Parts { get; set; } = 0;
     public int Fuel { get; set; } = 0;
     public int Ammo { get; set; } = 0;
-
-    public static JobReward FromDifficulty(JobDifficulty difficulty)
-    {
-        return difficulty switch
-        {
-            JobDifficulty.Easy => new JobReward { Money = 100, Parts = 10 },
-            JobDifficulty.Medium => new JobReward { Money = 200, Parts = 25, Ammo = 10 },
-            JobDifficulty.Hard => new JobReward { Money = 400, Parts = 50, Fuel = 20, Ammo = 20 },
-            _ => new JobReward { Money = 100 }
-        };
-    }
 
     public override string ToString()
     {
@@ -92,7 +72,12 @@ public class Job
     public string Id { get; set; }
     public string Title { get; set; } = "Unknown Job";
     public string Description { get; set; } = "No description";
-    public JobType Type { get; set; } = JobType.Assault;
+
+    /// <summary>
+    /// Contract archetype defining mission structure.
+    /// </summary>
+    public ContractType ContractType { get; set; } = ContractType.Assault;
+
     public JobDifficulty Difficulty { get; set; } = JobDifficulty.Easy;
 
     // Location
@@ -134,6 +119,17 @@ public class Job
     /// </summary>
     public int MissionConfigSeed { get; set; } = 0;
 
+    // Objectives (GN1)
+    /// <summary>
+    /// Primary objective that must be completed for mission success.
+    /// </summary>
+    public Objective PrimaryObjective { get; set; }
+
+    /// <summary>
+    /// Optional secondary objectives for bonus rewards.
+    /// </summary>
+    public List<Objective> SecondaryObjectives { get; set; } = new();
+
     public Job(string jobId)
     {
         Id = jobId;
@@ -154,6 +150,25 @@ public class Job
     }
 
     /// <summary>
+    /// Calculate total potential reward including all bonus objectives.
+    /// </summary>
+    public int GetMaxPotentialReward()
+    {
+        int baseReward = Reward?.Money ?? 0;
+        int bonusPercent = 0;
+
+        if (SecondaryObjectives != null)
+        {
+            foreach (var obj in SecondaryObjectives)
+            {
+                bonusPercent += obj.BonusRewardPercent;
+            }
+        }
+
+        return baseReward + (baseReward * bonusPercent / 100);
+    }
+
+    /// <summary>
     /// Get state for serialization.
     /// </summary>
     public JobData GetState()
@@ -163,7 +178,7 @@ public class Job
             Id = Id,
             Title = Title,
             Description = Description,
-            Type = Type.ToString(),
+            ContractType = ContractType.ToString(),
             Difficulty = Difficulty.ToString(),
             OriginNodeId = OriginNodeId,
             TargetNodeId = TargetNodeId,
@@ -175,7 +190,9 @@ public class Job
             FailureRepLoss = FailureRepLoss,
             DeadlineDays = DeadlineDays,
             DeadlineDay = DeadlineDay,
-            MissionConfigSeed = MissionConfigSeed
+            MissionConfigSeed = MissionConfigSeed,
+            PrimaryObjective = PrimaryObjective?.GetState(),
+            SecondaryObjectives = SecondaryObjectives?.Select(o => o.GetState()).ToList()
         };
     }
 
@@ -188,7 +205,7 @@ public class Job
         {
             Title = data.Title ?? "Unknown Job",
             Description = data.Description ?? "",
-            Type = Enum.TryParse<JobType>(data.Type, out var type) ? type : JobType.Assault,
+            ContractType = ParseContractType(data),
             Difficulty = Enum.TryParse<JobDifficulty>(data.Difficulty, out var diff) ? diff : JobDifficulty.Easy,
             OriginNodeId = data.OriginNodeId,
             TargetNodeId = data.TargetNodeId,
@@ -200,8 +217,32 @@ public class Job
             FailureRepLoss = data.FailureRepLoss,
             DeadlineDays = data.DeadlineDays,
             DeadlineDay = data.DeadlineDay,
-            MissionConfigSeed = data.MissionConfigSeed
+            MissionConfigSeed = data.MissionConfigSeed,
+            PrimaryObjective = data.PrimaryObjective != null ? Objective.FromState(data.PrimaryObjective) : null,
+            SecondaryObjectives = data.SecondaryObjectives?.Select(Objective.FromState).Where(o => o != null).ToList() ?? new List<Objective>()
         };
         return job;
+    }
+
+    /// <summary>
+    /// Parse ContractType from save data, with fallback to legacy Type field.
+    /// </summary>
+    private static ContractType ParseContractType(JobData data)
+    {
+        // Try new ContractType field first
+        if (!string.IsNullOrEmpty(data.ContractType) &&
+            Enum.TryParse<ContractType>(data.ContractType, out var contractType))
+        {
+            return contractType;
+        }
+
+        // Fall back to legacy Type field for old saves (pre-GN1)
+        return data.Type switch
+        {
+            "Assault" => ContractType.Assault,
+            "Defense" => ContractType.Assault,
+            "Extraction" => ContractType.Extraction,
+            _ => ContractType.Assault
+        };
     }
 }

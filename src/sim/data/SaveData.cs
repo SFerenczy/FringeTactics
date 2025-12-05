@@ -8,12 +8,13 @@ namespace FringeTactics;
 /// </summary>
 public static class SaveVersion
 {
-    public const int Current = 3;
+    public const int Current = 4;
 
     // Version history:
     // 1 - Initial save format (SF3)
     // 2 - MG1: Expanded crew stats (Grit, Tech, Savvy, Resolve), stat points
     // 3 - MG2: Ship with modules, inventory, equipment
+    // 4 - GN1: Contract types, objectives (primary/secondary)
 }
 
 /// <summary>
@@ -184,7 +185,17 @@ public class JobData
     public string Id { get; set; }
     public string Title { get; set; }
     public string Description { get; set; }
+
+    /// <summary>
+    /// Contract archetype (GN1+). Takes precedence over legacy Type.
+    /// </summary>
+    public string ContractType { get; set; }
+
+    /// <summary>
+    /// Legacy job type. Kept for backward compatibility with old saves.
+    /// </summary>
     public string Type { get; set; }
+
     public string Difficulty { get; set; }
 
     // Location
@@ -207,6 +218,10 @@ public class JobData
 
     // Mission config seed (for deterministic regeneration)
     public int MissionConfigSeed { get; set; }
+
+    // Objectives (GN1)
+    public ObjectiveData PrimaryObjective { get; set; }
+    public List<ObjectiveData> SecondaryObjectives { get; set; }
 }
 
 /// <summary>
@@ -218,6 +233,19 @@ public class JobRewardData
     public int Parts { get; set; }
     public int Fuel { get; set; }
     public int Ammo { get; set; }
+}
+
+/// <summary>
+/// Serializable objective data (GN1).
+/// </summary>
+public class ObjectiveData
+{
+    public string Id { get; set; }
+    public string Type { get; set; }
+    public string Description { get; set; }
+    public bool IsRequired { get; set; }
+    public int BonusRewardPercent { get; set; }
+    public Dictionary<string, object> Parameters { get; set; }
 }
 
 /// <summary>

@@ -70,11 +70,11 @@ public class MG2ShipTests
     public void Ship_GetCargoCapacity_SumsMultipleCargoModules()
     {
         var ship = new Ship { CargoSlots = 3 };
-        ship.InstallModule(new ShipModule { Id = "c1", SlotType = ShipSlotType.Cargo, CargoBonus = 20 });
-        ship.InstallModule(new ShipModule { Id = "c2", SlotType = ShipSlotType.Cargo, CargoBonus = 30 });
+        ship.InstallModule(new ShipModule { Id = "c1", DefId = "small_cargo", SlotType = ShipSlotType.Cargo });
+        ship.InstallModule(new ShipModule { Id = "c2", DefId = "large_cargo", SlotType = ShipSlotType.Cargo });
 
-        // Base 20 + 20 + 30 = 70
-        AssertThat(ship.GetCargoCapacity()).IsEqual(70);
+        // Base 20 + small(20) + large(50) = 90
+        AssertThat(ship.GetCargoCapacity()).IsEqual(90);
     }
 
     // === Damage Tests ===
@@ -219,8 +219,8 @@ public class MG2ShipTests
         var extraCargo = new ShipModule
         {
             Id = "extra",
-            SlotType = ShipSlotType.Cargo,
-            CargoBonus = 20
+            DefId = "small_cargo",
+            SlotType = ShipSlotType.Cargo
         };
 
         AssertThat(ship.CanInstallModule(extraCargo)).IsFalse();

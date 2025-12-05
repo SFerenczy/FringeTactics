@@ -185,22 +185,48 @@ public enum ObjectiveType
 {
     /// <summary>Kill all enemies on the map.</summary>
     EliminateAll,
-    
+
     /// <summary>Kill a specific target.</summary>
     EliminateTarget,
-    
+
     /// <summary>Get crew to a specific location.</summary>
     ReachZone,
-    
+
     /// <summary>Complete a hack on a terminal.</summary>
     HackTerminal,
-    
+
     /// <summary>Keep crew alive for a duration.</summary>
     Survive,
-    
+
     /// <summary>Pick up a specific item.</summary>
     Retrieve,
-    
+
     /// <summary>Protect a VIP.</summary>
-    Escort
+    Escort,
+
+    // === GN1 Additions ===
+
+    /// <summary>Keep a specific unit alive.</summary>
+    ProtectUnit,
+
+    /// <summary>Destroy an interactable object.</summary>
+    DestroyObject,
+
+    /// <summary>Pick up and extract an item.</summary>
+    RetrieveItem,
+
+    /// <summary>Survive for X turns.</summary>
+    SurviveTurns,
+
+    /// <summary>Complete mission without triggering alarm.</summary>
+    NoAlarm,
+
+    /// <summary>Complete mission with no crew deaths.</summary>
+    NoCasualties,
+
+    /// <summary>Complete mission within X turns.</summary>
+    TimeLimit,
+
+    /// <summary>Complete mission with no crew injuries.</summary>
+    NoInjuries
 }

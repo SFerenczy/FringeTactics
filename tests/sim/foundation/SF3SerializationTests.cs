@@ -136,7 +136,7 @@ public class SF3JobSerializationTests
         {
             Title = "Test Mission",
             Description = "A test job",
-            Type = JobType.Extraction,
+            ContractType = ContractType.Extraction,
             Difficulty = JobDifficulty.Hard,
             OriginNodeId = 1,
             TargetNodeId = 5,
@@ -156,7 +156,7 @@ public class SF3JobSerializationTests
         AssertString(restored.Id).IsEqual("job_123");
         AssertString(restored.Title).IsEqual("Test Mission");
         AssertString(restored.Description).IsEqual("A test job");
-        AssertThat(restored.Type).IsEqual(JobType.Extraction);
+        AssertThat(restored.ContractType).IsEqual(ContractType.Extraction);
         AssertThat(restored.Difficulty).IsEqual(JobDifficulty.Hard);
         AssertInt(restored.OriginNodeId).IsEqual(1);
         AssertInt(restored.TargetNodeId).IsEqual(5);
@@ -182,7 +182,7 @@ public class SF3JobSerializationTests
 
         var restored = Job.FromState(data);
 
-        AssertThat(restored.Type).IsEqual(JobType.Assault);
+        AssertThat(restored.ContractType).IsEqual(ContractType.Assault);
         AssertThat(restored.Difficulty).IsEqual(JobDifficulty.Easy);
     }
 }
