@@ -324,8 +324,8 @@ public class GN1ContractGeneratorTests
         foreach (var contract in contracts)
         {
             AssertInt(contract.OriginNodeId).IsEqual(context.CurrentNodeId);
-            // Target should be different from origin (nearby system)
-            AssertThat(contract.TargetNodeId).IsNotEqual(contract.OriginNodeId);
+            // Target should be a valid system (for G1 single-hub, this is the hub itself)
+            AssertThat(context.NearbySystems.Any(s => s.Id == contract.TargetNodeId)).IsTrue();
         }
     }
 

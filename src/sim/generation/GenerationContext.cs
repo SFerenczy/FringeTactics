@@ -220,6 +220,7 @@ public class GenerationContext
 
     /// <summary>
     /// Get nearby systems that can be contract targets.
+    /// For G1 single-hub worlds, the hub itself is a valid target.
     /// </summary>
     private static List<StarSystem> GetNearbySystems(CampaignState campaign)
     {
@@ -227,19 +228,16 @@ public class GenerationContext
 
         if (campaign.World == null)
         {
-            // Minimal fallback: create a synthetic target system (Outpost = Medium base difficulty)
-            targets.Add(new StarSystem(campaign.CurrentNodeId + 100, "Target Zone", SystemType.Outpost, Godot.Vector2.Zero));
             return targets;
         }
 
         var currentSystem = campaign.World.GetSystem(campaign.CurrentNodeId);
         if (currentSystem == null)
         {
-            targets.Add(new StarSystem(campaign.CurrentNodeId + 100, "Target Zone", SystemType.Outpost, Godot.Vector2.Zero));
             return targets;
         }
 
-        // Get connected systems
+        // Get connected systems (non-station types for variety)
         foreach (var connId in currentSystem.Connections)
         {
             var system = campaign.World.GetSystem(connId);
@@ -268,10 +266,11 @@ public class GenerationContext
             }
         }
 
-        // Fallback for single-hub worlds with no connections
+        // For single-hub worlds (G1): include the hub itself as a valid target
+        // This allows jobs to be completed at the current location
         if (targets.Count == 0)
         {
-            targets.Add(new StarSystem(campaign.CurrentNodeId + 100, "Target Zone", SystemType.Outpost, Godot.Vector2.Zero));
+            targets.Add(currentSystem);
         }
 
         return targets;

@@ -335,6 +335,13 @@ public partial class GameState : Node
         CurrentCombat = null;
         actorToCrewMap.Clear();
 
+        // Remove dead crew from roster
+        int buried = Campaign.BuryAllDeadCrew();
+        if (buried > 0)
+        {
+            GD.Print($"[GameState] Buried {buried} fallen crew member(s)");
+        }
+
         // Check for campaign over (all crew dead)
         if (Campaign.IsCampaignOver())
         {

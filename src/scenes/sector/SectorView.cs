@@ -25,6 +25,11 @@ public partial class SectorView : Control
     private Label currentJobLabel;
     private Button closeJobBoardButton;
 
+    // Station Services panel
+    private Button stationButton;
+    private Panel stationPanel;
+    private Label stationFeedbackLabel;
+
     private Dictionary<int, Button> nodeButtons = new();
     private int? selectedNodeId = null;
 
@@ -44,6 +49,7 @@ public partial class SectorView : Control
     {
         CreateUI();
         CreateJobBoardPanel();
+        CreateStationPanel();
         DrawSector();
         UpdateDisplay();
     }
@@ -59,9 +65,9 @@ public partial class SectorView : Control
         var campaign = GameState.Instance?.Campaign;
         if (campaign == null) return;
 
-        resourcesLabel.Text = $"Fuel: {campaign.Fuel}\n" +
-                              $"Money: ${campaign.Money}\n" +
-                              $"Ammo: {campaign.Ammo}";
+        resourcesLabel.Text = $"Money: ${campaign.Money}\n" +
+                              $"Fuel: {campaign.Fuel}  |  Ammo: {campaign.Ammo}\n" +
+                              $"Parts: {campaign.Parts}  |  Meds: {campaign.Meds}";
     }
 
     private void CreateUI()
@@ -155,6 +161,15 @@ public partial class SectorView : Control
         shipButton.Pressed += OnShipPressed;
         vbox.AddChild(shipButton);
 
+        AddSpacer(vbox, 10);
+
+        // Station Services button
+        stationButton = new Button();
+        stationButton.Text = "Station Services";
+        stationButton.CustomMinimumSize = new Vector2(200, 40);
+        stationButton.Pressed += OnStationPressed;
+        vbox.AddChild(stationButton);
+
         AddSpacer(vbox, 30);
 
         // Menu button
@@ -231,6 +246,253 @@ public partial class SectorView : Control
         closeJobBoardButton.CustomMinimumSize = new Vector2(100, 35);
         closeJobBoardButton.Pressed += () => jobBoardPanel.Visible = false;
         vbox.AddChild(closeJobBoardButton);
+    }
+
+    private void CreateStationPanel()
+    {
+        stationPanel = new Panel();
+        stationPanel.SetAnchorsPreset(LayoutPreset.Center);
+        stationPanel.CustomMinimumSize = new Vector2(350, 400);
+        stationPanel.Position = new Vector2(-175, -200);
+        stationPanel.Visible = false;
+        AddChild(stationPanel);
+
+        var panelStyle = new StyleBoxFlat();
+        panelStyle.BgColor = new Color(0.1f, 0.12f, 0.1f, 0.95f);
+        panelStyle.BorderWidthTop = 2;
+        panelStyle.BorderWidthBottom = 2;
+        panelStyle.BorderWidthLeft = 2;
+        panelStyle.BorderWidthRight = 2;
+        panelStyle.BorderColor = Colors.Green;
+        panelStyle.CornerRadiusTopLeft = 8;
+        panelStyle.CornerRadiusTopRight = 8;
+        panelStyle.CornerRadiusBottomLeft = 8;
+        panelStyle.CornerRadiusBottomRight = 8;
+        stationPanel.AddThemeStyleboxOverride("panel", panelStyle);
+
+        var vbox = new VBoxContainer();
+        vbox.SetAnchorsPreset(LayoutPreset.FullRect);
+        vbox.OffsetLeft = 15;
+        vbox.OffsetRight = -15;
+        vbox.OffsetTop = 15;
+        vbox.OffsetBottom = -15;
+        stationPanel.AddChild(vbox);
+
+        // Title
+        var title = new Label();
+        title.Text = "STATION SERVICES";
+        title.AddThemeFontSizeOverride("font_size", 20);
+        title.AddThemeColorOverride("font_color", Colors.Green);
+        title.HorizontalAlignment = HorizontalAlignment.Center;
+        vbox.AddChild(title);
+
+        AddSpacer(vbox, 15);
+
+        // Shop section
+        var shopLabel = new Label();
+        shopLabel.Text = "SUPPLY SHOP";
+        shopLabel.AddThemeFontSizeOverride("font_size", 14);
+        shopLabel.AddThemeColorOverride("font_color", Colors.Yellow);
+        vbox.AddChild(shopLabel);
+
+        var shopHbox = new HBoxContainer();
+        vbox.AddChild(shopHbox);
+
+        var buyAmmoBtn = new Button();
+        buyAmmoBtn.Text = "Buy Ammo ($20)";
+        buyAmmoBtn.CustomMinimumSize = new Vector2(140, 35);
+        buyAmmoBtn.Pressed += () => BuyResource("ammo", 20, 10);
+        shopHbox.AddChild(buyAmmoBtn);
+
+        var buyMedsBtn = new Button();
+        buyMedsBtn.Text = "Buy Meds ($30)";
+        buyMedsBtn.CustomMinimumSize = new Vector2(140, 35);
+        buyMedsBtn.Pressed += () => BuyResource("meds", 30, 2);
+        shopHbox.AddChild(buyMedsBtn);
+
+        AddSpacer(vbox, 10);
+
+        // Fuel Depot
+        var fuelLabel = new Label();
+        fuelLabel.Text = "FUEL DEPOT";
+        fuelLabel.AddThemeFontSizeOverride("font_size", 14);
+        fuelLabel.AddThemeColorOverride("font_color", Colors.Yellow);
+        vbox.AddChild(fuelLabel);
+
+        var buyFuelBtn = new Button();
+        buyFuelBtn.Text = "Buy Fuel ($15 for 20)";
+        buyFuelBtn.CustomMinimumSize = new Vector2(200, 35);
+        buyFuelBtn.Pressed += () => BuyResource("fuel", 15, 20);
+        vbox.AddChild(buyFuelBtn);
+
+        AddSpacer(vbox, 10);
+
+        // Repair Yard
+        var repairLabel = new Label();
+        repairLabel.Text = "REPAIR YARD";
+        repairLabel.AddThemeFontSizeOverride("font_size", 14);
+        repairLabel.AddThemeColorOverride("font_color", Colors.Yellow);
+        vbox.AddChild(repairLabel);
+
+        var repairBtn = new Button();
+        repairBtn.Text = "Repair Hull (10 Parts)";
+        repairBtn.CustomMinimumSize = new Vector2(200, 35);
+        repairBtn.Pressed += OnRepairShip;
+        vbox.AddChild(repairBtn);
+
+        AddSpacer(vbox, 10);
+
+        // Recruitment
+        var recruitLabel = new Label();
+        recruitLabel.Text = "RECRUITMENT";
+        recruitLabel.AddThemeFontSizeOverride("font_size", 14);
+        recruitLabel.AddThemeColorOverride("font_color", Colors.Yellow);
+        vbox.AddChild(recruitLabel);
+
+        var recruitHbox = new HBoxContainer();
+        vbox.AddChild(recruitHbox);
+
+        var hireSoldierBtn = new Button();
+        hireSoldierBtn.Text = "Soldier ($50)";
+        hireSoldierBtn.CustomMinimumSize = new Vector2(100, 35);
+        hireSoldierBtn.Pressed += () => HireCrew(CrewRole.Soldier, 50);
+        recruitHbox.AddChild(hireSoldierBtn);
+
+        var hireMedicBtn = new Button();
+        hireMedicBtn.Text = "Medic ($60)";
+        hireMedicBtn.CustomMinimumSize = new Vector2(100, 35);
+        hireMedicBtn.Pressed += () => HireCrew(CrewRole.Medic, 60);
+        recruitHbox.AddChild(hireMedicBtn);
+
+        var hireTechBtn = new Button();
+        hireTechBtn.Text = "Tech ($60)";
+        hireTechBtn.CustomMinimumSize = new Vector2(100, 35);
+        hireTechBtn.Pressed += () => HireCrew(CrewRole.Tech, 60);
+        recruitHbox.AddChild(hireTechBtn);
+
+        AddSpacer(vbox, 10);
+
+        // Feedback label
+        stationFeedbackLabel = new Label();
+        stationFeedbackLabel.AddThemeFontSizeOverride("font_size", 12);
+        stationFeedbackLabel.CustomMinimumSize = new Vector2(0, 40);
+        vbox.AddChild(stationFeedbackLabel);
+
+        AddSpacer(vbox, 10);
+
+        // Close button
+        var closeBtn = new Button();
+        closeBtn.Text = "Close";
+        closeBtn.CustomMinimumSize = new Vector2(100, 35);
+        closeBtn.Pressed += () => stationPanel.Visible = false;
+        vbox.AddChild(closeBtn);
+    }
+
+    private void BuyResource(string type, int cost, int amount)
+    {
+        var campaign = GameState.Instance?.Campaign;
+        if (campaign == null) return;
+
+        if (campaign.Money < cost)
+        {
+            stationFeedbackLabel.Text = "Not enough money!";
+            stationFeedbackLabel.AddThemeColorOverride("font_color", Colors.Red);
+            return;
+        }
+
+        campaign.Money -= cost;
+        switch (type)
+        {
+            case "ammo":
+                campaign.Ammo += amount;
+                stationFeedbackLabel.Text = $"Bought {amount} ammo.";
+                break;
+            case "meds":
+                campaign.Meds += amount;
+                stationFeedbackLabel.Text = $"Bought {amount} meds.";
+                break;
+            case "fuel":
+                campaign.Fuel += amount;
+                stationFeedbackLabel.Text = $"Bought {amount} fuel.";
+                break;
+        }
+        stationFeedbackLabel.AddThemeColorOverride("font_color", Colors.Green);
+    }
+
+    private void OnRepairShip()
+    {
+        var campaign = GameState.Instance?.Campaign;
+        if (campaign == null) return;
+
+        if (campaign.Ship == null)
+        {
+            stationFeedbackLabel.Text = "No ship to repair!";
+            stationFeedbackLabel.AddThemeColorOverride("font_color", Colors.Red);
+            return;
+        }
+
+        if (campaign.Parts < 10)
+        {
+            stationFeedbackLabel.Text = "Not enough parts! (Need 10)";
+            stationFeedbackLabel.AddThemeColorOverride("font_color", Colors.Red);
+            return;
+        }
+
+        if (campaign.Ship.Hull >= campaign.Ship.MaxHull)
+        {
+            stationFeedbackLabel.Text = "Hull already at maximum!";
+            stationFeedbackLabel.AddThemeColorOverride("font_color", Colors.Yellow);
+            return;
+        }
+
+        campaign.Parts -= 10;
+        int repaired = System.Math.Min(20, campaign.Ship.MaxHull - campaign.Ship.Hull);
+        campaign.Ship.Hull += repaired;
+        stationFeedbackLabel.Text = $"Repaired {repaired} hull damage.";
+        stationFeedbackLabel.AddThemeColorOverride("font_color", Colors.Green);
+    }
+
+    private void OnStationPressed()
+    {
+        stationFeedbackLabel.Text = "";
+        stationPanel.Visible = true;
+    }
+
+    private static readonly string[] RecruitNames = {
+        "Riley", "Quinn", "Avery", "Blake", "Cameron", "Dakota", "Ellis", "Finley",
+        "Harper", "Jade", "Kai", "Logan", "Mason", "Nova", "Parker", "Reese",
+        "Sage", "Taylor", "Val", "Winter"
+    };
+
+    private void HireCrew(CrewRole role, int cost)
+    {
+        var campaign = GameState.Instance?.Campaign;
+        if (campaign == null) return;
+
+        if (campaign.Money < cost)
+        {
+            stationFeedbackLabel.Text = "Not enough money!";
+            stationFeedbackLabel.AddThemeColorOverride("font_color", Colors.Red);
+            return;
+        }
+
+        // Check max crew (6 alive)
+        if (campaign.GetAliveCrew().Count >= 6)
+        {
+            stationFeedbackLabel.Text = "Crew roster full! (Max 6)";
+            stationFeedbackLabel.AddThemeColorOverride("font_color", Colors.Red);
+            return;
+        }
+
+        // Pick a random name
+        var name = RecruitNames[GD.RandRange(0, RecruitNames.Length - 1)];
+        var hired = campaign.HireCrew(name, role, cost);
+        
+        if (hired != null)
+        {
+            stationFeedbackLabel.Text = $"Hired {name} ({role})!";
+            stationFeedbackLabel.AddThemeColorOverride("font_color", Colors.Green);
+        }
     }
 
     private void PopulateJobBoard()
@@ -480,9 +742,9 @@ public partial class SectorView : Control
         locationLabel.Text = $"@ {currentSystem?.Name ?? "Unknown"}";
 
         // Resources
-        resourcesLabel.Text = $"Fuel: {campaign.Fuel}\n" +
-                              $"Money: ${campaign.Money}\n" +
-                              $"Ammo: {campaign.Ammo}";
+        resourcesLabel.Text = $"Money: ${campaign.Money}\n" +
+                              $"Fuel: {campaign.Fuel}  |  Ammo: {campaign.Ammo}\n" +
+                              $"Parts: {campaign.Parts}  |  Meds: {campaign.Meds}";
 
         // Selected system info
         if (selectedNodeId.HasValue && campaign.World != null)

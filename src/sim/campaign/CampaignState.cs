@@ -191,10 +191,17 @@ public class CampaignState
 
     /// <summary>
     /// Clear current job (on completion or abandonment).
+    /// Regenerates jobs if the board is empty.
     /// </summary>
     public void ClearCurrentJob()
     {
         CurrentJob = null;
+        
+        // Regenerate jobs if board is empty (G1 loop)
+        if (AvailableJobs.Count == 0)
+        {
+            RefreshJobsAtCurrentNode();
+        }
     }
 
     /// <summary>
@@ -693,6 +700,47 @@ public class CampaignState
         EventBus?.Publish(new CrewFiredEvent(crewId, name));
 
         return true;
+    }
+
+    /// <summary>
+    /// Remove a dead crew member from the roster (bury them).
+    /// </summary>
+    public bool BuryDeadCrew(int crewId)
+    {
+        var crew = GetCrewById(crewId);
+        if (crew == null)
+        {
+            return false;
+        }
+
+        if (!crew.IsDead)
+        {
+            SimLog.Log($"[Campaign] Cannot bury {crew.Name}: not dead");
+            return false;
+        }
+
+        string name = crew.Name;
+        Crew.Remove(crew);
+        SimLog.Log($"[Campaign] Buried {name}");
+        return true;
+    }
+
+    /// <summary>
+    /// Remove all dead crew from the roster.
+    /// </summary>
+    public int BuryAllDeadCrew()
+    {
+        int count = 0;
+        for (int i = Crew.Count - 1; i >= 0; i--)
+        {
+            if (Crew[i].IsDead)
+            {
+                SimLog.Log($"[Campaign] Buried {Crew[i].Name}");
+                Crew.RemoveAt(i);
+                count++;
+            }
+        }
+        return count;
     }
 
     /// <summary>
