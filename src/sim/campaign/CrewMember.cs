@@ -334,6 +334,36 @@ public class CrewMember
     public void ClearEquipped(EquipSlot slot) => SetEquipped(slot, null);
 
     /// <summary>
+    /// Get the effective weapon definition ID for tactical missions.
+    /// Priority: equipped weapon item > preferred weapon > default rifle.
+    /// </summary>
+    public string GetEffectiveWeaponId(Inventory inventory)
+    {
+        // Check equipped weapon item instance
+        if (!string.IsNullOrEmpty(EquippedWeaponId) && inventory != null)
+        {
+            var item = inventory.FindById(EquippedWeaponId);
+            if (item != null)
+            {
+                var itemDef = ItemRegistry.Get(item.DefId);
+                if (itemDef != null && itemDef.EquipSlot == EquipSlot.Weapon)
+                {
+                    return item.DefId;
+                }
+            }
+        }
+        
+        // Fall back to preferred weapon
+        if (!string.IsNullOrEmpty(PreferredWeaponId))
+        {
+            return PreferredWeaponId;
+        }
+        
+        // Default fallback
+        return "rifle";
+    }
+
+    /// <summary>
     /// Get all equipped item IDs.
     /// </summary>
     public List<string> GetAllEquippedIds()

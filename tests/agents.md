@@ -13,14 +13,18 @@ tests/
     │   ├── SF1TimeTests.cs     # SF1 time tests (CampaignTime, day advancement, deadlines)
     │   ├── SF2EventBusTests.cs     # SF2 event bus tests (30 tests: subscribe, publish, unsubscribe, event types)
     │   └── SF2IntegrationTests.cs  # SF2 integration tests (12 tests: wiring, cross-domain events, travel)
-    └── combat/
-        ├── M0Tests.cs    # M0 milestone tests (map, movement, time)
-        ├── M1Tests.cs    # M1 milestone tests (formation, collision, group movement)
-        ├── M3Tests.cs    # M3 milestone tests (hit chance, ammo, auto-defend, combat)
-        ├── M4Tests.cs    # M4 milestone tests (directional cover, cover heights, flanking, balance)
-        ├── M5Tests.cs    # M5 milestone tests (interactables, channeled actions, doors, terminals, hazards)
-        ├── M6Tests.cs    # M6 milestone tests (stealth, detection, alarm, perception, door/LOS integration)
-        └── M7Tests.cs    # M7 milestone tests (session I/O, retreat integration)
+    ├── combat/
+    │   ├── M0Tests.cs    # M0 milestone tests (map, movement, time)
+    │   ├── M1Tests.cs    # M1 milestone tests (formation, collision, group movement)
+    │   ├── M3Tests.cs    # M3 milestone tests (hit chance, ammo, auto-defend, combat)
+    │   ├── M4Tests.cs    # M4 milestone tests (directional cover, cover heights, flanking, balance)
+    │   ├── M5Tests.cs    # M5 milestone tests (interactables, channeled actions, doors, terminals, hazards)
+    │   ├── M6Tests.cs    # M6 milestone tests (stealth, detection, alarm, perception, door/LOS integration)
+    │   └── M7Tests.cs    # M7 milestone tests (session I/O, retreat integration)
+    └── management/
+        ├── MG3MissionInputTests.cs    # MG3 input tests (31 tests: stat mapping, equipment, context)
+        ├── MG3MissionOutputTests.cs   # MG3 output tests (death, injury, XP, ammo, loot, events)
+        └── MG3IntegrationTests.cs     # MG3 integration tests (full mission flow, crew stats, equipment)
 ```
 
 ## Running Tests

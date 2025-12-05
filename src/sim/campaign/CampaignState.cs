@@ -323,13 +323,17 @@ public class CampaignState
         EventBus?.Publish(new ResourceChangedEvent(type, oldValue, GetResource(type), amount, reason));
     }
 
-    // Typed wrappers for API convenience
+    // Typed wrappers for API convenience - all delegate to SpendResource/AddResource
     public bool SpendCredits(int amount, string reason = "unknown") => SpendResource(ResourceTypes.Money, amount, reason);
     public void AddCredits(int amount, string reason = "unknown") => AddResource(ResourceTypes.Money, amount, reason);
     public bool SpendFuel(int amount, string reason = "unknown") => SpendResource(ResourceTypes.Fuel, amount, reason);
     public void AddFuel(int amount, string reason = "unknown") => AddResource(ResourceTypes.Fuel, amount, reason);
     public bool SpendParts(int amount, string reason = "unknown") => SpendResource(ResourceTypes.Parts, amount, reason);
     public void AddParts(int amount, string reason = "unknown") => AddResource(ResourceTypes.Parts, amount, reason);
+    public bool SpendAmmo(int amount, string reason = "unknown") => SpendResource(ResourceTypes.Ammo, amount, reason);
+    public void AddAmmo(int amount, string reason = "unknown") => AddResource(ResourceTypes.Ammo, amount, reason);
+    public bool SpendMeds(int amount, string reason = "unknown") => SpendResource(ResourceTypes.Meds, amount, reason);
+    public void AddMeds(int amount, string reason = "unknown") => AddResource(ResourceTypes.Meds, amount, reason);
 
     /// <summary>
     /// Check if player can afford a purchase.
@@ -776,35 +780,52 @@ public class CampaignState
     }
 
     /// <summary>
-    /// Consume resources when starting a mission.
+    /// Consume resources when starting a mission (MG3).
+    /// Fuel is consumed upfront; ammo is tracked per-actor and consumed in ApplyMissionOutput.
     /// </summary>
     public void ConsumeMissionResources()
     {
-        int oldAmmo = Ammo;
-        int oldFuel = Fuel;
+        // Consume fuel for mission deployment
+        if (Fuel > 0 && MISSION_FUEL_COST > 0)
+        {
+            SpendFuel(MISSION_FUEL_COST, "mission_start");
+        }
         
-        Ammo -= MISSION_AMMO_COST;
-        Fuel -= MISSION_FUEL_COST;
+        // Advance time for mission
         Time.AdvanceDays(MISSION_TIME_DAYS);
-        SimLog.Log($"[Campaign] Mission started. Cost: {MISSION_AMMO_COST} ammo, {MISSION_FUEL_COST} fuel, {MISSION_TIME_DAYS} day(s).");
         
-        EventBus?.Publish(new ResourceChangedEvent(
-            ResourceType: ResourceTypes.Ammo,
-            OldValue: oldAmmo,
-            NewValue: Ammo,
-            Delta: -MISSION_AMMO_COST,
-            Reason: "mission_cost"
-        ));
-        
-        EventBus?.Publish(new ResourceChangedEvent(
-            ResourceType: ResourceTypes.Fuel,
-            OldValue: oldFuel,
-            NewValue: Fuel,
-            Delta: -MISSION_FUEL_COST,
-            Reason: "mission_cost"
-        ));
+        SimLog.Log($"[Campaign] Mission started. Cost: {MISSION_FUEL_COST} fuel, {MISSION_TIME_DAYS} day(s). Ammo tracked per-actor.");
     }
-
+    
+    /// <summary>
+    /// Calculate total ammo needed for a mission based on deployable crew (MG3).
+    /// Used for UI display and pre-mission validation.
+    /// </summary>
+    public int CalculateMissionAmmoNeeded()
+    {
+        int total = 0;
+        foreach (var crew in GetAliveCrew())
+        {
+            if (!crew.CanDeploy()) continue;
+            
+            // Resolve weapon using centralized method
+            string weaponId = crew.GetEffectiveWeaponId(Inventory);
+            var weapon = WeaponData.FromId(weaponId);
+            
+            // Use StatFormulas for ammo calculation
+            total += StatFormulas.CalculateTotalAmmoNeeded(weapon.MagazineSize);
+        }
+        return total;
+    }
+    
+    /// <summary>
+    /// Check if campaign has enough ammo for a mission.
+    /// </summary>
+    public bool HasEnoughAmmoForMission()
+    {
+        return Ammo >= CalculateMissionAmmoNeeded();
+    }
+    
     /// <summary>
     /// Rest at current location. Heals injuries, advances time.
     /// </summary>
@@ -844,11 +865,14 @@ public class CampaignState
     }
 
     /// <summary>
-    /// Apply mission output to campaign state.
-    /// This is the primary method for processing mission results.
+    /// Apply mission output to campaign state (MG3).
+    /// Handles crew outcomes, rewards, ammo consumption, loot, and events.
     /// </summary>
     public void ApplyMissionOutput(MissionOutput output)
     {
+        // Track total ammo used for consumption
+        int totalAmmoUsed = 0;
+        
         // Process each crew outcome
         foreach (var crewOutcome in output.CrewOutcomes)
         {
@@ -861,6 +885,7 @@ public class CampaignState
                 crew.IsDead = true;
                 TotalCrewDeaths++;
                 SimLog.Log($"[Campaign] {crew.Name} KIA.");
+                EventBus?.Publish(new CrewDiedEvent(crew.Id, crew.Name, "killed_in_action"));
                 continue;
             }
 
@@ -870,6 +895,7 @@ public class CampaignState
                 crew.IsDead = true;
                 TotalCrewDeaths++;
                 SimLog.Log($"[Campaign] {crew.Name} MIA - presumed dead.");
+                EventBus?.Publish(new CrewDiedEvent(crew.Id, crew.Name, "missing_in_action"));
                 continue;
             }
 
@@ -878,20 +904,104 @@ public class CampaignState
             {
                 crew.AddInjury(injury);
                 SimLog.Log($"[Campaign] {crew.Name} received injury: {injury}");
+                EventBus?.Publish(new CrewInjuredEvent(crew.Id, crew.Name, injury));
             }
 
             // Apply XP
             if (crewOutcome.SuggestedXp > 0)
             {
+                int oldLevel = crew.Level;
                 bool leveledUp = crew.AddXp(crewOutcome.SuggestedXp);
                 if (leveledUp)
                 {
                     SimLog.Log($"[Campaign] {crew.Name} leveled up to {crew.Level}!");
+                    EventBus?.Publish(new CrewLeveledUpEvent(crew.Id, crew.Name, oldLevel, crew.Level));
                 }
             }
+            
+            // Track ammo usage
+            totalAmmoUsed += crewOutcome.AmmoUsed;
         }
+        
+        // Consume ammo used during mission
+        if (totalAmmoUsed > 0)
+        {
+            SpendAmmo(totalAmmoUsed, "mission_consumption");
+        }
+        
+        // Process loot
+        ProcessMissionLoot(output.Loot);
 
         // Apply victory/defeat/retreat rewards
+        ApplyMissionRewards(output);
+    }
+    
+    /// <summary>
+    /// Process loot items from mission (MG3).
+    /// </summary>
+    private void ProcessMissionLoot(List<LootItem> loot)
+    {
+        if (loot == null || loot.Count == 0) return;
+        
+        foreach (var item in loot)
+        {
+            switch (item.Type)
+            {
+                case LootType.Credits:
+                    AddCredits(item.Quantity, "mission_loot");
+                    break;
+                    
+                case LootType.Resource:
+                    AddLootResource(item.ResourceKind, item.Quantity);
+                    break;
+                    
+                case LootType.Item:
+                    AddLootItem(item);
+                    break;
+            }
+        }
+    }
+    
+    /// <summary>
+    /// Add a resource from loot using ResourceType enum.
+    /// </summary>
+    private void AddLootResource(ResourceType? resourceType, int amount)
+    {
+        if (amount <= 0 || resourceType == null) return;
+        
+        string type = ResourceTypes.FromEnum(resourceType.Value);
+        if (type != null)
+        {
+            AddResource(type, amount, "mission_loot");
+        }
+    }
+    
+    /// <summary>
+    /// Add a loot item to inventory.
+    /// </summary>
+    private void AddLootItem(LootItem loot)
+    {
+        if (string.IsNullOrEmpty(loot.ItemDefId)) return;
+        
+        int capacity = Ship?.GetCargoCapacity() ?? 100;
+        var item = Inventory?.AddItem(loot.ItemDefId, loot.Quantity, capacity);
+        
+        if (item != null)
+        {
+            SimLog.Log($"[Campaign] Looted {loot.Quantity}x {loot.Name}");
+            EventBus?.Publish(new LootAcquiredEvent(loot.ItemDefId, loot.Name, loot.Quantity, "mission"));
+        }
+        else
+        {
+            SimLog.Log($"[Campaign] No cargo space for {loot.Name}");
+        }
+    }
+    
+    /// <summary>
+    /// Apply mission rewards based on outcome (MG3).
+    /// </summary>
+    private void ApplyMissionRewards(MissionOutput output)
+    {
         bool isVictory = output.Outcome == MissionOutcome.Victory;
         bool isRetreat = output.Outcome == MissionOutcome.Retreat;
 
@@ -905,13 +1015,18 @@ public class CampaignState
                 ModifyFactionRep(CurrentJob.EmployerFactionId, CurrentJob.RepGain);
                 ModifyFactionRep(CurrentJob.TargetFactionId, -CurrentJob.RepLoss);
                 SimLog.Log($"[Campaign] Job completed: {CurrentJob.Title}");
+                EventBus?.Publish(new JobCompletedEvent(CurrentJob.Id, CurrentJob.Title, true, CurrentJob.Reward?.Money ?? 0));
                 ClearCurrentJob();
             }
             else
             {
+                int oldMoney = Money;
+                int oldParts = Parts;
                 Money += VICTORY_MONEY;
                 Parts += VICTORY_PARTS;
                 SimLog.Log($"[Campaign] Victory! +${VICTORY_MONEY}, +{VICTORY_PARTS} parts.");
+                EventBus?.Publish(new ResourceChangedEvent(ResourceTypes.Money, oldMoney, Money, VICTORY_MONEY, "victory_bonus"));
+                EventBus?.Publish(new ResourceChangedEvent(ResourceTypes.Parts, oldParts, Parts, VICTORY_PARTS, "victory_bonus"));
             }
         }
         else if (isRetreat)
@@ -924,6 +1039,7 @@ public class CampaignState
                 // Half the reputation loss for retreat vs full failure
                 ModifyFactionRep(CurrentJob.EmployerFactionId, -CurrentJob.FailureRepLoss / 2);
                 SimLog.Log($"[Campaign] Job abandoned (retreat): {CurrentJob.Title}");
+                EventBus?.Publish(new JobCompletedEvent(CurrentJob.Id, CurrentJob.Title, false, 0));
                 ClearCurrentJob();
             }
             else
@@ -940,6 +1056,7 @@ public class CampaignState
             {
                 ModifyFactionRep(CurrentJob.EmployerFactionId, -CurrentJob.FailureRepLoss);
                 SimLog.Log($"[Campaign] Job failed: {CurrentJob.Title}");
+                EventBus?.Publish(new JobCompletedEvent(CurrentJob.Id, CurrentJob.Title, false, 0));
                 ClearCurrentJob();
             }
             else

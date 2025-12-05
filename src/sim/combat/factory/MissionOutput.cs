@@ -167,14 +167,107 @@ public enum CrewFinalStatus
 }
 
 /// <summary>
+/// Type of loot item.
+/// </summary>
+public enum LootType
+{
+    /// <summary>Currency reward.</summary>
+    Credits,
+    
+    /// <summary>Inventory item.</summary>
+    Item,
+    
+    /// <summary>Campaign resource (fuel, ammo, parts, meds).</summary>
+    Resource
+}
+
+/// <summary>
 /// Loot item acquired during mission.
 /// </summary>
 public class LootItem
 {
-    public string ItemId { get; set; }
+    /// <summary>
+    /// Type of loot.
+    /// </summary>
+    public LootType Type { get; set; }
+    
+    /// <summary>
+    /// Item definition ID (for Type == Item).
+    /// </summary>
+    public string ItemDefId { get; set; }
+    
+    /// <summary>
+    /// Display name.
+    /// </summary>
     public string Name { get; set; }
+    
+    /// <summary>
+    /// Amount (for credits/resources) or quantity (for items).
+    /// </summary>
     public int Quantity { get; set; } = 1;
+    
+    /// <summary>
+    /// Resource type enum (for Type == Resource).
+    /// </summary>
+    public ResourceType? ResourceKind { get; set; }
+    
+    /// <summary>
+    /// Tags for filtering.
+    /// </summary>
     public List<string> Tags { get; set; } = new();
+    
+    // === Factory Methods ===
+    
+    /// <summary>
+    /// Create a credits loot item.
+    /// </summary>
+    public static LootItem Credits(int amount) => new()
+    {
+        Type = LootType.Credits,
+        Name = $"{amount} Credits",
+        Quantity = amount
+    };
+    
+    /// <summary>
+    /// Create an item loot.
+    /// </summary>
+    public static LootItem Item(string defId, int quantity = 1)
+    {
+        var def = ItemRegistry.Get(defId);
+        return new LootItem
+        {
+            Type = LootType.Item,
+            ItemDefId = defId,
+            Name = def?.Name ?? defId,
+            Quantity = quantity
+        };
+    }
+    
+    /// <summary>
+    /// Create a resource loot (type-safe enum version).
+    /// </summary>
+    public static LootItem Resource(ResourceType resourceType, int amount) => new()
+    {
+        Type = LootType.Resource,
+        ResourceKind = resourceType,
+        Name = $"{amount} {resourceType}",
+        Quantity = amount
+    };
+    
+    /// <summary>
+    /// Create a resource loot (string version for compatibility).
+    /// </summary>
+    public static LootItem Resource(string resourceType, int amount)
+    {
+        var parsed = ResourceTypes.ToEnum(resourceType);
+        return new LootItem
+        {
+            Type = LootType.Resource,
+            ResourceKind = parsed,
+            Name = $"{amount} {resourceType}",
+            Quantity = amount
+        };
+    }
 }
 
 /// <summary>

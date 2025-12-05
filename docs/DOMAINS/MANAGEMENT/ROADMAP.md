@@ -102,24 +102,32 @@ Implement ship state and resource management.
 
 ---
 
-## MG3 – Tactical Integration (G1)
+## MG3 – Tactical Integration (G1) ✅
 
 **Goal:**  
 Connect Management to Tactical via the mission I/O contract.
 
+**Implementation:** See `MG3_IMPLEMENTATION.md` for detailed breakdown.
+
+**Status:** Complete
+
 **Key capabilities:**
 
-- `CreateMissionInput(contract)`:
-  - Snapshot crew for tactical.
-  - Include equipment and stats.
-- `ApplyMissionResult(result)`:
+- `MissionInputBuilder.Build(campaign, job)`:
+  - Snapshot crew for tactical with full stats.
+  - Include equipment and derived stats.
+  - Build mission context from world state.
+- `CampaignState.ApplyMissionOutput(output)`:
   - Apply injuries and deaths.
   - Apply XP gains.
   - Apply loot and rewards.
+  - Track ammo consumption.
   - Update contract state.
 
 **Deliverables:**
-- Mission I/O adapter methods.
+- `MissionInputBuilder` class.
+- Enhanced `ApplyMissionOutput` method.
+- Mission integration events.
 - Integration tests with Tactical.
 
 ---

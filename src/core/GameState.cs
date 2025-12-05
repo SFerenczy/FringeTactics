@@ -144,6 +144,21 @@ public partial class GameState : Node
         WireEventBus(CurrentCombat);
         actorToCrewMap = buildResult.ActorToCrewMap;
 
+        // Publish MissionStartedEvent (MG3)
+        int crewCount = 0;
+        int enemyCount = 0;
+        foreach (var actor in CurrentCombat.Actors)
+        {
+            if (actor.Type == ActorType.Crew) crewCount++;
+            else if (actor.Type == ActorType.Enemy) enemyCount++;
+        }
+        EventBus.Publish(new MissionStartedEvent(
+            Campaign.CurrentJob.Id,
+            Campaign.CurrentJob.Title,
+            crewCount,
+            enemyCount
+        ));
+
         GD.Print($"[GameState] Starting mission: {Campaign.CurrentJob.Title}");
         Mode = "mission";
         GetTree().ChangeSceneToFile(MissionScene);
@@ -294,6 +309,26 @@ public partial class GameState : Node
         
         // Log mission summary
         LogMissionSummary(output);
+        
+        // Calculate crew survived/lost for event (MG3)
+        int crewSurvived = 0;
+        int crewLost = 0;
+        foreach (var crew in output.CrewOutcomes)
+        {
+            if (crew.Status == CrewFinalStatus.Dead || crew.Status == CrewFinalStatus.MIA)
+                crewLost++;
+            else
+                crewSurvived++;
+        }
+        
+        // Publish MissionEndedEvent (MG3)
+        EventBus.Publish(new MissionEndedEvent(
+            output.MissionId ?? "unknown",
+            outcome,
+            crewSurvived,
+            crewLost,
+            output.EnemiesKilled
+        ));
         
         // Apply mission output directly to campaign
         Campaign.ApplyMissionOutput(output);

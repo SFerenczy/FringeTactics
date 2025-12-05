@@ -15,7 +15,11 @@ Campaign/meta-game state: crew management, resources, mission tracking, jobs.
   - FactionRep: reputation with each faction (0-100)
   - Mission costs and rewards (including time cost)
   - Campaign stats: TotalMoneyEarned, TotalCrewDeaths
-  - `ApplyMissionOutput(MissionOutput)` for XP, injuries, deaths, job rewards
+  - `ApplyMissionOutput(MissionOutput)` for XP, injuries, deaths, job rewards, ammo, loot (MG3)
+  - `SpendAmmo()`, `AddAmmo()` - ammo resource management (MG3)
+  - `CalculateMissionAmmoNeeded()` - estimate ammo for mission (MG3)
+  - `HasEnoughAmmoForMission()` - pre-mission validation (MG3)
+  - `ConsumeMissionResources()` - fuel upfront, ammo tracked per-actor (MG3)
   - `AcceptJob()` sets absolute deadline, publishes JobAcceptedEvent
   - `ModifyFactionRep()` publishes FactionRepChangedEvent
   - `ConsumeMissionResources()` publishes ResourceChangedEvent
@@ -26,6 +30,12 @@ Campaign/meta-game state: crew management, resources, mission tracking, jobs.
   - `FireCrew(crewId)` - remove crew from roster (MG1)
   - `AssignTrait(crewId, traitId)` - add trait to crew (MG1)
   - `RemoveTrait(crewId, traitId)` - remove non-permanent trait (MG1)
+- **MissionInputBuilder.cs** - Builds MissionInput from campaign state (MG3):
+  - `Build(campaign, job)` - creates complete MissionInput
+  - Maps crew stats (Grit→HP, Aim→Accuracy, Reflexes→MoveSpeed)
+  - Resolves equipped weapons or falls back to preferred/default
+  - Includes mission context (location, faction, tags)
+  - Converts job objectives to mission objectives
 - **CrewMember.cs** - Individual crew member:
   - Identity: id, name, role (Soldier/Medic/Tech/Scout)
   - Status: IsDead, Injuries list, TraitIds list

@@ -7,18 +7,23 @@ namespace FringeTactics;
 // 
 // Active events (currently published):
 //   - MissionCompletedEvent (CombatState.EndMission)
+//   - MissionStartedEvent (GameState.StartMission) [MG3]
+//   - MissionEndedEvent (GameState.EndMission) [MG3]
 //   - ActorDiedEvent (CombatState.OnActorDied)
 //   - DayAdvancedEvent (CampaignTime.AdvanceDays)
 //   - ResourceChangedEvent (TravelSystem, CampaignState)
 //   - JobAcceptedEvent (CampaignState.AcceptJob)
+//   - JobCompletedEvent (CampaignState.ApplyMissionOutput) [MG3]
 //   - TravelCompletedEvent (TravelSystem.Travel)
 //   - FactionRepChangedEvent (CampaignState.ModifyFactionRep)
+//   - CrewDiedEvent (CampaignState.ApplyMissionOutput) [MG3]
+//   - CrewInjuredEvent (CampaignState.ApplyMissionOutput) [MG3]
+//   - CrewLeveledUpEvent (CampaignState.ApplyMissionOutput) [MG3]
+//   - LootAcquiredEvent (CampaignState.ApplyMissionOutput) [MG3]
 //
 // Planned events (defined but not yet published):
 //   - MissionPhaseChangedEvent
 //   - AlarmStateChangedEvent
-//   - JobCompletedEvent
-//   - CrewLeveledUpEvent, CrewInjuredEvent, CrewDiedEvent
 // ============================================================================
 
 // ============================================================================
@@ -72,7 +77,19 @@ public readonly record struct AlarmStateChangedEvent(
 // ============================================================================
 
 /// <summary>
-/// Resource type constants for ResourceChangedEvent.
+/// Resource type enum for type-safe resource handling.
+/// </summary>
+public enum ResourceType
+{
+    Money,
+    Fuel,
+    Ammo,
+    Parts,
+    Meds
+}
+
+/// <summary>
+/// Resource type constants for ResourceChangedEvent (legacy compatibility).
 /// </summary>
 public static class ResourceTypes
 {
@@ -81,6 +98,32 @@ public static class ResourceTypes
     public const string Ammo = "ammo";
     public const string Parts = "parts";
     public const string Meds = "meds";
+    
+    /// <summary>
+    /// Convert enum to string constant.
+    /// </summary>
+    public static string FromEnum(ResourceType type) => type switch
+    {
+        ResourceType.Money => Money,
+        ResourceType.Fuel => Fuel,
+        ResourceType.Ammo => Ammo,
+        ResourceType.Parts => Parts,
+        ResourceType.Meds => Meds,
+        _ => null
+    };
+    
+    /// <summary>
+    /// Parse string to enum (case-insensitive).
+    /// </summary>
+    public static ResourceType? ToEnum(string type) => type?.ToLower() switch
+    {
+        "money" or "credits" => ResourceType.Money,
+        "fuel" => ResourceType.Fuel,
+        "ammo" => ResourceType.Ammo,
+        "parts" => ResourceType.Parts,
+        "meds" => ResourceType.Meds,
+        _ => null
+    };
 }
 
 /// <summary>
@@ -283,4 +326,39 @@ public readonly record struct ShipModuleRemovedEvent(
     string ModuleDefId,
     string ModuleName,
     string SlotType
+);
+
+// ============================================================================
+// MISSION INTEGRATION EVENTS (MG3)
+// ============================================================================
+
+/// <summary>
+/// Published when a mission starts.
+/// </summary>
+public readonly record struct MissionStartedEvent(
+    string MissionId,
+    string MissionName,
+    int CrewCount,
+    int EnemyCount
+);
+
+/// <summary>
+/// Published when a mission ends with detailed results.
+/// </summary>
+public readonly record struct MissionEndedEvent(
+    string MissionId,
+    MissionOutcome Outcome,
+    int CrewSurvived,
+    int CrewLost,
+    int EnemiesKilled
+);
+
+/// <summary>
+/// Published when loot is acquired from a mission.
+/// </summary>
+public readonly record struct LootAcquiredEvent(
+    string ItemDefId,
+    string ItemName,
+    int Quantity,
+    string Source
 );

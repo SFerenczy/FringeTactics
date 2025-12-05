@@ -16,9 +16,9 @@ Orchestrates game flow and state transitions. Bridges sim logic with scene prese
 ## Key Methods
 
 - `StartNewCampaign()` - Create campaign with 4 crew, go to campaign screen
-- `StartMission()` - Build CombatState via MissionFactory, store in CurrentCombat, load scene
+- `StartMission()` - Build CombatState via MissionFactory, publish `MissionStartedEvent`, load scene (MG3)
 - `StartSandboxMission()` - Build sandbox CombatState, load scene (no campaign)
-- `EndMission(victory, combatState)` - Apply results to campaign, clear CurrentCombat, return to campaign
+- `EndMission(outcome, combatState)` - Build output, publish `MissionEndedEvent`, apply to campaign (MG3)
 - `GoToMainMenu()` - Clear campaign and CurrentCombat, return to menu
 
 ## Key Properties

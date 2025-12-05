@@ -21,32 +21,52 @@ public static class MissionFactory
 
     /// <summary>
     /// Build a CombatState from campaign crew and mission config.
-    /// Internally converts to MissionInput and delegates to BuildFromInput.
+    /// Uses MissionInputBuilder for proper stat/equipment mapping when job is active (MG3).
     /// </summary>
     public static MissionBuildResult BuildFromCampaign(CampaignState campaign, MissionConfig config, int? seed = null)
     {
-        var input = ConvertConfigToInput(config, seed ?? System.Environment.TickCount);
+        // Use MissionInputBuilder if we have an active job (MG3 path)
+        if (campaign.CurrentJob != null)
+        {
+            var input = MissionInputBuilder.Build(campaign, campaign.CurrentJob);
+            if (seed.HasValue)
+            {
+                input.Seed = seed.Value;
+            }
+            return BuildFromInput(input);
+        }
         
-        // Add crew from campaign
-        var crewWeapon = WeaponData.FromId(config.CrewWeaponId);
+        // Legacy path for missions without jobs (sandbox, tests)
+        var legacyInput = ConvertConfigToInput(config, seed ?? System.Environment.TickCount);
+        
+        // Add crew from campaign with proper stats (MG3)
         var aliveCrew = campaign.GetAliveCrew();
-        for (int i = 0; i < aliveCrew.Count && i < config.CrewSpawnPositions.Count; i++)
+        int spawnIndex = 0;
+        for (int i = 0; i < aliveCrew.Count && spawnIndex < config.CrewSpawnPositions.Count; i++)
         {
             var crewMember = aliveCrew[i];
-            input.Crew.Add(new CrewDeployment
+            if (!crewMember.CanDeploy()) continue;
+            
+            // Resolve weapon using centralized method
+            string weaponId = crewMember.GetEffectiveWeaponId(campaign.Inventory);
+            var crewWeapon = WeaponData.FromId(weaponId);
+            
+            legacyInput.Crew.Add(new CrewDeployment
             {
                 CampaignCrewId = crewMember.Id,
                 Name = crewMember.Name,
-                MaxHp = 100,
-                CurrentHp = 100,
-                WeaponId = config.CrewWeaponId,
+                MaxHp = crewMember.GetMaxHp(),
+                CurrentHp = crewMember.GetMaxHp(),
+                Accuracy = StatFormulas.CalculateAccuracy(crewMember.GetEffectiveStat(CrewStatType.Aim)),
+                MoveSpeed = StatFormulas.CalculateMoveSpeed(crewMember.GetEffectiveStat(CrewStatType.Reflexes)),
+                WeaponId = weaponId,
                 AmmoInMagazine = crewWeapon.MagazineSize,
-                ReserveAmmo = 90,
-                SpawnPosition = config.CrewSpawnPositions[i]
+                ReserveAmmo = StatFormulas.CalculateReserveAmmo(crewWeapon.MagazineSize, campaign.Ammo),
+                SpawnPosition = config.CrewSpawnPositions[spawnIndex++]
             });
         }
         
-        return BuildFromInput(input);
+        return BuildFromInput(legacyInput);
     }
 
     /// <summary>

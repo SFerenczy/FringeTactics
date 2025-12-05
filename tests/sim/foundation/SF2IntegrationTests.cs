@@ -269,13 +269,10 @@ public class SF2IntegrationTests
 
         campaign.ConsumeMissionResources();
 
-        // Should have ammo and fuel events
-        var ammoEvents = received.FindAll(e => e.ResourceType == "ammo");
+        // MG3: Only fuel is consumed upfront; ammo is tracked per-actor during mission
         var fuelEvents = received.FindAll(e => e.ResourceType == "fuel");
 
-        AssertInt(ammoEvents.Count).IsEqual(1);
         AssertInt(fuelEvents.Count).IsEqual(1);
-        AssertString(ammoEvents[0].Reason).IsEqual("mission_cost");
-        AssertString(fuelEvents[0].Reason).IsEqual("mission_cost");
+        AssertString(fuelEvents[0].Reason).IsEqual("mission_start");
     }
 }

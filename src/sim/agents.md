@@ -4,6 +4,9 @@ Pure game logic. The "inside" of the hexagonal architecture.
 
 ## Files
 
+- **StatFormulas.cs** - Centralized stat formulas for campaign-to-tactical conversion (MG3 cleanup)
+  - Constants: `BaseAccuracy`, `AccuracyPerAim`, `BaseMoveSpeed`, `MoveSpeedPerReflexes`, ammo constants
+  - Methods: `CalculateAccuracy()`, `CalculateMoveSpeed()`, `CalculateReserveAmmo()`, `CalculateTotalAmmoNeeded()`
 - **SimLog.cs** - Logging abstraction: adapter layer subscribes to receive log messages
 - **RngStream.cs** - Single seeded RNG stream with serializable state for save/load
 - **RngService.cs** - Multi-stream RNG manager with isolated campaign/tactical streams
