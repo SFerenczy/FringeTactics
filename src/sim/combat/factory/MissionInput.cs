@@ -101,7 +101,7 @@ public class CrewDeployment
     /// <summary>
     /// Weapon definition ID (e.g., "rifle", "smg").
     /// </summary>
-    public string WeaponId { get; set; } = "rifle";
+    public string WeaponId { get; set; } = WeaponIds.Rifle;
     
     public int AmmoInMagazine { get; set; } = 30;
     public int ReserveAmmo { get; set; } = 90;

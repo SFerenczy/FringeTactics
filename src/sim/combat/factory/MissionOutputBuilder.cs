@@ -161,25 +161,26 @@ public static class MissionOutputBuilder
 
     private static int CalculateSuggestedXp(CrewOutcome crew, MissionOutcome outcome)
     {
+        var rewards = CampaignConfig.Instance.Rewards;
         int xp = 0;
 
         // Base participation XP (only if survived and extracted)
         if (crew.Status != CrewFinalStatus.Dead && crew.Status != CrewFinalStatus.MIA)
         {
-            xp += CampaignState.XP_PARTICIPATION;
+            xp += rewards.XpParticipation;
         }
 
         // Kill XP
-        xp += crew.Kills * CampaignState.XP_PER_KILL;
+        xp += crew.Kills * rewards.XpPerKill;
 
         // Victory bonus
         if (outcome == MissionOutcome.Victory)
         {
-            xp += CampaignState.XP_VICTORY_BONUS;
+            xp += rewards.XpVictoryBonus;
         }
         else if (outcome == MissionOutcome.Retreat)
         {
-            xp += CampaignState.XP_RETREAT_BONUS;
+            xp += rewards.XpRetreatBonus;
         }
 
         return xp;

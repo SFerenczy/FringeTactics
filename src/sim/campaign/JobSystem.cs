@@ -55,8 +55,8 @@ public static class JobSystem
                 };
                 config.EnemySpawns = new List<EnemySpawn>
                 {
-                    new EnemySpawn("grunt", new Vector2I(7, 3)),
-                    new EnemySpawn("grunt", new Vector2I(8, 5))
+                    new EnemySpawn(EnemyIds.Grunt, new Vector2I(7, 3)),
+                    new EnemySpawn(EnemyIds.Grunt, new Vector2I(8, 5))
                 };
                 break;
 
@@ -71,9 +71,9 @@ public static class JobSystem
                 };
                 config.EnemySpawns = new List<EnemySpawn>
                 {
-                    new EnemySpawn("grunt", new Vector2I(9, 3)),
-                    new EnemySpawn("gunner", new Vector2I(10, 5)),
-                    new EnemySpawn("grunt", new Vector2I(8, 7))
+                    new EnemySpawn(EnemyIds.Grunt, new Vector2I(9, 3)),
+                    new EnemySpawn(EnemyIds.Gunner, new Vector2I(10, 5)),
+                    new EnemySpawn(EnemyIds.Grunt, new Vector2I(8, 7))
                 };
                 break;
 
@@ -88,10 +88,10 @@ public static class JobSystem
                 };
                 config.EnemySpawns = new List<EnemySpawn>
                 {
-                    new EnemySpawn("grunt", new Vector2I(10, 3)),
-                    new EnemySpawn("gunner", new Vector2I(11, 5)),
-                    new EnemySpawn("grunt", new Vector2I(9, 7)),
-                    new EnemySpawn("heavy", new Vector2I(12, 6))
+                    new EnemySpawn(EnemyIds.Grunt, new Vector2I(10, 3)),
+                    new EnemySpawn(EnemyIds.Gunner, new Vector2I(11, 5)),
+                    new EnemySpawn(EnemyIds.Grunt, new Vector2I(9, 7)),
+                    new EnemySpawn(EnemyIds.Heavy, new Vector2I(12, 6))
                 };
                 break;
         }

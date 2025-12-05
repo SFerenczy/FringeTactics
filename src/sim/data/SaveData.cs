@@ -64,10 +64,7 @@ public class CampaignStateData
     public List<CrewMemberData> Crew { get; set; } = new();
     public int NextCrewId { get; set; }
 
-    // Sector (world state)
-    public SectorData Sector { get; set; }
-
-    // World state (WD1)
+    // World state
     public WorldStateData World { get; set; }
 
     // Jobs
@@ -150,31 +147,6 @@ public class CrewMemberData
     public string EquippedWeaponId { get; set; }
     public string EquippedArmorId { get; set; }
     public string EquippedGadgetId { get; set; }
-}
-
-/// <summary>
-/// Serializable sector state.
-/// </summary>
-public class SectorData
-{
-    public string Name { get; set; }
-    public List<SectorNodeData> Nodes { get; set; } = new();
-    public Dictionary<string, string> Factions { get; set; } = new();
-}
-
-/// <summary>
-/// Serializable sector node state.
-/// </summary>
-public class SectorNodeData
-{
-    public int Id { get; set; }
-    public string Name { get; set; }
-    public string Type { get; set; }
-    public string FactionId { get; set; }
-    public float PositionX { get; set; }
-    public float PositionY { get; set; }
-    public List<int> Connections { get; set; } = new();
-    public bool HasJob { get; set; }
 }
 
 /// <summary>

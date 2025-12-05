@@ -86,9 +86,9 @@ public class SF2IntegrationTests
         var received = new List<FactionRepChangedEvent>();
         bus.Subscribe<FactionRepChangedEvent>(e => received.Add(e));
 
-        // Get a faction from the sector
+        // Get a faction from the world
         string factionId = null;
-        foreach (var kvp in campaign.Sector.Factions)
+        foreach (var kvp in campaign.World.Factions)
         {
             factionId = kvp.Key;
             break;

@@ -28,9 +28,6 @@ public static class CombatBalance
     /// <summary>Hit reduction for high cover (0.75 height). 45% reduction.</summary>
     public const float HighCoverReduction = 0.45f;
     
-    /// <summary>Legacy constant for backwards compatibility. Maps to half cover.</summary>
-    public const float CoverHitReduction = HalfCoverReduction;
-    
     /// <summary>
     /// Get hit reduction for a given cover height.
     /// </summary>
@@ -103,17 +100,17 @@ public static class CombatBalance
     // If combat feels too slow:
     //   - Increase weapon damage
     //   - Increase base accuracy
-    //   - Decrease CoverHitReduction
+    //   - Decrease cover reduction values
     //
     // If combat feels too fast:
     //   - Decrease weapon damage
     //   - Increase HP values
-    //   - Increase CoverHitReduction
+    //   - Increase cover reduction values
     //
     // If cover feels useless:
-    //   - Increase CoverHitReduction (try 0.50)
+    //   - Increase HalfCoverReduction (try 0.50)
     //
     // If cover feels too strong:
-    //   - Decrease CoverHitReduction (try 0.30)
+    //   - Decrease HalfCoverReduction (try 0.25)
     //   - Add more flanking routes to maps
 }

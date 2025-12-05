@@ -1,0 +1,70 @@
+{
+    "mission": {
+        "fuelCost": 5,
+        "timeDays": 1
+    },
+    "rest": {
+        "timeDays": 3,
+        "healAmount": 1
+    },
+    "rewards": {
+        "victoryMoney": 150,
+        "victoryParts": 20,
+        "xpPerKill": 25,
+        "xpParticipation": 10,
+        "xpVictoryBonus": 20,
+        "xpRetreatBonus": 5
+    },
+    "crew": {
+        "xpPerLevel": 100,
+        "statCap": 10,
+        "baseHp": 100,
+        "hpPerGrit": 10,
+        "hitBonusPerAim": 2,
+        "hackBonusPerTech": 10,
+        "talkBonusPerSavvy": 10,
+        "baseStressThreshold": 50,
+        "stressPerResolve": 10
+    },
+    "roleStats": {
+        "soldier": {
+            "grit": 3,
+            "reflexes": 2,
+            "aim": 3,
+            "tech": 0,
+            "savvy": 0,
+            "resolve": 2
+        },
+        "medic": {
+            "grit": 2,
+            "reflexes": 1,
+            "aim": 1,
+            "tech": 2,
+            "savvy": 1,
+            "resolve": 3
+        },
+        "tech": {
+            "grit": 1,
+            "reflexes": 2,
+            "aim": 1,
+            "tech": 3,
+            "savvy": 1,
+            "resolve": 2
+        },
+        "scout": {
+            "grit": 2,
+            "reflexes": 3,
+            "aim": 2,
+            "tech": 1,
+            "savvy": 1,
+            "resolve": 1
+        }
+    },
+    "starting": {
+        "money": 200,
+        "fuel": 100,
+        "parts": 50,
+        "meds": 5,
+        "ammo": 50
+    }
+}

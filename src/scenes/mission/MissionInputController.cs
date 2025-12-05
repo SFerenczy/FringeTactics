@@ -490,7 +490,7 @@ public partial class MissionInputController : Node
 
         var actorId = selection.SelectedActorIds[0];
         var actor = combatState.GetActorById(actorId);
-        if (actor == null || actor.Type != ActorType.Enemy)
+        if (actor == null || actor.Type != ActorType.Crew)
         {
             GD.Print("[Ability] Only crew can use abilities");
             return;

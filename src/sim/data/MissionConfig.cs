@@ -74,7 +74,7 @@ public class MissionConfig
     public List<InteractableSpawn> InteractableSpawns { get; set; } = new();
 
     // Crew weapon (default for sandbox)
-    public string CrewWeaponId { get; set; } = "rifle";
+    public string CrewWeaponId { get; set; } = WeaponIds.Rifle;
 
     /// <summary>
     /// Default test mission configuration with walls and entry zone.
@@ -99,7 +99,7 @@ public class MissionConfig
                 "#............#",
                 "##############"
             },
-            CrewWeaponId = "rifle",
+            CrewWeaponId = WeaponIds.Rifle,
             CrewSpawnPositions = new List<Vector2I>
             {
                 new Vector2I(2, 2),
@@ -109,8 +109,8 @@ public class MissionConfig
             },
             EnemySpawns = new List<EnemySpawn>
             {
-                new EnemySpawn("grunt", new Vector2I(10, 3)),
-                new EnemySpawn("gunner", new Vector2I(11, 5))
+                new EnemySpawn(EnemyIds.Grunt, new Vector2I(10, 3)),
+                new EnemySpawn(EnemyIds.Gunner, new Vector2I(11, 5))
             }
         };
     }
@@ -138,7 +138,7 @@ public class MissionConfig
                 "#............#",
                 "##############"
             },
-            CrewWeaponId = "rifle",
+            CrewWeaponId = WeaponIds.Rifle,
             CrewSpawnPositions = new List<Vector2I>
             {
                 new Vector2I(2, 2)
@@ -175,7 +175,7 @@ public class MissionConfig
                 "#................#",
                 "##################"
             },
-            CrewWeaponId = "rifle",
+            CrewWeaponId = WeaponIds.Rifle,
             CrewSpawnPositions = new List<Vector2I>
             {
                 // Group A - clustered in entry zone (for box select testing)
@@ -222,7 +222,7 @@ public class MissionConfig
                 "#......................#",
                 "########################"
             },
-            CrewWeaponId = "rifle",
+            CrewWeaponId = WeaponIds.Rifle,
             CrewSpawnPositions = new List<Vector2I>
             {
                 new Vector2I(2, 2),
@@ -233,11 +233,11 @@ public class MissionConfig
             EnemySpawns = new List<EnemySpawn>
             {
                 // Enemy in far room (should be hidden initially)
-                new EnemySpawn("grunt", new Vector2I(20, 2)),
+                new EnemySpawn(EnemyIds.Grunt, new Vector2I(20, 2)),
                 // Enemy behind wall (tests LOS blocking)
-                new EnemySpawn("grunt", new Vector2I(14, 7)),
+                new EnemySpawn(EnemyIds.Grunt, new Vector2I(14, 7)),
                 // Enemy in bottom-right room
-                new EnemySpawn("gunner", new Vector2I(21, 12))
+                new EnemySpawn(EnemyIds.Gunner, new Vector2I(21, 12))
             }
         };
     }
@@ -272,7 +272,7 @@ public class MissionConfig
                 "#..................#",
                 "####################"
             },
-            CrewWeaponId = "rifle",
+            CrewWeaponId = WeaponIds.Rifle,
             CrewSpawnPositions = new List<Vector2I>
             {
                 new Vector2I(2, 2),
@@ -283,13 +283,13 @@ public class MissionConfig
             EnemySpawns = new List<EnemySpawn>
             {
                 // Close range enemy (easy target)
-                new EnemySpawn("grunt", new Vector2I(8, 4)),
+                new EnemySpawn(EnemyIds.Grunt, new Vector2I(8, 4)),
                 // Medium range enemy
-                new EnemySpawn("grunt", new Vector2I(12, 6)),
+                new EnemySpawn(EnemyIds.Grunt, new Vector2I(12, 6)),
                 // Long range enemy (harder to hit)
-                new EnemySpawn("gunner", new Vector2I(17, 10)),
+                new EnemySpawn(EnemyIds.Gunner, new Vector2I(17, 10)),
                 // Flanking enemy
-                new EnemySpawn("grunt", new Vector2I(15, 2))
+                new EnemySpawn(EnemyIds.Grunt, new Vector2I(15, 2))
             }
         };
     }
@@ -325,7 +325,7 @@ public class MissionConfig
                 "#..................#",
                 "####################"
             },
-            CrewWeaponId = "rifle",
+            CrewWeaponId = WeaponIds.Rifle,
             CrewSpawnPositions = new List<Vector2I>
             {
                 new Vector2I(2, 2),
@@ -336,13 +336,13 @@ public class MissionConfig
             EnemySpawns = new List<EnemySpawn>
             {
                 // Enemy behind vertical wall (wall to their west) - has cover from west
-                new EnemySpawn("grunt", new Vector2I(8, 3)),
+                new EnemySpawn(EnemyIds.Grunt, new Vector2I(8, 3)),
                 // Enemy in open (no cover)
-                new EnemySpawn("grunt", new Vector2I(14, 5)),
+                new EnemySpawn(EnemyIds.Grunt, new Vector2I(14, 5)),
                 // Enemy behind central cover block
-                new EnemySpawn("grunt", new Vector2I(11, 7)),
+                new EnemySpawn(EnemyIds.Grunt, new Vector2I(11, 7)),
                 // Enemy behind vertical wall (wall to their east) - has cover from east
-                new EnemySpawn("gunner", new Vector2I(16, 3))
+                new EnemySpawn(EnemyIds.Gunner, new Vector2I(16, 3))
             }
         };
     }
@@ -380,7 +380,7 @@ public class MissionConfig
                 "#......................#",
                 "########################"
             },
-            CrewWeaponId = "rifle",
+            CrewWeaponId = WeaponIds.Rifle,
             CrewSpawnPositions = new List<Vector2I>
             {
                 new Vector2I(2, 2),
@@ -391,15 +391,15 @@ public class MissionConfig
             EnemySpawns = new List<EnemySpawn>
             {
                 // Enemy behind low cover (15% reduction)
-                new EnemySpawn("grunt", new Vector2I(6, 5)),
+                new EnemySpawn(EnemyIds.Grunt, new Vector2I(6, 5)),
                 // Enemy behind half cover (30% reduction)
-                new EnemySpawn("grunt", new Vector2I(12, 5)),
+                new EnemySpawn(EnemyIds.Grunt, new Vector2I(12, 5)),
                 // Enemy behind high cover (45% reduction)
-                new EnemySpawn("grunt", new Vector2I(18, 5)),
+                new EnemySpawn(EnemyIds.Grunt, new Vector2I(18, 5)),
                 // Enemy in open (no cover)
-                new EnemySpawn("gunner", new Vector2I(22, 3)),
+                new EnemySpawn(EnemyIds.Gunner, new Vector2I(22, 3)),
                 // Enemy behind mixed cover cluster
-                new EnemySpawn("grunt", new Vector2I(8, 12))
+                new EnemySpawn(EnemyIds.Grunt, new Vector2I(8, 12))
             }
         };
     }
@@ -434,7 +434,7 @@ public class MissionConfig
                 "#....................#",
                 "######################"
             },
-            CrewWeaponId = "rifle",
+            CrewWeaponId = WeaponIds.Rifle,
             CrewSpawnPositions = new List<Vector2I>
             {
                 new Vector2I(1, 1),
@@ -445,11 +445,11 @@ public class MissionConfig
             EnemySpawns = new List<EnemySpawn>
             {
                 // Guard near first door
-                new EnemySpawn("grunt", new Vector2I(12, 3)),
+                new EnemySpawn(EnemyIds.Grunt, new Vector2I(12, 3)),
                 // Guard in locked room
-                new EnemySpawn("grunt", new Vector2I(13, 11)),
+                new EnemySpawn(EnemyIds.Grunt, new Vector2I(13, 11)),
                 // Patrol in corridor
-                new EnemySpawn("grunt", new Vector2I(17, 7))
+                new EnemySpawn(EnemyIds.Grunt, new Vector2I(17, 7))
             }
         };
     }
@@ -487,7 +487,7 @@ public class MissionConfig
                 "#.............###....#",
                 "######################"
             },
-            CrewWeaponId = "rifle",
+            CrewWeaponId = WeaponIds.Rifle,
             CrewSpawnPositions = new List<Vector2I>
             {
                 new Vector2I(1, 1),
@@ -498,13 +498,13 @@ public class MissionConfig
             EnemySpawns = new List<EnemySpawn>
             {
                 // Guard in top-right room - avoidable via doors
-                new EnemySpawn("grunt", new Vector2I(17, 3)),
+                new EnemySpawn(EnemyIds.Grunt, new Vector2I(17, 3)),
                 // Guard in middle corridor - patrols open area
-                new EnemySpawn("grunt", new Vector2I(10, 7)),
+                new EnemySpawn(EnemyIds.Grunt, new Vector2I(10, 7)),
                 // Guard near bottom rooms
-                new EnemySpawn("grunt", new Vector2I(7, 13)),
+                new EnemySpawn(EnemyIds.Grunt, new Vector2I(7, 13)),
                 // Guard protecting terminal
-                new EnemySpawn("gunner", new Vector2I(17, 15))
+                new EnemySpawn(EnemyIds.Gunner, new Vector2I(17, 15))
             }
         };
     }
@@ -539,7 +539,7 @@ public class MissionConfig
                 "#....###....###....#",
                 "####################"
             },
-            CrewWeaponId = "rifle",
+            CrewWeaponId = WeaponIds.Rifle,
             CrewSpawnPositions = new List<Vector2I>
             {
                 new Vector2I(1, 1),
@@ -550,9 +550,9 @@ public class MissionConfig
             EnemySpawns = new List<EnemySpawn>
             {
                 // Enemy in middle area
-                new EnemySpawn("grunt", new Vector2I(10, 9)),
+                new EnemySpawn(EnemyIds.Grunt, new Vector2I(10, 9)),
                 // Enemy near bottom
-                new EnemySpawn("grunt", new Vector2I(14, 12))
+                new EnemySpawn(EnemyIds.Grunt, new Vector2I(14, 12))
             }
         };
     }
@@ -582,7 +582,7 @@ public class MissionConfig
                 "#..............#",
                 "################"
             },
-            CrewWeaponId = "rifle",
+            CrewWeaponId = WeaponIds.Rifle,
             CrewSpawnPositions = new List<Vector2I>
             {
                 new Vector2I(2, 2),
@@ -592,10 +592,10 @@ public class MissionConfig
             },
             EnemySpawns = new List<EnemySpawn>
             {
-                new EnemySpawn("grunt", new Vector2I(12, 3)),
-                new EnemySpawn("grunt", new Vector2I(13, 5)),
-                new EnemySpawn("gunner", new Vector2I(14, 4)),
-                new EnemySpawn("heavy", new Vector2I(12, 8))
+                new EnemySpawn(EnemyIds.Grunt, new Vector2I(12, 3)),
+                new EnemySpawn(EnemyIds.Grunt, new Vector2I(13, 5)),
+                new EnemySpawn(EnemyIds.Gunner, new Vector2I(14, 4)),
+                new EnemySpawn(EnemyIds.Heavy, new Vector2I(12, 8))
             }
         };
     }

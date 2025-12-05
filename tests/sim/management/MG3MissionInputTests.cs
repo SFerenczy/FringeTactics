@@ -127,8 +127,9 @@ public class MG3MissionInputTests
         var deployment = input.Crew[0];
         var testCrew = campaign.GetCrewById(deployment.CampaignCrewId);
         
-        // HP = 100 + (Grit * 10)
-        int expectedHp = CrewMember.BASE_HP + (testCrew.GetEffectiveStat(CrewStatType.Grit) * CrewMember.HP_PER_GRIT);
+        // HP = BaseHp + (Grit * HpPerGrit)
+        var crewConfig = CampaignConfig.Instance.Crew;
+        int expectedHp = crewConfig.BaseHp + (testCrew.GetEffectiveStat(CrewStatType.Grit) * crewConfig.HpPerGrit);
         AssertThat(deployment.MaxHp).IsEqual(expectedHp);
         AssertThat(deployment.CurrentHp).IsEqual(expectedHp);
     }

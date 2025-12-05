@@ -9,7 +9,7 @@ Campaign/meta-game state: crew management, resources, mission tracking, jobs.
   - Rng: RngService for deterministic generation
   - EventBus: for cross-domain event publishing (SF2)
   - Resources: money, fuel, parts, meds, ammo
-  - Sector and CurrentNodeId for location
+  - World (WorldState) and CurrentNodeId for location
   - Crew roster management
   - Jobs: AvailableJobs, CurrentJob
   - FactionRep: reputation with each faction (0-100)
@@ -58,10 +58,6 @@ Campaign/meta-game state: crew management, resources, mission tracking, jobs.
   - Personality: brave, cautious, reckless, cold_blooded, empathetic
   - Acquired: vengeful, hardened, scarred
   - Injury (permanent): damaged_eye, shattered_knee, nerve_damage, head_trauma, chronic_pain
-- **Sector.cs** - Sector map:
-  - SectorNode: id, name, type, faction, position, connections
-  - NodeType enum: Station, Outpost, Derelict, Asteroid, Nebula, Contested
-  - `GenerateTestSector(seed)` creates 9-node test map
 - **TravelSystem.cs** - Travel between nodes:
   - Fuel cost based on distance
   - Time cost based on distance (minimum 1 day)

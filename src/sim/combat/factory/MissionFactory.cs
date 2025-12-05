@@ -201,9 +201,13 @@ public static class MissionFactory
             SimLog.Log($"[MissionFactory] Spawned {crew.Name} (Crew#{crew.CampaignCrewId}) as Actor#{actor.Id} at {spawnPos}");
         }
 
-        // Spawn enemies
-        var hasEnemies = input.Enemies.Count > 0;
-        combat.SetHasEnemyObjective(hasEnemies);
+        // Set up objectives - SurviveObjective is always required
+        combat.ObjectiveEvaluator.AddObjective(new SurviveObjective());
+        
+        if (input.Enemies.Count > 0)
+        {
+            combat.ObjectiveEvaluator.AddObjective(new EliminateAllObjective());
+        }
 
         foreach (var spawn in input.Enemies)
         {

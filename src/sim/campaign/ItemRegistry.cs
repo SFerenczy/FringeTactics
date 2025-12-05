@@ -146,9 +146,9 @@ public static class ItemRegistry
     private static void RegisterDefaultItems()
     {
         // === Equipment: Weapons ===
-        items["rifle"] = new ItemDef
+        items[WeaponIds.Rifle] = new ItemDef
         {
-            Id = "rifle",
+            Id = WeaponIds.Rifle,
             Name = "Assault Rifle",
             Description = "Standard-issue automatic rifle. Reliable and versatile.",
             Category = ItemCategory.Equipment,
@@ -159,9 +159,9 @@ public static class ItemRegistry
             Tags = new() { "weapon", "ballistic" }
         };
 
-        items["pistol"] = new ItemDef
+        items[WeaponIds.Pistol] = new ItemDef
         {
-            Id = "pistol",
+            Id = WeaponIds.Pistol,
             Name = "Sidearm",
             Description = "Compact backup weapon. Quick to draw.",
             Category = ItemCategory.Equipment,
@@ -172,9 +172,9 @@ public static class ItemRegistry
             Tags = new() { "weapon", "ballistic", "sidearm" }
         };
 
-        items["shotgun"] = new ItemDef
+        items[WeaponIds.Shotgun] = new ItemDef
         {
-            Id = "shotgun",
+            Id = WeaponIds.Shotgun,
             Name = "Combat Shotgun",
             Description = "Devastating at close range. Spread pattern.",
             Category = ItemCategory.Equipment,
@@ -185,9 +185,9 @@ public static class ItemRegistry
             Tags = new() { "weapon", "ballistic", "spread" }
         };
 
-        items["sniper"] = new ItemDef
+        items[WeaponIds.Sniper] = new ItemDef
         {
-            Id = "sniper",
+            Id = WeaponIds.Sniper,
             Name = "Sniper Rifle",
             Description = "Long-range precision weapon. One shot, one kill.",
             Category = ItemCategory.Equipment,
@@ -198,9 +198,9 @@ public static class ItemRegistry
             Tags = new() { "weapon", "ballistic", "precision" }
         };
 
-        items["smg"] = new ItemDef
+        items[WeaponIds.Smg] = new ItemDef
         {
-            Id = "smg",
+            Id = WeaponIds.Smg,
             Name = "Submachine Gun",
             Description = "High rate of fire, low damage per shot.",
             Category = ItemCategory.Equipment,

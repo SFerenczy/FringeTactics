@@ -178,7 +178,7 @@ public class GenerationContext
 
         var deployableCrew = campaign.GetDeployableCrew();
         var hubSystem = campaign.GetCurrentSystem();
-        var nearbySystems = GetNearbySystems(campaign);
+        var nearbySystems = campaign.World?.GetReachableSystems(campaign.CurrentNodeId) ?? new List<StarSystem>();
 
         var context = new GenerationContext
         {
@@ -197,7 +197,7 @@ public class GenerationContext
             // World state
             HubSystem = hubSystem,
             NearbySystems = nearbySystems,
-            Factions = campaign.Sector?.Factions ?? new Dictionary<string, string>(),
+            Factions = GetFactionNames(campaign.World),
 
             // RNG
             Rng = campaign.Rng?.Campaign
@@ -218,61 +218,19 @@ public class GenerationContext
         return context;
     }
 
+    
     /// <summary>
-    /// Get nearby systems that can be contract targets.
-    /// For G1 single-hub worlds, the hub itself is a valid target.
+    /// Extract faction id -> name mapping from WorldState.
     /// </summary>
-    private static List<StarSystem> GetNearbySystems(CampaignState campaign)
+    private static Dictionary<string, string> GetFactionNames(WorldState world)
     {
-        var targets = new List<StarSystem>();
-
-        if (campaign.World == null)
+        var result = new Dictionary<string, string>();
+        if (world == null) return result;
+        
+        foreach (var faction in world.GetAllFactions())
         {
-            return targets;
+            result[faction.Id] = faction.Name;
         }
-
-        var currentSystem = campaign.World.GetSystem(campaign.CurrentNodeId);
-        if (currentSystem == null)
-        {
-            return targets;
-        }
-
-        // Get connected systems (non-station types for variety)
-        foreach (var connId in currentSystem.Connections)
-        {
-            var system = campaign.World.GetSystem(connId);
-            if (system != null && system.Type != SystemType.Station)
-            {
-                targets.Add(system);
-            }
-        }
-
-        // Get 2-hop systems for more variety
-        foreach (var connId in currentSystem.Connections)
-        {
-            var connSystem = campaign.World.GetSystem(connId);
-            if (connSystem == null) continue;
-
-            foreach (var secondHop in connSystem.Connections)
-            {
-                if (secondHop == campaign.CurrentNodeId) continue;
-                if (targets.Any(s => s.Id == secondHop)) continue;
-
-                var system = campaign.World.GetSystem(secondHop);
-                if (system != null && system.Type != SystemType.Station)
-                {
-                    targets.Add(system);
-                }
-            }
-        }
-
-        // For single-hub worlds (G1): include the hub itself as a valid target
-        // This allows jobs to be completed at the current location
-        if (targets.Count == 0)
-        {
-            targets.Add(currentSystem);
-        }
-
-        return targets;
+        return result;
     }
 }

@@ -200,13 +200,13 @@ public class AbilitySystem
 
     private void ApplyStatusEffect(Actor target, string effectId, int duration)
     {
-        // For now, just track in StatusEffects list
-        // Future: proper status effect system with tick-down
-        if (!target.StatusEffects.Contains(effectId))
+        if (!EffectRegistry.Has(effectId))
         {
-            target.StatusEffects.Add(effectId);
+            SimLog.Log($"[Ability] Unknown effect ID: {effectId} - register in EffectRegistry");
+            return;
         }
-
+        
+        target.Effects.Apply(effectId, duration);
         SimLog.Log($"[Ability] {target.Type}#{target.Id} is now {effectId} for {duration} ticks");
         StatusEffectApplied?.Invoke(target, effectId, duration);
     }

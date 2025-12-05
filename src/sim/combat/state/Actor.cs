@@ -28,10 +28,12 @@ public partial class Actor
     public ActorState State { get; set; } = ActorState.Alive;
     public Dictionary<string, int> Stats { get; set; } = new() { { "aim", 0 }, { "toughness", 0 }, { "reflexes", 0 } };
     public List<string> Abilities { get; set; } = new();
-    public List<string> StatusEffects { get; set; } = new();
     
     // Stat modifier system
     public ModifierCollection Modifiers { get; } = new();
+    
+    // Effect system
+    public ActorEffects Effects { get; private set; }
 
     // Weapon and attack
     public WeaponData EquippedWeapon { get; set; } = WeaponData.DefaultRifle;
@@ -94,8 +96,8 @@ public partial class Actor
         State = ActorState.Alive;
         Stats = new Dictionary<string, int> { { "aim", 0 }, { "toughness", 0 }, { "reflexes", 0 } };
         Abilities = new List<string>();
-        StatusEffects = new List<string>();
         Modifiers.ModifiersChanged += () => ModifiersChanged?.Invoke(this);
+        Effects = new ActorEffects(this);
         EquippedWeapon = WeaponData.DefaultRifle;
         CurrentMagazine = EquippedWeapon.MagazineSize;
         ReserveAmmo = EquippedWeapon.MagazineSize * 3;
@@ -437,7 +439,7 @@ public partial class Actor
     /// </summary>
     public bool IsStunned()
     {
-        return Modifiers.HasModifier("stunned");
+        return Effects.Has(StunEffect.EffectId) || Modifiers.HasModifier(StunEffect.EffectId);
     }
 
     /// <summary>
@@ -445,15 +447,16 @@ public partial class Actor
     /// </summary>
     public bool IsSuppressed()
     {
-        return Modifiers.HasModifier("suppressed");
+        return Effects.Has(SuppressedEffect.EffectId) || Modifiers.HasModifier(SuppressedEffect.EffectId);
     }
 
     /// <summary>
-    /// Remove expired modifiers. Call each tick.
+    /// Remove expired modifiers and tick effects. Call each tick.
     /// </summary>
     public void UpdateModifiers(int currentTick)
     {
         Modifiers.RemoveExpired(currentTick);
+        Effects.Tick();
     }
 
     // === Movement Methods (for MovementSystem) ===

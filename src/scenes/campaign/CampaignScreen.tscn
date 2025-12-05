@@ -10,3 +10,111 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_script")
+
+[node name="MainLayout" type="HBoxContainer" parent="."]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 40
+
+[node name="LeftPanel" type="VBoxContainer" parent="MainLayout"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(300, 0)
+layout_mode = 2
+
+[node name="TitleLabel" type="Label" parent="MainLayout/LeftPanel"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 32
+text = "SHIP HQ"
+horizontal_alignment = 1
+
+[node name="Spacer1" type="Control" parent="MainLayout/LeftPanel"]
+custom_minimum_size = Vector2(0, 20)
+layout_mode = 2
+
+[node name="ResourcesTitle" type="Label" parent="MainLayout/LeftPanel"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 0, 1)
+theme_override_font_sizes/font_size = 18
+text = "RESOURCES"
+
+[node name="ResourcesLabel" type="Label" parent="MainLayout/LeftPanel"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+text = "Money: $0
+Fuel: 0
+Ammo: 0
+Parts: 0
+Meds: 0"
+
+[node name="Spacer2" type="Control" parent="MainLayout/LeftPanel"]
+custom_minimum_size = Vector2(0, 20)
+layout_mode = 2
+
+[node name="MissionCostLabel" type="Label" parent="MainLayout/LeftPanel"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.5, 0.5, 0.5, 1)
+theme_override_font_sizes/font_size = 12
+text = "Mission cost: 10 ammo, 5 fuel"
+
+[node name="Spacer3" type="Control" parent="MainLayout/LeftPanel"]
+custom_minimum_size = Vector2(0, 10)
+layout_mode = 2
+
+[node name="StatsLabel" type="Label" parent="MainLayout/LeftPanel"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.5, 0.5, 0.5, 1)
+theme_override_font_sizes/font_size = 12
+text = "Missions: 0 won, 0 lost"
+
+[node name="Spacer4" type="Control" parent="MainLayout/LeftPanel"]
+custom_minimum_size = Vector2(0, 30)
+layout_mode = 2
+
+[node name="BackToSectorButton" type="Button" parent="MainLayout/LeftPanel"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(200, 50)
+layout_mode = 2
+text = "Back to Sector"
+
+[node name="Spacer5" type="Control" parent="MainLayout/LeftPanel"]
+custom_minimum_size = Vector2(0, 10)
+layout_mode = 2
+
+[node name="AbandonButton" type="Button" parent="MainLayout/LeftPanel"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(200, 40)
+layout_mode = 2
+text = "Abandon Campaign"
+
+[node name="RightPanel" type="VBoxContainer" parent="MainLayout"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="CrewTitle" type="Label" parent="MainLayout/RightPanel"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0, 1, 1, 1)
+theme_override_font_sizes/font_size = 24
+text = "CREW ROSTER"
+
+[node name="Spacer" type="Control" parent="MainLayout/RightPanel"]
+custom_minimum_size = Vector2(0, 10)
+layout_mode = 2
+
+[node name="CrewScroll" type="ScrollContainer" parent="MainLayout/RightPanel"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="CrewContainer" type="VBoxContainer" parent="MainLayout/RightPanel/CrewScroll"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3

@@ -367,9 +367,13 @@ public class M4Tests
     [RequireGodotRuntime]
     public void CombatBalance_ConstantsAreValid()
     {
-        // Cover reduction should be between 0 and 1
-        AssertThat(CombatBalance.CoverHitReduction).IsGreater(0f);
-        AssertThat(CombatBalance.CoverHitReduction).IsLess(1f);
+        // Cover reduction values should be between 0 and 1
+        AssertThat(CombatBalance.LowCoverReduction).IsGreater(0f);
+        AssertThat(CombatBalance.LowCoverReduction).IsLess(1f);
+        AssertThat(CombatBalance.HalfCoverReduction).IsGreater(0f);
+        AssertThat(CombatBalance.HalfCoverReduction).IsLess(1f);
+        AssertThat(CombatBalance.HighCoverReduction).IsGreater(0f);
+        AssertThat(CombatBalance.HighCoverReduction).IsLess(1f);
         
         // Min/max hit chance should be valid
         AssertThat(CombatBalance.MinHitChance).IsGreater(0f);

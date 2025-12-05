@@ -26,7 +26,7 @@ public static class SaveManager
         {
             Version = SaveVersion.Current,
             SavedAt = DateTime.UtcNow,
-            DisplayName = displayName ?? $"{campaign.Sector?.Name ?? "Campaign"} - Day {campaign.Time.CurrentDay}",
+            DisplayName = displayName ?? $"{campaign.World?.Name ?? "Campaign"} - Day {campaign.Time.CurrentDay}",
             Campaign = campaign.GetState()
         };
     }
@@ -99,9 +99,9 @@ public static class SaveManager
             result.AddError("Campaign time data is missing");
         }
 
-        if (data.Campaign.Sector == null)
+        if (data.Campaign.World == null)
         {
-            result.AddError("Sector data is missing");
+            result.AddError("World data is missing");
         }
 
         if (data.Campaign.Crew == null || data.Campaign.Crew.Count == 0)

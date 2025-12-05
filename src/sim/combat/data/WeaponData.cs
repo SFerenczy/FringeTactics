@@ -35,6 +35,6 @@ public struct WeaponData
     public static WeaponData FromId(string id) => FromDef(Definitions.Weapons.Get(id));
 
     // Legacy accessors for compatibility
-    public static WeaponData DefaultRifle => FromId("rifle");
-    public static WeaponData DefaultPistol => FromId("pistol");
+    public static WeaponData DefaultRifle => FromId(WeaponIds.Rifle);
+    public static WeaponData DefaultPistol => FromId(WeaponIds.Pistol);
 }

@@ -188,79 +188,6 @@ public class SF3JobSerializationTests
 }
 
 [TestSuite]
-public class SF3SectorSerializationTests
-{
-    [TestCase]
-    [RequireGodotRuntime]
-    public void SectorNode_RoundTrip_PreservesPosition()
-    {
-        var node = new SectorNode(3, "Test Station", SystemType.Contested, new Vector2(150.5f, 275.25f))
-        {
-            FactionId = "rebels",
-            HasJob = true,
-            Connections = new List<int> { 1, 2, 5 }
-        };
-
-        var state = node.GetState();
-        var restored = SectorNode.FromState(state);
-
-        AssertInt(restored.Id).IsEqual(3);
-        AssertString(restored.Name).IsEqual("Test Station");
-        AssertThat(restored.Type).IsEqual(SystemType.Contested);
-        AssertString(restored.FactionId).IsEqual("rebels");
-        AssertFloat(restored.Position.X).IsEqualApprox(150.5f, 0.01f);
-        AssertFloat(restored.Position.Y).IsEqualApprox(275.25f, 0.01f);
-        AssertBool(restored.HasJob).IsTrue();
-        AssertInt(restored.Connections.Count).IsEqual(3);
-        AssertBool(restored.Connections.Contains(1)).IsTrue();
-        AssertBool(restored.Connections.Contains(2)).IsTrue();
-        AssertBool(restored.Connections.Contains(5)).IsTrue();
-    }
-
-    [TestCase]
-    public void SectorNode_FromState_HandlesUnknownType()
-    {
-        var data = new SectorNodeData
-        {
-            Id = 1,
-            Name = "Test",
-            Type = "UnknownType"
-        };
-
-        var restored = SectorNode.FromState(data);
-
-        AssertThat(restored.Type).IsEqual(SystemType.Station);
-    }
-
-    [TestCase]
-    [RequireGodotRuntime]
-    public void Sector_RoundTrip_PreservesNodesAndFactions()
-    {
-        var sector = new Sector
-        {
-            Name = "Test Sector",
-            Factions = new Dictionary<string, string>
-            {
-                { "corp", "Helix Corp" },
-                { "rebels", "Free Colonies" }
-            }
-        };
-        sector.Nodes.Add(new SectorNode(0, "Node A", SystemType.Station, new Vector2(100, 100)));
-        sector.Nodes.Add(new SectorNode(1, "Node B", SystemType.Outpost, new Vector2(200, 200)));
-
-        var state = sector.GetState();
-        var restored = Sector.FromState(state);
-
-        AssertString(restored.Name).IsEqual("Test Sector");
-        AssertInt(restored.Factions.Count).IsEqual(2);
-        AssertString(restored.Factions["corp"]).IsEqual("Helix Corp");
-        AssertInt(restored.Nodes.Count).IsEqual(2);
-        AssertString(restored.Nodes[0].Name).IsEqual("Node A");
-        AssertString(restored.Nodes[1].Name).IsEqual("Node B");
-    }
-}
-
-[TestSuite]
 public class SF3CampaignStateSerializationTests
 {
     [TestCase]
@@ -354,17 +281,17 @@ public class SF3CampaignStateSerializationTests
     }
 
     [TestCase]
-    public void CampaignState_RoundTrip_PreservesSector()
+    public void CampaignState_RoundTrip_PreservesWorld()
     {
         var campaign = CampaignState.CreateNew(12345);
-        var originalSectorName = campaign.Sector.Name;
-        var originalNodeCount = campaign.Sector.Nodes.Count;
+        var originalWorldName = campaign.World.Name;
+        var originalSystemCount = campaign.World.Systems.Count;
 
         var state = campaign.GetState();
         var restored = CampaignState.FromState(state);
 
-        AssertString(restored.Sector.Name).IsEqual(originalSectorName);
-        AssertInt(restored.Sector.Nodes.Count).IsEqual(originalNodeCount);
+        AssertString(restored.World.Name).IsEqual(originalWorldName);
+        AssertInt(restored.World.Systems.Count).IsEqual(originalSystemCount);
     }
 
     [TestCase]
@@ -476,7 +403,7 @@ public class SF3SaveManagerTests
         var saveData = new SaveData
         {
             Version = 1,
-            Campaign = new CampaignStateData { Time = null, Sector = new SectorData() }
+            Campaign = new CampaignStateData { Time = null, World = new WorldStateData() }
         };
 
         var result = SaveManager.ValidateSaveData(saveData);
@@ -485,12 +412,12 @@ public class SF3SaveManagerTests
     }
 
     [TestCase]
-    public void SaveData_Validation_DetectsMissingSector()
+    public void SaveData_Validation_DetectsMissingWorld()
     {
         var saveData = new SaveData
         {
             Version = 1,
-            Campaign = new CampaignStateData { Time = new CampaignTimeState(), Sector = null }
+            Campaign = new CampaignStateData { Time = new CampaignTimeState(), World = null }
         };
 
         var result = SaveManager.ValidateSaveData(saveData);
@@ -507,7 +434,7 @@ public class SF3SaveManagerTests
             Campaign = new CampaignStateData
             {
                 Time = new CampaignTimeState(),
-                Sector = new SectorData(),
+                World = new WorldStateData(),
                 Crew = new List<CrewMemberData>()
             }
         };

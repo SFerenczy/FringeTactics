@@ -69,8 +69,11 @@ public class GN1ContractGeneratorTests
 
         foreach (var contract in contracts)
         {
-            // Should only generate implemented types
-            AssertBool(contract.ContractType.IsImplemented()).IsTrue();
+            // Should only generate Assault or Extraction
+            AssertBool(
+                contract.ContractType == ContractType.Assault ||
+                contract.ContractType == ContractType.Extraction
+            ).IsTrue();
         }
     }
 

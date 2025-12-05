@@ -23,13 +23,10 @@ public class CampaignState
     public int Meds { get; set; } = 5;
     public int Ammo { get; set; } = 50;
 
-    // Sector and location
-    public Sector Sector { get; set; }
-    public int CurrentNodeId { get; set; } = 0;
-
-    // World state (WD1)
+    // World state - canonical representation of the sector
     public WorldState World { get; set; }
-
+    public int CurrentNodeId { get; set; } = 0;
+    
     // Ship (MG2)
     public Ship Ship { get; set; }
 
@@ -56,22 +53,8 @@ public class CampaignState
     public int TotalMoneyEarned { get; set; } = 0;
     public int TotalCrewDeaths { get; set; } = 0;
 
-    // Mission costs (consumed on mission start)
-    public const int MISSION_AMMO_COST = 10;
-    public const int MISSION_FUEL_COST = 5;
-    public const int MISSION_TIME_DAYS = 1;
-
-    // Rest configuration
-    public const int REST_TIME_DAYS = 3;
-    public const int REST_HEAL_AMOUNT = 1;
-
-    // Rewards
-    public const int VICTORY_MONEY = 150;
-    public const int VICTORY_PARTS = 20;
-    public const int XP_PER_KILL = 25;
-    public const int XP_PARTICIPATION = 10;
-    public const int XP_VICTORY_BONUS = 20;
-    public const int XP_RETREAT_BONUS = 5;
+    // Configuration (loaded from data/campaign.json)
+    private static CampaignConfig Config => CampaignConfig.Instance;
 
     public CampaignState()
     {
@@ -90,29 +73,27 @@ public class CampaignState
     /// </summary>
     public static CampaignState CreateNew(int sectorSeed = 12345)
     {
+        var starting = Config.Starting;
         var campaign = new CampaignState
         {
-            Money = 200,
-            Fuel = 100,
-            Parts = 50,
-            Meds = 5,
-            Ammo = 50,
+            Money = starting.Money,
+            Fuel = starting.Fuel,
+            Parts = starting.Parts,
+            Meds = starting.Meds,
+            Ammo = starting.Ammo,
             Time = new CampaignTime(),
             Rng = new RngService(sectorSeed)
         };
 
-        // Generate sector
-        campaign.Sector = Sector.GenerateTestSector(sectorSeed);
-        campaign.CurrentNodeId = 0; // Start at Haven Station
-
-        // Initialize world state (WD1)
+        // Initialize world state (G1: single hub)
         campaign.World = WorldState.CreateSingleHub("Haven Station", "corp");
+        campaign.CurrentNodeId = 0; // Start at Haven Station
 
         // Create starter ship (MG2)
         campaign.Ship = Ship.CreateStarter();
 
         // Initialize faction reputation (50 = neutral)
-        foreach (var factionId in campaign.Sector.Factions.Keys)
+        foreach (var factionId in campaign.World.Factions.Keys)
         {
             campaign.FactionRep[factionId] = 50;
         }
@@ -177,7 +158,7 @@ public class CampaignState
         // TODO: Use RNG when MissionConfig generation becomes procedural
         CurrentJob.MissionConfig = JobSystem.GenerateMissionConfig(job);
 
-        SimLog.Log($"[Campaign] Accepted job: {job.Title} at {Sector.GetNode(job.TargetNodeId)?.Name}");
+        SimLog.Log($"[Campaign] Accepted job: {job.Title} at {World?.GetSystem(job.TargetNodeId)?.Name}");
         
         EventBus?.Publish(new JobAcceptedEvent(
             JobId: job.Id,
@@ -235,7 +216,7 @@ public class CampaignState
 
         FactionRep[factionId] = Math.Clamp(FactionRep[factionId] + delta, 0, 100);
         int newRep = FactionRep[factionId];
-        var factionName = Sector.Factions.GetValueOrDefault(factionId, factionId);
+        var factionName = World?.GetFactionName(factionId) ?? factionId;
         SimLog.Log($"[Campaign] {factionName} rep: {newRep} ({(delta >= 0 ? "+" : "")}{delta})");
         
         EventBus?.Publish(new FactionRepChangedEvent(
@@ -253,15 +234,6 @@ public class CampaignState
     public StarSystem GetCurrentSystem()
     {
         return World?.GetSystem(CurrentNodeId);
-    }
-
-    /// <summary>
-    /// Get the current sector node (deprecated - use GetCurrentSystem).
-    /// </summary>
-    [System.Obsolete("Use GetCurrentSystem() instead")]
-    public SectorNode GetCurrentNode()
-    {
-        return Sector?.GetNode(CurrentNodeId);
     }
 
     // ========================================================================
@@ -811,8 +783,7 @@ public class CampaignState
     public bool CanStartMission()
     {
         if (GetDeployableCrew().Count == 0) return false;
-        if (Ammo < MISSION_AMMO_COST) return false;
-        if (Fuel < MISSION_FUEL_COST) return false;
+        if (Fuel < Config.Mission.FuelCost) return false;
         return true;
     }
 
@@ -822,8 +793,7 @@ public class CampaignState
     public string GetMissionBlockReason()
     {
         if (GetDeployableCrew().Count == 0) return "No deployable crew!";
-        if (Ammo < MISSION_AMMO_COST) return $"Need {MISSION_AMMO_COST} ammo (have {Ammo})";
-        if (Fuel < MISSION_FUEL_COST) return $"Need {MISSION_FUEL_COST} fuel (have {Fuel})";
+        if (Fuel < Config.Mission.FuelCost) return $"Need {Config.Mission.FuelCost} fuel (have {Fuel})";
         return null;
     }
 
@@ -834,15 +804,15 @@ public class CampaignState
     public void ConsumeMissionResources()
     {
         // Consume fuel for mission deployment
-        if (Fuel > 0 && MISSION_FUEL_COST > 0)
+        if (Fuel > 0 && Config.Mission.FuelCost > 0)
         {
-            SpendFuel(MISSION_FUEL_COST, "mission_start");
+            SpendFuel(Config.Mission.FuelCost, "mission_start");
         }
         
         // Advance time for mission
-        Time.AdvanceDays(MISSION_TIME_DAYS);
+        Time.AdvanceDays(Config.Mission.TimeDays);
         
-        SimLog.Log($"[Campaign] Mission started. Cost: {MISSION_FUEL_COST} fuel, {MISSION_TIME_DAYS} day(s). Ammo tracked per-actor.");
+        SimLog.Log($"[Campaign] Mission started. Cost: {Config.Mission.FuelCost} fuel, {Config.Mission.TimeDays} day(s). Ammo tracked per-actor.");
     }
     
     /// <summary>
@@ -884,7 +854,7 @@ public class CampaignState
 
         foreach (var crew in GetAliveCrew())
         {
-            if (healed >= REST_HEAL_AMOUNT) break;
+            if (healed >= Config.Rest.HealAmount) break;
             if (crew.Injuries.Count > 0)
             {
                 var injury = crew.Injuries[0];
@@ -894,8 +864,8 @@ public class CampaignState
             }
         }
 
-        Time.AdvanceDays(REST_TIME_DAYS);
-        SimLog.Log($"[Campaign] Rested for {REST_TIME_DAYS} days. Healed {healed} injury(ies).");
+        Time.AdvanceDays(Config.Rest.TimeDays);
+        SimLog.Log($"[Campaign] Rested for {Config.Rest.TimeDays} days. Healed {healed} injury(ies).");
 
         return healed;
     }
@@ -1070,11 +1040,11 @@ public class CampaignState
             {
                 int oldMoney = Money;
                 int oldParts = Parts;
-                Money += VICTORY_MONEY;
-                Parts += VICTORY_PARTS;
-                SimLog.Log($"[Campaign] Victory! +${VICTORY_MONEY}, +{VICTORY_PARTS} parts.");
-                EventBus?.Publish(new ResourceChangedEvent(ResourceTypes.Money, oldMoney, Money, VICTORY_MONEY, "victory_bonus"));
-                EventBus?.Publish(new ResourceChangedEvent(ResourceTypes.Parts, oldParts, Parts, VICTORY_PARTS, "victory_bonus"));
+                Money += Config.Rewards.VictoryMoney;
+                Parts += Config.Rewards.VictoryParts;
+                SimLog.Log($"[Campaign] Victory! +${Config.Rewards.VictoryMoney}, +{Config.Rewards.VictoryParts} parts.");
+                EventBus?.Publish(new ResourceChangedEvent(ResourceTypes.Money, oldMoney, Money, Config.Rewards.VictoryMoney, "victory_bonus"));
+                EventBus?.Publish(new ResourceChangedEvent(ResourceTypes.Parts, oldParts, Parts, Config.Rewards.VictoryParts, "victory_bonus"));
             }
         }
         else if (isRetreat)
@@ -1220,7 +1190,6 @@ public class CampaignState
                 TotalMoneyEarned = TotalMoneyEarned,
                 TotalCrewDeaths = TotalCrewDeaths
             },
-            Sector = Sector?.GetState(),
             World = World?.GetState(),
             Ship = Ship?.GetState(),
             Inventory = Inventory?.GetState()
@@ -1291,13 +1260,7 @@ public class CampaignState
         campaign.nextCrewId = data.NextCrewId;
         campaign.nextJobId = data.NextJobId;
 
-        // Restore sector
-        if (data.Sector != null)
-        {
-            campaign.Sector = Sector.FromState(data.Sector);
-        }
-
-        // Restore world state (WD1)
+        // Restore world state
         if (data.World != null)
         {
             campaign.World = WorldState.FromState(data.World);

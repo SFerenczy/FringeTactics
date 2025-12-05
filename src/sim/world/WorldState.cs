@@ -117,6 +117,59 @@ public class WorldState
     // ========== Topology Queries (for travel) ==========
 
     /// <summary>
+    /// Get systems reachable within a given hop count from origin.
+    /// Excludes station-type systems and the origin itself.
+    /// </summary>
+    /// <param name="originId">Starting system ID.</param>
+    /// <param name="maxHops">Maximum number of jumps (1 = direct neighbors, 2 = neighbors of neighbors).</param>
+    /// <param name="includeOriginAsFallback">If true and no systems found, include origin system.</param>
+    public List<StarSystem> GetReachableSystems(int originId, int maxHops = 2, bool includeOriginAsFallback = true)
+    {
+        var result = new List<StarSystem>();
+        var visited = new HashSet<int> { originId };
+
+        var currentFrontier = new List<int> { originId };
+
+        for (int hop = 0; hop < maxHops && currentFrontier.Count > 0; hop++)
+        {
+            var nextFrontier = new List<int>();
+
+            foreach (var systemId in currentFrontier)
+            {
+                var system = GetSystem(systemId);
+                if (system == null) continue;
+
+                foreach (var connId in system.Connections)
+                {
+                    if (visited.Contains(connId)) continue;
+                    visited.Add(connId);
+
+                    var connSystem = GetSystem(connId);
+                    if (connSystem != null && connSystem.Type != SystemType.Station)
+                    {
+                        result.Add(connSystem);
+                    }
+
+                    nextFrontier.Add(connId);
+                }
+            }
+
+            currentFrontier = nextFrontier;
+        }
+
+        if (result.Count == 0 && includeOriginAsFallback)
+        {
+            var origin = GetSystem(originId);
+            if (origin != null)
+            {
+                result.Add(origin);
+            }
+        }
+
+        return result;
+    }
+
+    /// <summary>
     /// Check if two systems are connected.
     /// </summary>
     public bool AreConnected(int systemA, int systemB)
@@ -241,39 +294,6 @@ public class WorldState
 
         return world;
     }
-
-    /// <summary>
-    /// Create WorldState from existing Sector (migration helper).
-    /// </summary>
-    #pragma warning disable CS0618 // Sector/SectorNode are obsolete
-    public static WorldState FromSector(Sector sector)
-    {
-        var world = new WorldState
-        {
-            Name = sector.Name
-        };
-
-        foreach (var kvp in sector.Factions)
-        {
-            world.AddFaction(new Faction(kvp.Key, kvp.Value, FactionType.Neutral));
-        }
-
-        foreach (var node in sector.Nodes)
-        {
-            var system = StarSystem.FromSectorNode(node);
-            world.AddSystem(system);
-
-            if (node.Type == SystemType.Station)
-            {
-                var stationId = world.GenerateStationId();
-                var station = Station.CreateHub(stationId, node.Name, node.Id, node.FactionId);
-                world.AddStation(station);
-            }
-        }
-
-        return world;
-    }
-    #pragma warning restore CS0618
 
     // ========== Serialization ==========
 

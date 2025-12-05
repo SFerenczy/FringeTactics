@@ -106,9 +106,9 @@ public class WeaponDefinitions
     {
         weapons = new Dictionary<string, WeaponDef>
         {
-            ["rifle"] = new WeaponDef
+            [WeaponIds.Rifle] = new WeaponDef
             {
-                Id = "rifle",
+                Id = WeaponIds.Rifle,
                 Name = "Assault Rifle",
                 Damage = 25,
                 Range = 8,
@@ -181,12 +181,12 @@ public class EnemyDefinitions
     {
         enemies = new Dictionary<string, EnemyDef>
         {
-            ["grunt"] = new EnemyDef
+            [EnemyIds.Grunt] = new EnemyDef
             {
-                Id = "grunt",
+                Id = EnemyIds.Grunt,
                 Name = "Grunt",
                 Hp = 80,
-                WeaponId = "rifle",
+                WeaponId = WeaponIds.Rifle,
                 Behavior = EnemyBehavior.Aggressive
             }
         };

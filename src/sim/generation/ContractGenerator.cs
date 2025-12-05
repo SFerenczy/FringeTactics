@@ -10,40 +10,16 @@ namespace FringeTactics;
 /// </summary>
 public class ContractGenerator
 {
-    // === Weight Constants ===
-    // Base weights for contract type selection
-    private const int AssaultBaseWeight = 30;
-    private const int ExtractionBaseWeight = 20;
-    private const int DeliveryBaseWeight = 15;
-    private const int EscortBaseWeight = 10;
-    private const int RaidBaseWeight = 10;
-    private const int HeistBaseWeight = 5;
-
-    // Multipliers for hub metrics (0-5 scale)
-    private const int CrimeWeightMultiplier = 5;
-    private const int EconomyWeightMultiplier = 5;
-    private const int SecurityWeightMultiplier = 3;
-
-    // === Reward Constants ===
-    private const int EasyBaseReward = 100;
-    private const int MediumBaseReward = 200;
-    private const int HardBaseReward = 400;
-
-    private const float FriendlyFactionBonus = 1.15f;
-    private const float HostileFactionPenalty = 0.85f;
-
     private readonly GenerationContext context;
-    private readonly Random rng;
+    private readonly GenerationConfig config;
+    private readonly RngStream rng;
     private int nextContractId = 0;
 
-    public ContractGenerator(GenerationContext context)
+    public ContractGenerator(GenerationContext context, GenerationConfig config = null)
     {
         this.context = context ?? throw new ArgumentNullException(nameof(context));
-
-        // Create local Random from RNG stream for this generation batch
-        this.rng = context.Rng != null
-            ? new Random(context.Rng.NextInt(int.MaxValue))
-            : new Random();
+        this.config = config ?? GenerationConfig.Default;
+        this.rng = context.Rng ?? throw new ArgumentNullException("context.Rng", "RngStream is required for deterministic generation");
     }
 
     /// <summary>
@@ -138,40 +114,10 @@ public class ContractGenerator
         var weights = new Dictionary<ContractType, int>();
 
         // Assault: base weight, higher in high-crime areas
-        if (ContractType.Assault.IsImplemented())
-        {
-            weights[ContractType.Assault] = AssaultBaseWeight + (context.HubCriminalActivity * CrimeWeightMultiplier);
-        }
+        weights[ContractType.Assault] = config.AssaultBaseWeight + (context.HubCriminalActivity * config.CrimeWeightMultiplier);
 
         // Extraction: always available, slightly higher in dangerous areas
-        if (ContractType.Extraction.IsImplemented())
-        {
-            weights[ContractType.Extraction] = ExtractionBaseWeight + (context.HubCriminalActivity * 2);
-        }
-
-        // Delivery: higher in high-economic areas
-        if (ContractType.Delivery.IsImplemented())
-        {
-            weights[ContractType.Delivery] = DeliveryBaseWeight + (context.HubEconomicActivity * EconomyWeightMultiplier);
-        }
-
-        // Escort: higher in corporate/secure areas
-        if (ContractType.Escort.IsImplemented())
-        {
-            weights[ContractType.Escort] = EscortBaseWeight + (context.HubSecurityLevel * SecurityWeightMultiplier);
-        }
-
-        // Raid: higher in contested/low-security areas
-        if (ContractType.Raid.IsImplemented())
-        {
-            weights[ContractType.Raid] = RaidBaseWeight + ((5 - context.HubSecurityLevel) * SecurityWeightMultiplier);
-        }
-
-        // Heist: requires Tech crew, higher in corporate areas
-        if (ContractType.Heist.IsImplemented() && context.HasRole(CrewRole.Tech))
-        {
-            weights[ContractType.Heist] = HeistBaseWeight + (context.HubEconomicActivity * 2);
-        }
+        weights[ContractType.Extraction] = config.ExtractionBaseWeight + (context.HubCriminalActivity * 2);
 
         // Fallback if nothing is implemented
         if (weights.Count == 0)
@@ -192,7 +138,7 @@ public class ContractGenerator
 
         if (totalWeight == 0) return weights.Keys.First();
 
-        int roll = rng.Next(totalWeight);
+        int roll = rng.NextInt(totalWeight);
         int cumulative = 0;
 
         foreach (var kvp in weights)
@@ -214,7 +160,7 @@ public class ContractGenerator
 
         // For now, simple random selection
         // Future: weight by contract type (e.g., Heist prefers corporate systems)
-        return context.NearbySystems[rng.Next(context.NearbySystems.Count)];
+        return context.NearbySystems[rng.NextInt(context.NearbySystems.Count)];
     }
 
     // ========================================================================
@@ -241,7 +187,7 @@ public class ContractGenerator
         baseDifficulty = AdjustForPlayerPower(baseDifficulty);
 
         // Random variance (20% chance to shift up or down)
-        var roll = rng.NextDouble();
+        var roll = rng.NextFloat();
         if (roll < 0.2)
         {
             baseDifficulty = ShiftDifficulty(baseDifficulty, -1);
@@ -287,13 +233,13 @@ public class ContractGenerator
     /// </summary>
     private JobReward CalculateReward(JobDifficulty difficulty, ContractType type, string factionId)
     {
-        // Base reward per difficulty (per GN0 design)
+        // Base reward per difficulty
         int baseReward = difficulty switch
         {
-            JobDifficulty.Easy => EasyBaseReward,
-            JobDifficulty.Medium => MediumBaseReward,
-            JobDifficulty.Hard => HardBaseReward,
-            _ => EasyBaseReward
+            JobDifficulty.Easy => config.EasyBaseReward,
+            JobDifficulty.Medium => config.MediumBaseReward,
+            JobDifficulty.Hard => config.HardBaseReward,
+            _ => config.EasyBaseReward
         };
 
         // Apply contract type multiplier
@@ -303,11 +249,11 @@ public class ContractGenerator
         float factionMultiplier = 1.0f;
         if (context.IsFriendlyWith(factionId))
         {
-            factionMultiplier = FriendlyFactionBonus;
+            factionMultiplier = config.FriendlyFactionBonus;
         }
         else if (context.IsHostileWith(factionId))
         {
-            factionMultiplier = HostileFactionPenalty;
+            factionMultiplier = config.HostileFactionPenalty;
         }
 
         int finalMoney = (int)(baseReward * typeMultiplier * factionMultiplier);
@@ -339,10 +285,6 @@ public class ContractGenerator
         {
             ContractType.Assault => Objective.EliminateAll(),
             ContractType.Extraction => Objective.ReachExtraction(),
-            ContractType.Escort => Objective.ProtectVIP(),
-            ContractType.Delivery => Objective.ReachExtraction(),
-            ContractType.Raid => Objective.DestroyTarget(),
-            ContractType.Heist => Objective.RetrieveItem("the data"),
             _ => Objective.EliminateAll()
         };
 
@@ -356,29 +298,14 @@ public class ContractGenerator
 
         if (difficulty >= JobDifficulty.Hard)
         {
-            // Time bonus: harder missions have tighter time limits
             int turnLimit = 20;
             secondaries.Add(Objective.TimeBonus(turnLimit));
         }
 
         // Contract-type-specific bonuses
-        switch (type)
+        if (type == ContractType.Extraction && difficulty >= JobDifficulty.Medium)
         {
-            case ContractType.Heist:
-                secondaries.Add(Objective.GhostBonus());
-                break;
-
-            case ContractType.Extraction:
-            case ContractType.Escort:
-                if (difficulty >= JobDifficulty.Medium)
-                {
-                    secondaries.Add(Objective.NoInjuries());
-                }
-                break;
-
-            case ContractType.Assault:
-                // No additional bonuses - straightforward combat
-                break;
+            secondaries.Add(Objective.NoInjuries());
         }
 
         return (primary, secondaries);
@@ -395,7 +322,7 @@ public class ContractGenerator
         if (string.IsNullOrEmpty(employer) && context.Factions.Count > 0)
         {
             var factionIds = context.Factions.Keys.ToList();
-            employer = factionIds[rng.Next(factionIds.Count)];
+            employer = factionIds[rng.NextInt(factionIds.Count)];
         }
         employer ??= "independent";
 
@@ -435,9 +362,9 @@ public class ContractGenerator
 
     private int GetDeadlineDays(JobDifficulty difficulty) => difficulty switch
     {
-        JobDifficulty.Easy => rng.Next(5, 10),
-        JobDifficulty.Medium => rng.Next(7, 14),
-        JobDifficulty.Hard => rng.Next(10, 20),
+        JobDifficulty.Easy => rng.NextInt(5, 10),
+        JobDifficulty.Medium => rng.NextInt(7, 14),
+        JobDifficulty.Hard => rng.NextInt(10, 20),
         _ => 7
     };
 }

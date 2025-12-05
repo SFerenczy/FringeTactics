@@ -24,26 +24,8 @@ public static class InjuryTypes
 
 public class CrewMember
 {
-    // === Constants for derived stat formulas ===
-    public const int XP_PER_LEVEL = 100;
-    public const int STAT_CAP = 10;
-    public const int BASE_HP = 100;
-    public const int HP_PER_GRIT = 10;
-    public const int HIT_BONUS_PER_AIM = 2;
-    public const int HACK_BONUS_PER_TECH = 10;
-    public const int TALK_BONUS_PER_SAVVY = 10;
-    public const int BASE_STRESS_THRESHOLD = 50;
-    public const int STRESS_PER_RESOLVE = 10;
-
-    // === Role starting stats (data-driven) ===
-    private static readonly Dictionary<CrewRole, int[]> RoleStats = new()
-    {
-        //                                    Grit, Refl, Aim, Tech, Savvy, Resolve
-        { CrewRole.Soldier, new[] { 3, 2, 3, 0, 0, 2 } },
-        { CrewRole.Medic,   new[] { 2, 1, 1, 2, 1, 3 } },
-        { CrewRole.Tech,    new[] { 1, 2, 1, 3, 1, 2 } },
-        { CrewRole.Scout,   new[] { 2, 3, 2, 1, 1, 1 } }
-    };
+    // Configuration (loaded from data/campaign.json)
+    private static CrewStatConfig StatConfig => CampaignConfig.Instance.Crew;
 
     public int Id { get; set; }
     public string Name { get; set; }
@@ -75,7 +57,7 @@ public class CrewMember
     public string EquippedGadgetId { get; set; }
 
     // Equipment preference (legacy, used when no specific weapon equipped)
-    public string PreferredWeaponId { get; set; } = "rifle";
+    public string PreferredWeaponId { get; set; } = WeaponIds.Rifle;
 
     public CrewMember(int memberId, string memberName)
     {
@@ -89,9 +71,9 @@ public class CrewMember
     public bool AddXp(int amount)
     {
         Xp += amount;
-        if (Xp >= XP_PER_LEVEL)
+        if (Xp >= StatConfig.XpPerLevel)
         {
-            Xp -= XP_PER_LEVEL;
+            Xp -= StatConfig.XpPerLevel;
             Level++;
             UnspentStatPoints++;
             return true;
@@ -137,7 +119,7 @@ public class CrewMember
     public bool SpendStatPoint(CrewStatType stat)
     {
         if (UnspentStatPoints <= 0) return false;
-        if (GetBaseStat(stat) >= STAT_CAP) return false;
+        if (GetBaseStat(stat) >= StatConfig.StatCap) return false;
 
         UnspentStatPoints--;
         SetBaseStat(stat, GetBaseStat(stat) + 1);
@@ -241,27 +223,27 @@ public class CrewMember
     /// <summary>
     /// Get effective HP based on effective Grit.
     /// </summary>
-    public int GetMaxHp() => BASE_HP + (GetEffectiveStat(CrewStatType.Grit) * HP_PER_GRIT);
+    public int GetMaxHp() => StatConfig.BaseHp + (GetEffectiveStat(CrewStatType.Grit) * StatConfig.HpPerGrit);
 
     /// <summary>
     /// Get hit chance bonus from effective Aim.
     /// </summary>
-    public int GetHitBonus() => GetEffectiveStat(CrewStatType.Aim) * HIT_BONUS_PER_AIM;
+    public int GetHitBonus() => GetEffectiveStat(CrewStatType.Aim) * StatConfig.HitBonusPerAim;
 
     /// <summary>
     /// Get hacking bonus from effective Tech.
     /// </summary>
-    public int GetHackBonus() => GetEffectiveStat(CrewStatType.Tech) * HACK_BONUS_PER_TECH;
+    public int GetHackBonus() => GetEffectiveStat(CrewStatType.Tech) * StatConfig.HackBonusPerTech;
 
     /// <summary>
     /// Get social check bonus from effective Savvy.
     /// </summary>
-    public int GetTalkBonus() => GetEffectiveStat(CrewStatType.Savvy) * TALK_BONUS_PER_SAVVY;
+    public int GetTalkBonus() => GetEffectiveStat(CrewStatType.Savvy) * StatConfig.TalkBonusPerSavvy;
 
     /// <summary>
     /// Get stress threshold from effective Resolve.
     /// </summary>
-    public int GetStressThreshold() => BASE_STRESS_THRESHOLD + (GetEffectiveStat(CrewStatType.Resolve) * STRESS_PER_RESOLVE);
+    public int GetStressThreshold() => StatConfig.BaseStressThreshold + (GetEffectiveStat(CrewStatType.Resolve) * StatConfig.StressPerResolve);
 
     /// <summary>
     /// Create a crew member with role-appropriate starting stats.
@@ -275,14 +257,13 @@ public class CrewMember
 
     private static void ApplyRoleStats(CrewMember crew, CrewRole role)
     {
-        if (!RoleStats.TryGetValue(role, out var stats)) return;
-
-        crew.Grit = stats[0];
-        crew.Reflexes = stats[1];
-        crew.Aim = stats[2];
-        crew.Tech = stats[3];
-        crew.Savvy = stats[4];
-        crew.Resolve = stats[5];
+        var stats = CampaignConfig.Instance.GetRoleStats(role);
+        crew.Grit = stats.Grit;
+        crew.Reflexes = stats.Reflexes;
+        crew.Aim = stats.Aim;
+        crew.Tech = stats.Tech;
+        crew.Savvy = stats.Savvy;
+        crew.Resolve = stats.Resolve;
     }
 
     /// <summary>
@@ -360,7 +341,7 @@ public class CrewMember
         }
         
         // Default fallback
-        return "rifle";
+        return WeaponIds.Rifle;
     }
 
     /// <summary>
@@ -426,7 +407,7 @@ public class CrewMember
             Resolve = data.Resolve,
             UnspentStatPoints = data.UnspentStatPoints,
             TraitIds = new List<string>(data.TraitIds ?? new List<string>()),
-            PreferredWeaponId = data.PreferredWeaponId ?? "rifle",
+            PreferredWeaponId = data.PreferredWeaponId ?? WeaponIds.Rifle,
             // Equipment (MG2)
             EquippedWeaponId = data.EquippedWeaponId,
             EquippedArmorId = data.EquippedArmorId,

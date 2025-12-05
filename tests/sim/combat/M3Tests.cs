@@ -241,7 +241,8 @@ public class M3Tests
         var combat = new CombatState();
         combat.MapState = map;
         combat.InitializeVisibility();
-        combat.SetHasEnemyObjective(true);
+        combat.ObjectiveEvaluator.AddObjective(new SurviveObjective());
+        combat.ObjectiveEvaluator.AddObjective(new EliminateAllObjective());
 
         var attacker = combat.AddActor(ActorType.Crew, new Vector2I(5, 5));
         var target = combat.AddActor(ActorType.Enemy, new Vector2I(8, 5));
@@ -298,7 +299,8 @@ public class M3Tests
         var combat = new CombatState();
         combat.MapState = map;
         combat.InitializeVisibility();
-        combat.SetHasEnemyObjective(true);
+        combat.ObjectiveEvaluator.AddObjective(new SurviveObjective());
+        combat.ObjectiveEvaluator.AddObjective(new EliminateAllObjective());
 
         var crew = combat.AddActor(ActorType.Crew, new Vector2I(5, 5));
         var enemy = combat.AddActor(ActorType.Enemy, new Vector2I(8, 5));
@@ -320,7 +322,8 @@ public class M3Tests
         var combat = new CombatState();
         combat.MapState = map;
         combat.InitializeVisibility();
-        combat.SetHasEnemyObjective(true);
+        combat.ObjectiveEvaluator.AddObjective(new SurviveObjective());
+        combat.ObjectiveEvaluator.AddObjective(new EliminateAllObjective());
 
         var crew = combat.AddActor(ActorType.Crew, new Vector2I(5, 5));
         var enemy = combat.AddActor(ActorType.Enemy, new Vector2I(8, 5));

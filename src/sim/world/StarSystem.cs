@@ -34,32 +34,6 @@ public class StarSystem
         return Tags.Contains(tag);
     }
 
-    /// <summary>
-    /// Create from existing SectorNode (for migration).
-    /// </summary>
-    #pragma warning disable CS0618 // SectorNode is obsolete
-    public static StarSystem FromSectorNode(SectorNode node)
-    {
-        var system = new StarSystem(
-            node.Id,
-            node.Name,
-            node.Type,
-            node.Position
-        )
-        {
-            Connections = new List<int>(node.Connections),
-            OwningFactionId = node.FactionId
-        };
-
-        if (node.Type == SystemType.Station)
-        {
-            system.Tags.Add(WorldTags.Hub);
-        }
-
-        return system;
-    }
-    #pragma warning restore CS0618
-
     public StarSystemData GetState()
     {
         return new StarSystemData

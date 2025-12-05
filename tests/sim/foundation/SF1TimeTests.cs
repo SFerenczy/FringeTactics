@@ -179,7 +179,7 @@ public class CampaignStateTimeIntegrationTests
 
         campaign.ConsumeMissionResources();
 
-        AssertInt(campaign.Time.CurrentDay).IsEqual(startDay + CampaignState.MISSION_TIME_DAYS);
+        AssertInt(campaign.Time.CurrentDay).IsEqual(startDay + CampaignConfig.Instance.Mission.TimeDays);
     }
 
     [TestCase]
@@ -190,7 +190,7 @@ public class CampaignStateTimeIntegrationTests
 
         campaign.Rest();
 
-        AssertInt(campaign.Time.CurrentDay).IsEqual(startDay + CampaignState.REST_TIME_DAYS);
+        AssertInt(campaign.Time.CurrentDay).IsEqual(startDay + CampaignConfig.Instance.Rest.TimeDays);
     }
 
     [TestCase]
@@ -218,8 +218,8 @@ public class CampaignStateTimeIntegrationTests
 
         int healed = campaign.Rest();
 
-        // Should only heal REST_HEAL_AMOUNT (1) per rest
-        AssertInt(healed).IsEqual(CampaignState.REST_HEAL_AMOUNT);
+        // Should only heal HealAmount (1) per rest
+        AssertInt(healed).IsEqual(CampaignConfig.Instance.Rest.HealAmount);
     }
 
     [TestCase]

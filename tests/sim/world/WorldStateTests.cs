@@ -269,25 +269,6 @@ public class StarSystemTests
     }
 
     [TestCase]
-    public void FromSectorNode_ConvertsCorrectly()
-    {
-        var node = new SectorNode(1, "Test Node", SystemType.Station, new Godot.Vector2(100, 200))
-        {
-            FactionId = "corp",
-            Connections = new System.Collections.Generic.List<int> { 2, 3 }
-        };
-
-        var system = StarSystem.FromSectorNode(node);
-
-        AssertInt(system.Id).IsEqual(1);
-        AssertString(system.Name).IsEqual("Test Node");
-        AssertObject(system.Type).IsEqual(SystemType.Station);
-        AssertString(system.OwningFactionId).IsEqual("corp");
-        AssertInt(system.Connections.Count).IsEqual(2);
-        AssertBool(system.HasTag(WorldTags.Hub)).IsTrue();
-    }
-
-    [TestCase]
     public void Serialization_RoundTrip()
     {
         var system = new StarSystem(0, "Test System", SystemType.Outpost, new Godot.Vector2(50, 75))

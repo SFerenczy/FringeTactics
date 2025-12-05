@@ -107,6 +107,48 @@ src/
 
 Exact filenames can evolve, but the **layer separation** is important.
 
+### 2.3 Event Communication Patterns
+
+The codebase uses two event mechanisms for different purposes:
+
+**EventBus (Cross-Domain Communication)**
+
+Use `EventBus` for events that:
+- Affect multiple systems (e.g., resource changes update UI AND might trigger game over)
+- Cross layer boundaries (sim → presentation)
+- Need to be observed by unrelated systems
+
+Examples:
+- `ResourceChangedEvent` - UI updates resource display, campaign checks bankruptcy
+- `MissionCompletedEvent` - Campaign applies results, UI shows debrief
+- `CrewDiedEvent` - Campaign updates roster, UI shows notification
+- `JobCompletedEvent` - Campaign pays rewards, faction rep changes
+
+Location: `src/sim/EventBus.cs`, event types in `src/sim/Events.cs`
+
+**C# Events (Local/Visual Communication)**
+
+Use standard C# `event Action<T>` for:
+- Single-system visual feedback (e.g., actor took damage → show floating text)
+- Parent-child component wiring within the same layer
+- Events that only one subscriber cares about
+
+Examples:
+- `Actor.DamageTaken` - ActorView shows damage number
+- `Actor.PositionChanged` - ActorView updates sprite position
+- `Actor.ReloadCompleted` - ActorView plays reload animation
+- `MissionEndPanel.RestartRequested` - MissionView handles restart
+
+**Rule of Thumb**
+
+| Scope | Mechanism | Example |
+|-------|-----------|---------|
+| Cross-domain, multiple listeners | `EventBus` | `ResourceChangedEvent` |
+| Visual feedback, single listener | C# `event` | `Actor.DamageTaken` |
+| Component wiring in same scene | C# `event` | `Button.Pressed` |
+
+**Important**: Sim layer (`src/sim/`) should NOT emit Godot signals. Use `EventBus` for cross-domain events and C# events for intra-sim communication.
+
 ---
 
 ## 3. Core Data Model (Overview)

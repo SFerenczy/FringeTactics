@@ -11,6 +11,14 @@ Static configuration types and data definitions used across the sim layer.
   - `Definitions.Reload()` - Hot-reload from JSON (Shift+Alt+D in dev)
   - `Definitions.GetLastLoadResult()` - Get validation result from last load
   - `Definitions.GetRegistry()` - Get underlying ConfigRegistry
+- **CampaignConfig.cs** - Campaign balance configuration (singleton):
+  - `Mission` - fuel cost, time cost
+  - `Rest` - time cost, heal amount
+  - `Rewards` - victory money/parts, XP values
+  - `Crew` - stat formulas (HP per grit, XP per level, etc.)
+  - `RoleStats` - starting stats per crew role
+  - `Starting` - initial resources for new campaign
+  - Loads from `data/campaign.json`, falls back to defaults
 - **ConfigRegistry.cs** - Config loading with validation:
   - Loads weapons, enemies, abilities from JSON
   - Validates each definition (required fields, value ranges)
@@ -24,6 +32,7 @@ Static configuration types and data definitions used across the sim layer.
 ## JSON Data Files
 
 Located in `data/` folder at project root:
+- `data/campaign.json` - Campaign balance configuration
 - `data/weapons.json` - Weapon definitions
 - `data/enemies.json` - Enemy definitions  
 - `data/abilities.json` - Ability definitions

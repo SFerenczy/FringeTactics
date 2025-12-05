@@ -119,8 +119,8 @@ public partial class DevTools : Node
             return;
         }
 
-        var targetNode = campaign.Sector.GetNode(targetNodeId);
-        if (targetNode == null)
+        var targetSystem = campaign.World?.GetSystem(targetNodeId);
+        if (targetSystem == null)
         {
             GD.Print("[DevTools] Invalid target node");
             return;
@@ -128,7 +128,7 @@ public partial class DevTools : Node
 
         // Teleport without fuel cost
         campaign.CurrentNodeId = targetNodeId;
-        GD.Print($"[DevTools] Teleported to {targetNode.Name}");
+        GD.Print($"[DevTools] Teleported to {targetSystem.Name}");
 
         // Refresh sector view if we're in it
         if (GameState.Instance.Mode == "sector")

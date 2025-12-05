@@ -17,14 +17,14 @@ public class GN1SerializationTests
     {
         var job = new Job("test_1")
         {
-            ContractType = ContractType.Raid,
-            Title = "Test Raid"
+            ContractType = ContractType.Extraction,
+            Title = "Test Extraction"
         };
 
         var data = job.GetState();
         var restored = Job.FromState(data);
 
-        AssertThat(restored.ContractType).IsEqual(ContractType.Raid);
+        AssertThat(restored.ContractType).IsEqual(ContractType.Extraction);
     }
 
     [TestCase]
@@ -33,10 +33,6 @@ public class GN1SerializationTests
         var types = new[] 
         { 
             ContractType.Assault, 
-            ContractType.Delivery, 
-            ContractType.Escort,
-            ContractType.Raid,
-            ContractType.Heist,
             ContractType.Extraction
         };
 
@@ -199,12 +195,12 @@ public class GN1SerializationTests
         {
             Id = "job",
             Type = "Assault",
-            ContractType = "Heist"
+            ContractType = "Extraction"
         };
 
         var restored = Job.FromState(data);
 
-        AssertThat(restored.ContractType).IsEqual(ContractType.Heist);
+        AssertThat(restored.ContractType).IsEqual(ContractType.Extraction);
     }
 
     [TestCase]

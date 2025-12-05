@@ -30,9 +30,6 @@ public partial class CombatState
     // Mission phase tracking
     public MissionPhase Phase { get; private set; } = MissionPhase.Active;
     
-    // Track if mission was spawned with enemies (for win condition logic)
-    private bool hasEnemyObjective = false;
-    
     // Retreat state (M7)
     public bool IsRetreating { get; private set; } = false;
     
@@ -56,6 +53,9 @@ public partial class CombatState
 
     // Perception system (enemy detection, alarm state)
     public PerceptionSystem Perception { get; private set; }
+    
+    // Objective evaluator (replaces hardcoded CheckMissionEnd logic)
+    public ObjectiveEvaluator ObjectiveEvaluator { get; private set; }
     
     /// <summary>
     /// Event bus for cross-domain communication (optional, set by GameState).
@@ -90,6 +90,7 @@ public partial class CombatState
         Visibility = new VisibilitySystem(MapState);
         Interactions = new InteractionSystem(this);
         Perception = new PerceptionSystem(this);
+        ObjectiveEvaluator = new ObjectiveEvaluator(); // Empty by default, MissionFactory sets up objectives
         
         attackSystem = new AttackSystem(GetActorById);
         attackSystem.AttackResolved += OnAttackResolved;
@@ -206,39 +207,12 @@ public partial class CombatState
             return;
         }
 
-        var aliveCrewCount = 0;
-        var aliveEnemyCount = 0;
-
-        foreach (var actor in Actors)
+        // Evaluate objectives
+        var outcome = ObjectiveEvaluator.Evaluate(this);
+        if (outcome.HasValue)
         {
-            if (actor.State != ActorState.Alive)
-            {
-                continue;
-            }
-
-            if (actor.Type == ActorType.Crew)
-            {
-                aliveCrewCount++;
-            }
-            else if (actor.Type == ActorType.Enemy)
-            {
-                aliveEnemyCount++;
-            }
-        }
-
-        // Only check victory if mission has enemy objective
-        // (prevents auto-win in M0 sandbox with no enemies)
-        if (hasEnemyObjective && aliveEnemyCount == 0)
-        {
-            // Victory - all enemies dead
-            EndMission(MissionOutcome.Victory);
-            SimLog.Log("[Combat] VICTORY! All enemies eliminated.");
-        }
-        else if (aliveCrewCount == 0)
-        {
-            // Defeat - all crew dead
-            EndMission(MissionOutcome.Defeat);
-            SimLog.Log("[Combat] DEFEAT! All crew eliminated.");
+            EndMission(outcome.Value);
+            SimLog.Log($"[Combat] Mission ended: {outcome.Value}");
         }
     }
     
@@ -345,16 +319,6 @@ public partial class CombatState
         return (inZone, total);
     }
     
-    /// <summary>
-    /// Mark that this mission has an enemy elimination objective.
-    /// Called by MissionFactory when enemies are spawned.
-    /// </summary>
-    public void SetHasEnemyObjective(bool hasEnemies)
-    {
-        hasEnemyObjective = hasEnemies;
-        SimLog.Log($"[CombatState] Enemy objective set: {hasEnemies}");
-    }
-
     public Actor AddActor(ActorType actorType, Vector2I position)
     {
         var actor = new Actor(nextActorId, actorType);
