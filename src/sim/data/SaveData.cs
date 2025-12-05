@@ -8,11 +8,12 @@ namespace FringeTactics;
 /// </summary>
 public static class SaveVersion
 {
-    public const int Current = 2;
+    public const int Current = 3;
 
     // Version history:
     // 1 - Initial save format (SF3)
     // 2 - MG1: Expanded crew stats (Grit, Tech, Savvy, Resolve), stat points
+    // 3 - MG2: Ship with modules, inventory, equipment
 }
 
 /// <summary>
@@ -78,6 +79,12 @@ public class CampaignStateData
 
     // Statistics
     public CampaignStatsData Stats { get; set; }
+
+    // Ship (MG2)
+    public ShipData Ship { get; set; }
+
+    // Inventory (MG2)
+    public InventoryData Inventory { get; set; }
 }
 
 /// <summary>
@@ -135,8 +142,13 @@ public class CrewMemberData
     // Traits (MG1 Phase 2)
     public List<string> TraitIds { get; set; } = new();
 
-    // Equipment
+    // Equipment preference (legacy)
     public string PreferredWeaponId { get; set; }
+
+    // Equipment slots (MG2) - item instance IDs
+    public string EquippedWeaponId { get; set; }
+    public string EquippedArmorId { get; set; }
+    public string EquippedGadgetId { get; set; }
 }
 
 /// <summary>
@@ -206,6 +218,54 @@ public class JobRewardData
     public int Parts { get; set; }
     public int Fuel { get; set; }
     public int Ammo { get; set; }
+}
+
+/// <summary>
+/// Serializable ship state (MG2).
+/// </summary>
+public class ShipData
+{
+    public string ChassisId { get; set; }
+    public string Name { get; set; }
+    public int Hull { get; set; }
+    public int MaxHull { get; set; }
+    public int EngineSlots { get; set; }
+    public int WeaponSlots { get; set; }
+    public int CargoSlots { get; set; }
+    public int UtilitySlots { get; set; }
+    public List<ShipModuleData> Modules { get; set; } = new();
+}
+
+/// <summary>
+/// Serializable ship module state (MG2).
+/// </summary>
+public class ShipModuleData
+{
+    public string Id { get; set; }
+    public string DefId { get; set; }
+    public string Name { get; set; }
+    public string SlotType { get; set; }
+    public int CargoBonus { get; set; }
+    public int FuelEfficiency { get; set; }
+}
+
+/// <summary>
+/// Serializable inventory state (MG2).
+/// </summary>
+public class InventoryData
+{
+    public List<ItemData> Items { get; set; } = new();
+    public int NextItemId { get; set; }
+}
+
+/// <summary>
+/// Serializable item instance (MG2).
+/// </summary>
+public class ItemData
+{
+    public string Id { get; set; }
+    public string DefId { get; set; }
+    public int Quantity { get; set; }
 }
 
 /// <summary>

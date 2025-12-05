@@ -33,6 +33,8 @@ Campaign/meta-game state: crew management, resources, mission tracking, jobs.
   - Primary stats (MG1): Grit, Reflexes, Aim, Tech, Savvy, Resolve
   - Derived stats: GetMaxHp(), GetHitBonus(), GetHackBonus(), GetTalkBonus(), GetStressThreshold()
   - Trait methods: HasTrait(), AddTrait(), RemoveTrait(), GetTraits(), GetTraitModifier(), GetEffectiveStat()
+  - Equipment (MG2): EquippedWeaponId, EquippedArmorId, EquippedGadgetId
+  - Equipment methods: GetEquipped(), SetEquipped(), HasEquipped(), ClearEquipped(), GetAllEquippedIds()
   - Factory: `CreateWithRole(id, name, role)` - creates crew with role-based starting stats
   - Methods: AddXp() (grants stat point on level up), SpendStatPoint(), CanDeploy(), AddInjury(), HealInjury()
 - **StatType.cs** - CrewStatType enum for primary stats (MG1)
@@ -69,10 +71,6 @@ Campaign/meta-game state: crew management, resources, mission tracking, jobs.
   - `GenerateMissionConfig()` creates combat setup from job difficulty
   - `ResetJobIdCounter()` resets job ID counter for new campaigns
   - Determines difficulty and deadline based on target node type
-- **ShipState.cs** - Ship status (placeholder, to be expanded in MG2)
-
-### MG2 Files (Planned)
-
 - **Ship.cs** - Full ship implementation (MG2):
   - Hull integrity, max hull
   - Chassis type (Scout, Freighter, Corvette, Gunship)
@@ -81,20 +79,22 @@ Campaign/meta-game state: crew management, resources, mission tracking, jobs.
   - `InstallModule()`, `RemoveModule()` with slot validation
   - `TakeDamage()`, `Repair()`, `IsCritical()`, `IsDestroyed()`
   - Serialization: `GetState()`, `FromState()`
+
 - **Item.cs** - Item system (MG2):
   - ItemCategory enum: Equipment, Consumable, Cargo, Module
   - ItemDef class: id, name, category, volume, baseValue, tags, stats
   - Item class: instance with id, defId, quantity
 - **ItemRegistry.cs** - Static item definitions (MG2):
-  - Equipment: weapons (rifle, pistol, shotgun, sniper), armor
-  - Consumables: medkit, repair_kit
-  - Cargo: medical_supplies, luxury_goods, contraband, weapons_cache
-  - Modules: basic_engine, efficient_engine, small_cargo, large_cargo
+  - Equipment: weapons (rifle, pistol, shotgun, sniper, smg), armor (light, medium, heavy), gadgets
+  - Consumables: medkit, repair_kit, stim_pack
+  - Cargo: medical_supplies, luxury_goods, contraband, weapons_cache, fuel_cells, electronics, raw_ore
+  - Modules: engines, cargo pods, weapons, utility
 - **Inventory.cs** - Inventory management (MG2):
   - Items list with capacity tracking
   - `AddItem()`, `RemoveItem()`, `RemoveByDefId()`
-  - `GetUsedVolume()`, `CanAdd()`
+  - `GetUsedVolume()`, `CanAdd()`, `HasItem()`
   - Stacking for consumables and cargo
+  - Serialization: `GetState()`, `FromState()`
 
 ## Responsibilities
 

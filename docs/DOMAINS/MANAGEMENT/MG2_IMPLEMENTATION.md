@@ -1,6 +1,6 @@
 # MG2 – Ship & Resources: Implementation Plan
 
-**Status**: ⏳ Pending  
+**Status**: ✅ Complete  
 **Depends on**: MG1 (PlayerState & Crew Core) ✅ Complete  
 **Blocked by**: None
 
@@ -283,31 +283,31 @@ public const int Current = 3;
 
 ## MG2 Deliverables Checklist
 
-### Phase 1: Ship Foundation
-- [ ] **1.1** Create `Ship` class with hull, modules
-- [ ] **1.2** Create ship serialization
-- [ ] **1.3** Add `Ship` to `CampaignState`
+### Phase 1: Ship Foundation ✅
+- [x] **1.1** Create `Ship` class with hull, modules
+- [x] **1.2** Create ship serialization
+- [x] **1.3** Add `Ship` to `CampaignState`
 
-### Phase 2: Item & Inventory System
-- [ ] **2.1** Create `Item` and `ItemDef` classes
-- [ ] **2.2** Create `ItemRegistry` with default items
-- [ ] **2.3** Create `Inventory` class with capacity tracking
-- [ ] **2.4** Add inventory serialization
+### Phase 2: Item & Inventory System ✅
+- [x] **2.1** Create `Item` and `ItemDef` classes
+- [x] **2.2** Create `ItemRegistry` with default items
+- [x] **2.3** Create `Inventory` class with capacity tracking
+- [x] **2.4** Add inventory serialization
 
-### Phase 3: Resource Operations
-- [ ] **3.1** Add validated resource methods
-- [ ] **3.2** Add `Inventory` to `CampaignState`
-- [ ] **3.3** Add item and ship events
+### Phase 3: Resource Operations ✅
+- [x] **3.1** Add validated resource methods
+- [x] **3.2** Add `Inventory` to `CampaignState`
+- [x] **3.3** Add item and ship events
 
-### Phase 4: Equipment System
-- [ ] **4.1** Add equipment slots to `CrewMember`
-- [ ] **4.2** Add `EquipItem` / `UnequipItem` operations
+### Phase 4: Equipment System ✅
+- [x] **4.1** Add equipment slots to `CrewMember`
+- [x] **4.2** Add `EquipItem` / `UnequipItem` operations
 
-### Phase 5: Ship Operations
-- [ ] **5.1** Add `RepairShip`, `DamageShip`, `InstallModule`, `RemoveModule`
+### Phase 5: Ship Operations ✅
+- [x] **5.1** Add `RepairShip`, `DamageShip`, `InstallModule`, `RemoveModule`
 
-### Phase 6: Save Version
-- [ ] **6.1** Increment save version to 3
+### Phase 6: Save Version ✅
+- [x] **6.1** Increment save version to 3
 
 ---
 

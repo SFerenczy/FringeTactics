@@ -13,9 +13,10 @@ public class MG1SerializationTests
     // === Save Version Tests ===
 
     [TestCase]
-    public void SaveVersion_IsTwo()
+    public void SaveVersion_IsThree()
     {
-        AssertThat(SaveVersion.Current).IsEqual(2);
+        // MG2 incremented save version to 3
+        AssertThat(SaveVersion.Current).IsEqual(3);
     }
 
     // === CrewMemberData Field Tests ===

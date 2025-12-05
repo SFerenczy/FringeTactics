@@ -205,3 +205,82 @@ public readonly record struct CrewTraitChangedEvent(
     string TraitName,
     bool Gained
 );
+
+// ============================================================================
+// INVENTORY EVENTS (MG2)
+// ============================================================================
+
+/// <summary>
+/// Published when an item is added to inventory.
+/// </summary>
+public readonly record struct ItemAddedEvent(
+    string ItemId,
+    string DefId,
+    string ItemName,
+    int Quantity
+);
+
+/// <summary>
+/// Published when an item is removed from inventory.
+/// </summary>
+public readonly record struct ItemRemovedEvent(
+    string ItemId,
+    string DefId,
+    string ItemName,
+    int Quantity
+);
+
+/// <summary>
+/// Published when an item is equipped by a crew member.
+/// </summary>
+public readonly record struct ItemEquippedEvent(
+    int CrewId,
+    string CrewName,
+    string ItemId,
+    string DefId,
+    string Slot
+);
+
+/// <summary>
+/// Published when an item is unequipped by a crew member.
+/// </summary>
+public readonly record struct ItemUnequippedEvent(
+    int CrewId,
+    string CrewName,
+    string DefId,
+    string Slot
+);
+
+// ============================================================================
+// SHIP EVENTS (MG2)
+// ============================================================================
+
+/// <summary>
+/// Published when ship hull changes.
+/// </summary>
+public readonly record struct ShipHullChangedEvent(
+    int OldHull,
+    int NewHull,
+    int MaxHull,
+    string Reason
+);
+
+/// <summary>
+/// Published when a ship module is installed.
+/// </summary>
+public readonly record struct ShipModuleInstalledEvent(
+    string ModuleId,
+    string ModuleDefId,
+    string ModuleName,
+    string SlotType
+);
+
+/// <summary>
+/// Published when a ship module is removed.
+/// </summary>
+public readonly record struct ShipModuleRemovedEvent(
+    string ModuleId,
+    string ModuleDefId,
+    string ModuleName,
+    string SlotType
+);

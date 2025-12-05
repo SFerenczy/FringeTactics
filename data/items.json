@@ -1,0 +1,452 @@
+{
+    "items": [
+        {
+            "id": "rifle",
+            "name": "Assault Rifle",
+            "description": "Standard-issue automatic rifle. Reliable and versatile.",
+            "category": "Equipment",
+            "equipSlot": "Weapon",
+            "volume": 0,
+            "baseValue": 100,
+            "stats": {
+                "damage": 25,
+                "range": 8,
+                "accuracy": 70
+            },
+            "tags": [
+                "weapon",
+                "ballistic"
+            ]
+        },
+        {
+            "id": "pistol",
+            "name": "Sidearm",
+            "description": "Compact backup weapon. Quick to draw.",
+            "category": "Equipment",
+            "equipSlot": "Weapon",
+            "volume": 0,
+            "baseValue": 50,
+            "stats": {
+                "damage": 15,
+                "range": 5,
+                "accuracy": 80
+            },
+            "tags": [
+                "weapon",
+                "ballistic",
+                "sidearm"
+            ]
+        },
+        {
+            "id": "shotgun",
+            "name": "Combat Shotgun",
+            "description": "Devastating at close range. Spread pattern.",
+            "category": "Equipment",
+            "equipSlot": "Weapon",
+            "volume": 0,
+            "baseValue": 120,
+            "stats": {
+                "damage": 40,
+                "range": 4,
+                "accuracy": 60
+            },
+            "tags": [
+                "weapon",
+                "ballistic",
+                "spread"
+            ]
+        },
+        {
+            "id": "sniper",
+            "name": "Sniper Rifle",
+            "description": "Long-range precision weapon. One shot, one kill.",
+            "category": "Equipment",
+            "equipSlot": "Weapon",
+            "volume": 0,
+            "baseValue": 200,
+            "stats": {
+                "damage": 50,
+                "range": 12,
+                "accuracy": 85
+            },
+            "tags": [
+                "weapon",
+                "ballistic",
+                "precision"
+            ]
+        },
+        {
+            "id": "smg",
+            "name": "Submachine Gun",
+            "description": "High rate of fire, low damage per shot.",
+            "category": "Equipment",
+            "equipSlot": "Weapon",
+            "volume": 0,
+            "baseValue": 80,
+            "stats": {
+                "damage": 18,
+                "range": 6,
+                "accuracy": 65
+            },
+            "tags": [
+                "weapon",
+                "ballistic",
+                "automatic"
+            ]
+        },
+        {
+            "id": "light_armor",
+            "name": "Light Armor",
+            "description": "Basic protection without mobility penalty.",
+            "category": "Equipment",
+            "equipSlot": "Armor",
+            "volume": 0,
+            "baseValue": 80,
+            "stats": {
+                "armor": 10
+            },
+            "tags": [
+                "armor",
+                "light"
+            ]
+        },
+        {
+            "id": "medium_armor",
+            "name": "Medium Armor",
+            "description": "Balanced protection and mobility.",
+            "category": "Equipment",
+            "equipSlot": "Armor",
+            "volume": 0,
+            "baseValue": 120,
+            "stats": {
+                "armor": 18
+            },
+            "tags": [
+                "armor",
+                "medium"
+            ]
+        },
+        {
+            "id": "heavy_armor",
+            "name": "Heavy Armor",
+            "description": "Maximum protection at the cost of speed.",
+            "category": "Equipment",
+            "equipSlot": "Armor",
+            "volume": 0,
+            "baseValue": 180,
+            "stats": {
+                "armor": 25,
+                "speed_penalty": -1
+            },
+            "tags": [
+                "armor",
+                "heavy"
+            ]
+        },
+        {
+            "id": "medkit_gadget",
+            "name": "Field Medkit",
+            "description": "Allows healing allies in combat.",
+            "category": "Equipment",
+            "equipSlot": "Gadget",
+            "volume": 0,
+            "baseValue": 60,
+            "stats": {
+                "heal_amount": 30
+            },
+            "tags": [
+                "gadget",
+                "medical"
+            ]
+        },
+        {
+            "id": "scanner",
+            "name": "Tactical Scanner",
+            "description": "Reveals enemy positions and weaknesses.",
+            "category": "Equipment",
+            "equipSlot": "Gadget",
+            "volume": 0,
+            "baseValue": 100,
+            "stats": {
+                "scan_range": 10
+            },
+            "tags": [
+                "gadget",
+                "tech"
+            ]
+        },
+        {
+            "id": "medkit",
+            "name": "Medical Kit",
+            "description": "Heals one injury when used at base.",
+            "category": "Consumable",
+            "volume": 1,
+            "baseValue": 25,
+            "useEffect": "heal_injury",
+            "useAmount": 1,
+            "tags": [
+                "medical",
+                "consumable"
+            ]
+        },
+        {
+            "id": "repair_kit",
+            "name": "Repair Kit",
+            "description": "Repairs ship hull damage.",
+            "category": "Consumable",
+            "volume": 2,
+            "baseValue": 40,
+            "useEffect": "repair_hull",
+            "useAmount": 20,
+            "tags": [
+                "mechanical",
+                "consumable"
+            ]
+        },
+        {
+            "id": "stim_pack",
+            "name": "Stim Pack",
+            "description": "Temporary combat enhancement.",
+            "category": "Consumable",
+            "volume": 1,
+            "baseValue": 35,
+            "useEffect": "combat_boost",
+            "useAmount": 1,
+            "tags": [
+                "medical",
+                "consumable",
+                "combat"
+            ]
+        },
+        {
+            "id": "medical_supplies",
+            "name": "Medical Supplies",
+            "description": "Bulk medical equipment and pharmaceuticals.",
+            "category": "Cargo",
+            "volume": 5,
+            "baseValue": 100,
+            "tags": [
+                "medical",
+                "legal",
+                "trade"
+            ]
+        },
+        {
+            "id": "luxury_goods",
+            "name": "Luxury Goods",
+            "description": "High-end consumer products.",
+            "category": "Cargo",
+            "volume": 3,
+            "baseValue": 200,
+            "tags": [
+                "luxury",
+                "legal",
+                "trade"
+            ]
+        },
+        {
+            "id": "contraband",
+            "name": "Contraband",
+            "description": "Illegal goods. High profit, high risk.",
+            "category": "Cargo",
+            "volume": 2,
+            "baseValue": 300,
+            "tags": [
+                "illegal",
+                "trade"
+            ]
+        },
+        {
+            "id": "weapons_cache",
+            "name": "Weapons Cache",
+            "description": "Military-grade weapons shipment.",
+            "category": "Cargo",
+            "volume": 10,
+            "baseValue": 500,
+            "tags": [
+                "restricted",
+                "military",
+                "trade"
+            ]
+        },
+        {
+            "id": "fuel_cells",
+            "name": "Fuel Cells",
+            "description": "Portable fuel storage units.",
+            "category": "Cargo",
+            "volume": 4,
+            "baseValue": 80,
+            "tags": [
+                "fuel",
+                "legal",
+                "trade"
+            ]
+        },
+        {
+            "id": "electronics",
+            "name": "Electronics",
+            "description": "Computer components and circuits.",
+            "category": "Cargo",
+            "volume": 2,
+            "baseValue": 150,
+            "tags": [
+                "tech",
+                "legal",
+                "trade"
+            ]
+        },
+        {
+            "id": "raw_ore",
+            "name": "Raw Ore",
+            "description": "Unprocessed mineral ore. Heavy but valuable.",
+            "category": "Cargo",
+            "volume": 8,
+            "baseValue": 60,
+            "tags": [
+                "mining",
+                "legal",
+                "trade",
+                "heavy"
+            ]
+        },
+        {
+            "id": "basic_engine",
+            "name": "Basic Engine",
+            "description": "Standard propulsion system.",
+            "category": "Module",
+            "moduleSlotType": "Engine",
+            "volume": 0,
+            "baseValue": 100,
+            "tags": [
+                "module",
+                "engine"
+            ]
+        },
+        {
+            "id": "efficient_engine",
+            "name": "Efficient Engine",
+            "description": "Improved fuel economy.",
+            "category": "Module",
+            "moduleSlotType": "Engine",
+            "fuelEfficiency": 20,
+            "volume": 0,
+            "baseValue": 300,
+            "tags": [
+                "module",
+                "engine"
+            ]
+        },
+        {
+            "id": "fast_engine",
+            "name": "Fast Engine",
+            "description": "Increased travel speed.",
+            "category": "Module",
+            "moduleSlotType": "Engine",
+            "volume": 0,
+            "baseValue": 400,
+            "stats": {
+                "speed_bonus": 25
+            },
+            "tags": [
+                "module",
+                "engine"
+            ]
+        },
+        {
+            "id": "small_cargo",
+            "name": "Small Cargo Pod",
+            "description": "Adds 20 cargo capacity.",
+            "category": "Module",
+            "moduleSlotType": "Cargo",
+            "cargoBonus": 20,
+            "volume": 0,
+            "baseValue": 150,
+            "tags": [
+                "module",
+                "cargo"
+            ]
+        },
+        {
+            "id": "large_cargo",
+            "name": "Large Cargo Pod",
+            "description": "Adds 50 cargo capacity.",
+            "category": "Module",
+            "moduleSlotType": "Cargo",
+            "cargoBonus": 50,
+            "volume": 0,
+            "baseValue": 400,
+            "tags": [
+                "module",
+                "cargo"
+            ]
+        },
+        {
+            "id": "point_defense",
+            "name": "Point Defense",
+            "description": "Automated defense against missiles and fighters.",
+            "category": "Module",
+            "moduleSlotType": "Weapon",
+            "volume": 0,
+            "baseValue": 250,
+            "stats": {
+                "defense_rating": 15
+            },
+            "tags": [
+                "module",
+                "weapon",
+                "defensive"
+            ]
+        },
+        {
+            "id": "railgun",
+            "name": "Railgun",
+            "description": "High-velocity kinetic weapon.",
+            "category": "Module",
+            "moduleSlotType": "Weapon",
+            "volume": 0,
+            "baseValue": 500,
+            "stats": {
+                "damage": 40,
+                "range": 15
+            },
+            "tags": [
+                "module",
+                "weapon",
+                "offensive"
+            ]
+        },
+        {
+            "id": "shield_generator",
+            "name": "Shield Generator",
+            "description": "Provides energy shielding.",
+            "category": "Module",
+            "moduleSlotType": "Utility",
+            "volume": 0,
+            "baseValue": 350,
+            "stats": {
+                "shield_hp": 30
+            },
+            "tags": [
+                "module",
+                "utility",
+                "defensive"
+            ]
+        },
+        {
+            "id": "sensor_array",
+            "name": "Sensor Array",
+            "description": "Enhanced detection and scanning.",
+            "category": "Module",
+            "moduleSlotType": "Utility",
+            "volume": 0,
+            "baseValue": 200,
+            "stats": {
+                "sensor_range": 50
+            },
+            "tags": [
+                "module",
+                "utility"
+            ]
+        }
+    ]
+}

@@ -69,7 +69,12 @@ public class CrewMember
     // Traits
     public List<string> TraitIds { get; set; } = new();
 
-    // Equipment preference
+    // Equipment (MG2) - item instance IDs
+    public string EquippedWeaponId { get; set; }
+    public string EquippedArmorId { get; set; }
+    public string EquippedGadgetId { get; set; }
+
+    // Equipment preference (legacy, used when no specific weapon equipped)
     public string PreferredWeaponId { get; set; } = "rifle";
 
     public CrewMember(int memberId, string memberName)
@@ -290,6 +295,56 @@ public class CrewMember
         return "Ready";
     }
 
+    // ========================================================================
+    // EQUIPMENT METHODS (MG2)
+    // ========================================================================
+
+    /// <summary>
+    /// Get equipped item ID for a slot.
+    /// </summary>
+    public string GetEquipped(EquipSlot slot) => slot switch
+    {
+        EquipSlot.Weapon => EquippedWeaponId,
+        EquipSlot.Armor => EquippedArmorId,
+        EquipSlot.Gadget => EquippedGadgetId,
+        _ => null
+    };
+
+    /// <summary>
+    /// Set equipped item for a slot.
+    /// </summary>
+    public void SetEquipped(EquipSlot slot, string itemId)
+    {
+        switch (slot)
+        {
+            case EquipSlot.Weapon: EquippedWeaponId = itemId; break;
+            case EquipSlot.Armor: EquippedArmorId = itemId; break;
+            case EquipSlot.Gadget: EquippedGadgetId = itemId; break;
+        }
+    }
+
+    /// <summary>
+    /// Check if crew has any equipment in a slot.
+    /// </summary>
+    public bool HasEquipped(EquipSlot slot) => !string.IsNullOrEmpty(GetEquipped(slot));
+
+    /// <summary>
+    /// Clear equipment from a slot.
+    /// </summary>
+    public void ClearEquipped(EquipSlot slot) => SetEquipped(slot, null);
+
+    /// <summary>
+    /// Get all equipped item IDs.
+    /// </summary>
+    public List<string> GetAllEquippedIds()
+    {
+        var result = new List<string>();
+        if (!string.IsNullOrEmpty(EquippedWeaponId)) result.Add(EquippedWeaponId);
+        if (!string.IsNullOrEmpty(EquippedArmorId)) result.Add(EquippedArmorId);
+        if (!string.IsNullOrEmpty(EquippedGadgetId)) result.Add(EquippedGadgetId);
+        return result;
+    }
+
     /// <summary>
     /// Get state for serialization.
     /// </summary>
@@ -312,7 +367,11 @@ public class CrewMember
             Resolve = Resolve,
             UnspentStatPoints = UnspentStatPoints,
             TraitIds = new List<string>(TraitIds),
-            PreferredWeaponId = PreferredWeaponId
+            PreferredWeaponId = PreferredWeaponId,
+            // Equipment (MG2)
+            EquippedWeaponId = EquippedWeaponId,
+            EquippedArmorId = EquippedArmorId,
+            EquippedGadgetId = EquippedGadgetId
         };
     }
 
@@ -337,7 +396,11 @@ public class CrewMember
             Resolve = data.Resolve,
             UnspentStatPoints = data.UnspentStatPoints,
             TraitIds = new List<string>(data.TraitIds ?? new List<string>()),
-            PreferredWeaponId = data.PreferredWeaponId ?? "rifle"
+            PreferredWeaponId = data.PreferredWeaponId ?? "rifle",
+            // Equipment (MG2)
+            EquippedWeaponId = data.EquippedWeaponId,
+            EquippedArmorId = data.EquippedArmorId,
+            EquippedGadgetId = data.EquippedGadgetId
         };
         return crew;
     }

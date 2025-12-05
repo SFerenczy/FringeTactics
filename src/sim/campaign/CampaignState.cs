@@ -30,6 +30,12 @@ public class CampaignState
     // World state (WD1)
     public WorldState World { get; set; }
 
+    // Ship (MG2)
+    public Ship Ship { get; set; }
+
+    // Inventory (MG2)
+    public Inventory Inventory { get; set; } = new();
+
     // Crew roster
     public List<CrewMember> Crew { get; set; } = new();
     private int nextCrewId = 0;
@@ -101,6 +107,9 @@ public class CampaignState
 
         // Initialize world state (WD1)
         campaign.World = WorldState.CreateSingleHub("Haven Station", "corp");
+
+        // Create starter ship (MG2)
+        campaign.Ship = Ship.CreateStarter();
 
         // Initialize faction reputation (50 = neutral)
         foreach (var factionId in campaign.Sector.Factions.Keys)
@@ -249,6 +258,355 @@ public class CampaignState
     {
         return Sector?.GetNode(CurrentNodeId);
     }
+
+    // ========================================================================
+    // RESOURCE OPERATIONS (MG2)
+    // ========================================================================
+
+    /// <summary>
+    /// Get current value of a resource.
+    /// </summary>
+    public int GetResource(ResourceTypes type) => type switch
+    {
+        ResourceTypes.Money => Money,
+        ResourceTypes.Fuel => Fuel,
+        ResourceTypes.Parts => Parts,
+        _ => 0
+    };
+
+    /// <summary>
+    /// Set a resource value directly (used internally).
+    /// </summary>
+    private void SetResource(ResourceTypes type, int value)
+    {
+        switch (type)
+        {
+            case ResourceTypes.Money: Money = value; break;
+            case ResourceTypes.Fuel: Fuel = value; break;
+            case ResourceTypes.Parts: Parts = value; break;
+        }
+    }
+
+    /// <summary>
+    /// Spend a resource. Returns false if insufficient.
+    /// </summary>
+    public bool SpendResource(ResourceTypes type, int amount, string reason = "unknown")
+    {
+        if (amount <= 0) return false;
+        
+        int current = GetResource(type);
+        if (current < amount) return false;
+
+        int oldValue = current;
+        SetResource(type, current - amount);
+
+        SimLog.Log($"[Campaign] Spent {amount} {type} ({reason}). Remaining: {GetResource(type)}");
+        EventBus?.Publish(new ResourceChangedEvent(type, oldValue, GetResource(type), -amount, reason));
+
+        return true;
+    }
+
+    /// <summary>
+    /// Add a resource.
+    /// </summary>
+    public void AddResource(ResourceTypes type, int amount, string reason = "unknown")
+    {
+        if (amount <= 0) return;
+
+        int oldValue = GetResource(type);
+        SetResource(type, oldValue + amount);
+
+        if (type == ResourceTypes.Money)
+            TotalMoneyEarned += amount;
+
+        SimLog.Log($"[Campaign] Gained {amount} {type} ({reason}). Total: {GetResource(type)}");
+        EventBus?.Publish(new ResourceChangedEvent(type, oldValue, GetResource(type), amount, reason));
+    }
+
+    // Typed wrappers for API convenience
+    public bool SpendCredits(int amount, string reason = "unknown") => SpendResource(ResourceTypes.Money, amount, reason);
+    public void AddCredits(int amount, string reason = "unknown") => AddResource(ResourceTypes.Money, amount, reason);
+    public bool SpendFuel(int amount, string reason = "unknown") => SpendResource(ResourceTypes.Fuel, amount, reason);
+    public void AddFuel(int amount, string reason = "unknown") => AddResource(ResourceTypes.Fuel, amount, reason);
+    public bool SpendParts(int amount, string reason = "unknown") => SpendResource(ResourceTypes.Parts, amount, reason);
+    public void AddParts(int amount, string reason = "unknown") => AddResource(ResourceTypes.Parts, amount, reason);
+
+    /// <summary>
+    /// Check if player can afford a purchase.
+    /// </summary>
+    public bool CanAfford(int credits = 0, int fuel = 0, int parts = 0)
+    {
+        return Money >= credits && Fuel >= fuel && Parts >= parts;
+    }
+
+    // ========================================================================
+    // INVENTORY OPERATIONS (MG2)
+    // ========================================================================
+
+    /// <summary>
+    /// Get current cargo capacity from ship.
+    /// </summary>
+    public int GetCargoCapacity() => Ship?.GetCargoCapacity() ?? 0;
+
+    /// <summary>
+    /// Get used cargo space.
+    /// </summary>
+    public int GetUsedCargo() => Inventory?.GetUsedVolume() ?? 0;
+
+    /// <summary>
+    /// Get available cargo space.
+    /// </summary>
+    public int GetAvailableCargo() => GetCargoCapacity() - GetUsedCargo();
+
+    /// <summary>
+    /// Add an item to inventory. Returns the item or null if no space.
+    /// </summary>
+    public Item AddItem(string defId, int quantity = 1)
+    {
+        var item = Inventory.AddItem(defId, quantity, GetCargoCapacity());
+        if (item != null)
+        {
+            var def = ItemRegistry.Get(defId);
+            SimLog.Log($"[Campaign] Added {quantity}x {def?.Name ?? defId} to inventory");
+            EventBus?.Publish(new ItemAddedEvent(item.Id, defId, def?.Name ?? defId, quantity));
+        }
+        return item;
+    }
+
+    /// <summary>
+    /// Remove an item from inventory by instance ID.
+    /// Automatically unequips from any crew member first.
+    /// </summary>
+    public bool RemoveItem(string itemId)
+    {
+        var item = Inventory.FindById(itemId);
+        if (item == null) return false;
+
+        // Unequip from any crew member who has this item equipped
+        UnequipItemFromAllCrew(itemId);
+
+        var def = item.GetDef();
+        var quantity = item.Quantity;
+        if (Inventory.RemoveItem(itemId))
+        {
+            SimLog.Log($"[Campaign] Removed {def?.Name ?? item.DefId} from inventory");
+            EventBus?.Publish(new ItemRemovedEvent(itemId, item.DefId, def?.Name ?? item.DefId, quantity));
+            return true;
+        }
+        return false;
+    }
+
+    /// <summary>
+    /// Unequip an item from all crew members who have it equipped.
+    /// </summary>
+    private void UnequipItemFromAllCrew(string itemId)
+    {
+        foreach (var crew in Crew)
+        {
+            if (crew.EquippedWeaponId == itemId)
+            {
+                crew.EquippedWeaponId = null;
+                EventBus?.Publish(new ItemUnequippedEvent(crew.Id, crew.Name, "unknown", "weapon"));
+            }
+            if (crew.EquippedArmorId == itemId)
+            {
+                crew.EquippedArmorId = null;
+                EventBus?.Publish(new ItemUnequippedEvent(crew.Id, crew.Name, "unknown", "armor"));
+            }
+            if (crew.EquippedGadgetId == itemId)
+            {
+                crew.EquippedGadgetId = null;
+                EventBus?.Publish(new ItemUnequippedEvent(crew.Id, crew.Name, "unknown", "gadget"));
+            }
+        }
+    }
+
+    /// <summary>
+    /// Remove quantity of an item by definition ID.
+    /// </summary>
+    public bool RemoveItemByDef(string defId, int quantity = 1)
+    {
+        if (Inventory.RemoveByDefId(defId, quantity))
+        {
+            var def = ItemRegistry.Get(defId);
+            SimLog.Log($"[Campaign] Removed {quantity}x {def?.Name ?? defId} from inventory");
+            EventBus?.Publish(new ItemRemovedEvent(null, defId, def?.Name ?? defId, quantity));
+            return true;
+        }
+        return false;
+    }
+
+    /// <summary>
+    /// Check if inventory has an item.
+    /// </summary>
+    public bool HasItem(string defId, int quantity = 1) => Inventory.HasItem(defId, quantity);
+
+    // ========================================================================
+    // SHIP OPERATIONS (MG2)
+    // ========================================================================
+
+    /// <summary>
+    /// Repair ship hull using parts.
+    /// </summary>
+    public bool RepairShip(int partsToUse)
+    {
+        if (Ship == null || Ship.Hull >= Ship.MaxHull) return false;
+        if (Parts < partsToUse) return false;
+        if (partsToUse <= 0) return false;
+
+        int repairAmount = partsToUse * 2; // 2 hull per part
+        int oldHull = Ship.Hull;
+
+        SpendParts(partsToUse, "ship_repair");
+        Ship.Repair(repairAmount);
+
+        SimLog.Log($"[Campaign] Repaired ship: {oldHull} -> {Ship.Hull} hull");
+        EventBus?.Publish(new ShipHullChangedEvent(oldHull, Ship.Hull, Ship.MaxHull, "repair"));
+
+        return true;
+    }
+
+    /// <summary>
+    /// Apply damage to ship hull.
+    /// </summary>
+    public void DamageShip(int amount, string reason = "unknown")
+    {
+        if (Ship == null || amount <= 0) return;
+
+        int oldHull = Ship.Hull;
+        Ship.TakeDamage(amount);
+
+        SimLog.Log($"[Campaign] Ship damaged: {oldHull} -> {Ship.Hull} hull ({reason})");
+        EventBus?.Publish(new ShipHullChangedEvent(oldHull, Ship.Hull, Ship.MaxHull, reason));
+    }
+
+    /// <summary>
+    /// Install a module from inventory onto ship.
+    /// </summary>
+    public bool InstallModule(string itemId)
+    {
+        if (Ship == null) return false;
+
+        var item = Inventory.FindById(itemId);
+        if (item == null) return false;
+
+        var def = item.GetDef();
+        if (def == null || def.Category != ItemCategory.Module) return false;
+
+        if (!Enum.TryParse<ShipSlotType>(def.ModuleSlotType, out var slotType)) return false;
+
+        var module = new ShipModule
+        {
+            Id = $"module_{item.Id}",
+            DefId = def.Id,
+            SlotType = slotType
+        };
+
+        if (!Ship.InstallModule(module)) return false;
+
+        Inventory.RemoveItem(itemId);
+
+        SimLog.Log($"[Campaign] Installed module: {def.Name}");
+        EventBus?.Publish(new ShipModuleInstalledEvent(module.Id, def.Id, def.Name, slotType.ToString()));
+
+        return true;
+    }
+
+    /// <summary>
+    /// Remove a module from ship and add to inventory.
+    /// </summary>
+    public bool RemoveModule(string moduleId)
+    {
+        if (Ship == null) return false;
+
+        var module = Ship.FindModule(moduleId);
+        if (module == null) return false;
+
+        if (!Ship.RemoveModule(moduleId)) return false;
+
+        // Add module item back to inventory (modules have 0 volume so always fits)
+        AddItem(module.DefId);
+
+        SimLog.Log($"[Campaign] Removed module: {module.Name}");
+        EventBus?.Publish(new ShipModuleRemovedEvent(moduleId, module.DefId, module.Name, module.SlotType.ToString()));
+
+        return true;
+    }
+
+    // ========================================================================
+    // EQUIPMENT OPERATIONS (MG2)
+    // ========================================================================
+
+    /// <summary>
+    /// Equip an item to a crew member.
+    /// </summary>
+    public bool EquipItem(int crewId, string itemId)
+    {
+        var crew = GetCrewById(crewId);
+        if (crew == null || crew.IsDead) return false;
+
+        var item = Inventory.FindById(itemId);
+        if (item == null) return false;
+
+        var def = item.GetDef();
+        if (def == null || def.Category != ItemCategory.Equipment) return false;
+        if (def.EquipSlot == EquipSlot.None) return false;
+
+        // Unequip current item in that slot first
+        var currentId = crew.GetEquipped(def.EquipSlot);
+        if (!string.IsNullOrEmpty(currentId))
+        {
+            UnequipItem(crewId, def.EquipSlot);
+        }
+
+        // Equip new item
+        crew.SetEquipped(def.EquipSlot, itemId);
+
+        SimLog.Log($"[Campaign] {crew.Name} equipped {def.Name}");
+        EventBus?.Publish(new ItemEquippedEvent(crewId, crew.Name, itemId, def.Id, def.EquipSlot.ToString().ToLower()));
+
+        return true;
+    }
+
+    /// <summary>
+    /// Unequip an item from a crew member.
+    /// </summary>
+    public bool UnequipItem(int crewId, EquipSlot slot)
+    {
+        var crew = GetCrewById(crewId);
+        if (crew == null) return false;
+
+        var itemId = crew.GetEquipped(slot);
+        if (string.IsNullOrEmpty(itemId)) return false;
+
+        var item = Inventory.FindById(itemId);
+        var defId = item?.DefId ?? "unknown";
+
+        crew.ClearEquipped(slot);
+
+        SimLog.Log($"[Campaign] {crew.Name} unequipped {slot}");
+        EventBus?.Publish(new ItemUnequippedEvent(crewId, crew.Name, defId, slot.ToString().ToLower()));
+
+        return true;
+    }
+
+    /// <summary>
+    /// Get the item equipped by a crew member in a slot.
+    /// </summary>
+    public Item GetEquippedItem(int crewId, EquipSlot slot)
+    {
+        var crew = GetCrewById(crewId);
+        if (crew == null) return null;
+
+        var itemId = crew.GetEquipped(slot);
+        if (string.IsNullOrEmpty(itemId)) return null;
+
+        return Inventory.FindById(itemId);
+    }
+
+    // ========================================================================
+    // CREW OPERATIONS
+    // ========================================================================
 
     /// <summary>
     /// Add a crew member without cost (for initial setup, testing).
@@ -698,7 +1056,9 @@ public class CampaignState
                 TotalCrewDeaths = TotalCrewDeaths
             },
             Sector = Sector?.GetState(),
-            World = World?.GetState()
+            World = World?.GetState(),
+            Ship = Ship?.GetState(),
+            Inventory = Inventory?.GetState()
         };
 
         // Serialize crew
@@ -777,6 +1137,12 @@ public class CampaignState
         {
             campaign.World = WorldState.FromState(data.World);
         }
+
+        // Restore ship (MG2)
+        campaign.Ship = Ship.FromState(data.Ship);
+
+        // Restore inventory (MG2)
+        campaign.Inventory = Inventory.FromState(data.Inventory);
 
         // Restore jobs
         campaign.AvailableJobs.Clear();

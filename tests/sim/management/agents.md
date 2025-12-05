@@ -37,39 +37,44 @@ Unit tests for the Management domain (MG1, MG2).
   - Full round-trip: all data preserved
   - CampaignState integration: crew with traits, hired crew
 
-### MG2 Tests (Planned)
+### MG2 Tests
 
-- **MG2ShipTests.cs** - Ship tests:
-  - Ship creation, starter ship defaults
-  - Hull damage and repair
-  - Cargo capacity calculation
-  - Module installation/removal with slot limits
-  - Critical/destroyed state checks
+- **MG2ShipTests.cs** - Ship tests (38 tests):
+  - Ship creation: CreateStarter, CreateFromChassis (all 4 chassis types)
+  - Hull: damage, repair, clamping, IsCritical, IsDestroyed, GetHullPercent
+  - Cargo capacity: base + cargo modules
+  - Modules: install, remove, slot limits, find
+  - Serialization: GetState/FromState round-trip
+  - CampaignState integration: CreateNew has ship, round-trip preserves ship
 
-- **MG2InventoryTests.cs** - Inventory tests:
-  - Add/remove items
-  - Capacity enforcement
-  - Stacking for consumables/cargo
-  - Volume calculation
-  - Find by ID/DefId
+- **MG2InventoryTests.cs** - Inventory tests (43 tests):
+  - ItemRegistry: Has, Get, GetByCategory, GetByTag
+  - ItemDef: HasTag, IsStackable, GetStat, EquipSlot, ModuleSlotType
+  - Inventory add: works, respects capacity, stacks consumables/cargo, no stack equipment
+  - Inventory volume: GetUsedVolume, CanAdd
+  - Inventory remove: RemoveItem, RemoveByDefId
+  - Inventory find: FindByDefId, FindById, HasItem
+  - Inventory category/tag: GetByCategory, GetByTag
+  - Item instance: GetDef, GetTotalVolume, GetTotalValue, GetName
+  - Serialization: GetState/FromState round-trip
 
-- **MG2ResourceTests.cs** - Resource operation tests:
-  - SpendCredits/AddCredits validation
-  - SpendFuel/AddFuel validation
-  - SpendParts/AddParts validation
-  - CanAfford checks
-  - Event emission
+- **MG2ResourceTests.cs** - Resource & integration tests (40 tests):
+  - SpendCredits/AddCredits: validation, events, TotalMoneyEarned
+  - SpendFuel/AddFuel: validation
+  - SpendParts/AddParts: validation
+  - CanAfford: single and multiple resources
+  - Inventory integration: AddItem, RemoveItem, RemoveItemByDef, HasItem
+  - Cargo: GetCargoCapacity, GetUsedCargo, GetAvailableCargo
+  - Ship operations: RepairShip, DamageShip, InstallModule, RemoveModule
+  - Serialization: round-trip preserves inventory and resources
 
-- **MG2EquipmentTests.cs** - Equipment tests:
-  - Equip/unequip items
-  - Slot validation
-  - Auto-unequip previous item
-
-- **MG2SerializationTests.cs** - Serialization tests:
-  - Ship round-trip
-  - Inventory round-trip
-  - Equipment round-trip
-  - Save version 3
+- **MG2EquipmentTests.cs** - Equipment tests (27 tests):
+  - CrewMember equipment methods: GetEquipped, SetEquipped, HasEquipped, ClearEquipped, GetAllEquippedIds
+  - CampaignState.EquipItem: works, emits event, fails for invalid crew/item/non-equipment
+  - Auto-unequip previous item, different slots
+  - CampaignState.UnequipItem: works, emits event, fails for invalid
+  - GetEquippedItem: returns item or null
+  - Serialization: CrewMember and CampaignState round-trip preserves equipment
 
 ## Test Patterns
 
