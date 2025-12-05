@@ -310,9 +310,9 @@ public class TravelTimeTests
     [TestCase]
     public void TravelSystem_CalculateTravelDays_ReturnsMinimumOne()
     {
-        var sector = Sector.GenerateTestSector(12345);
+        var world = WorldState.CreateSingleHub();
         // Even for very close nodes, minimum is 1 day
-        int days = TravelSystem.CalculateTravelDays(sector, 0, 1);
+        int days = TravelSystem.CalculateTravelDays(world, 0, 0);
         AssertBool(days >= TravelSystem.MIN_TRAVEL_DAYS).IsTrue();
     }
 
@@ -320,17 +320,16 @@ public class TravelTimeTests
     public void TravelSystem_Travel_AdvancesTime()
     {
         var campaign = CampaignState.CreateNew();
-        var sector = campaign.Sector;
         int startDay = campaign.Time.CurrentDay;
 
-        // Find a connected node
-        var currentNode = campaign.GetCurrentNode();
-        if (currentNode != null && currentNode.Connections.Count > 0)
+        // Find a connected system
+        var currentSystem = campaign.GetCurrentSystem();
+        if (currentSystem != null && currentSystem.Connections.Count > 0)
         {
-            int targetId = currentNode.Connections[0];
-            int expectedDays = TravelSystem.CalculateTravelDays(sector, campaign.CurrentNodeId, targetId);
+            int targetId = currentSystem.Connections[0];
+            int expectedDays = TravelSystem.CalculateTravelDays(campaign.World, campaign.CurrentNodeId, targetId);
 
-            var result = TravelSystem.Travel(campaign, sector, targetId);
+            var result = TravelSystem.Travel(campaign, targetId);
 
             AssertObject(result).IsEqual(TravelResult.Success);
             AssertInt(campaign.Time.CurrentDay).IsEqual(startDay + expectedDays);
@@ -341,13 +340,12 @@ public class TravelTimeTests
     public void TravelSystem_GetTravelCostSummary_IncludesTimeAndFuel()
     {
         var campaign = CampaignState.CreateNew();
-        var sector = campaign.Sector;
 
-        var currentNode = campaign.GetCurrentNode();
-        if (currentNode != null && currentNode.Connections.Count > 0)
+        var currentSystem = campaign.GetCurrentSystem();
+        if (currentSystem != null && currentSystem.Connections.Count > 0)
         {
-            int targetId = currentNode.Connections[0];
-            string summary = TravelSystem.GetTravelCostSummary(campaign, sector, targetId);
+            int targetId = currentSystem.Connections[0];
+            string summary = TravelSystem.GetTravelCostSummary(campaign, targetId);
 
             // Should contain both fuel and day information
             AssertBool(summary.Contains("fuel")).IsTrue();
@@ -359,21 +357,20 @@ public class TravelTimeTests
     public void TravelSystem_MultipleTravels_AccumulateTime()
     {
         var campaign = CampaignState.CreateNew();
-        var sector = campaign.Sector;
         int startDay = campaign.Time.CurrentDay;
         int totalDays = 0;
 
-        var currentNode = campaign.GetCurrentNode();
-        if (currentNode != null && currentNode.Connections.Count > 0)
+        var currentSystem = campaign.GetCurrentSystem();
+        if (currentSystem != null && currentSystem.Connections.Count > 0)
         {
-            // Travel to first connected node
-            int firstTarget = currentNode.Connections[0];
-            totalDays += TravelSystem.CalculateTravelDays(sector, campaign.CurrentNodeId, firstTarget);
-            TravelSystem.Travel(campaign, sector, firstTarget);
+            // Travel to first connected system
+            int firstTarget = currentSystem.Connections[0];
+            totalDays += TravelSystem.CalculateTravelDays(campaign.World, campaign.CurrentNodeId, firstTarget);
+            TravelSystem.Travel(campaign, firstTarget);
 
             // Travel back
-            totalDays += TravelSystem.CalculateTravelDays(sector, campaign.CurrentNodeId, 0);
-            TravelSystem.Travel(campaign, sector, 0);
+            totalDays += TravelSystem.CalculateTravelDays(campaign.World, campaign.CurrentNodeId, 0);
+            TravelSystem.Travel(campaign, 0);
 
             AssertInt(campaign.Time.CurrentDay).IsEqual(startDay + totalDays);
         }

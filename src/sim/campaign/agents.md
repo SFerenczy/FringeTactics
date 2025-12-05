@@ -69,7 +69,32 @@ Campaign/meta-game state: crew management, resources, mission tracking, jobs.
   - `GenerateMissionConfig()` creates combat setup from job difficulty
   - `ResetJobIdCounter()` resets job ID counter for new campaigns
   - Determines difficulty and deadline based on target node type
-- **ShipState.cs** - Ship status (future use)
+- **ShipState.cs** - Ship status (placeholder, to be expanded in MG2)
+
+### MG2 Files (Planned)
+
+- **Ship.cs** - Full ship implementation (MG2):
+  - Hull integrity, max hull
+  - Chassis type (Scout, Freighter, Corvette, Gunship)
+  - Module slots: Engine, Weapon, Cargo, Utility
+  - `GetCargoCapacity()` - base + cargo module bonuses
+  - `InstallModule()`, `RemoveModule()` with slot validation
+  - `TakeDamage()`, `Repair()`, `IsCritical()`, `IsDestroyed()`
+  - Serialization: `GetState()`, `FromState()`
+- **Item.cs** - Item system (MG2):
+  - ItemCategory enum: Equipment, Consumable, Cargo, Module
+  - ItemDef class: id, name, category, volume, baseValue, tags, stats
+  - Item class: instance with id, defId, quantity
+- **ItemRegistry.cs** - Static item definitions (MG2):
+  - Equipment: weapons (rifle, pistol, shotgun, sniper), armor
+  - Consumables: medkit, repair_kit
+  - Cargo: medical_supplies, luxury_goods, contraband, weapons_cache
+  - Modules: basic_engine, efficient_engine, small_cargo, large_cargo
+- **Inventory.cs** - Inventory management (MG2):
+  - Items list with capacity tracking
+  - `AddItem()`, `RemoveItem()`, `RemoveByDefId()`
+  - `GetUsedVolume()`, `CanAdd()`
+  - Stacking for consumables and cargo
 
 ## Responsibilities
 

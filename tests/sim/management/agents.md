@@ -1,6 +1,6 @@
 # tests/sim/management/ - Management Domain Tests
 
-Unit tests for the Management domain, specifically MG1 (PlayerState & Crew Core).
+Unit tests for the Management domain (MG1, MG2).
 
 ## Files
 
@@ -36,6 +36,40 @@ Unit tests for the Management domain, specifically MG1 (PlayerState & Crew Core)
   - Null handling: TraitIds, Injuries
   - Full round-trip: all data preserved
   - CampaignState integration: crew with traits, hired crew
+
+### MG2 Tests (Planned)
+
+- **MG2ShipTests.cs** - Ship tests:
+  - Ship creation, starter ship defaults
+  - Hull damage and repair
+  - Cargo capacity calculation
+  - Module installation/removal with slot limits
+  - Critical/destroyed state checks
+
+- **MG2InventoryTests.cs** - Inventory tests:
+  - Add/remove items
+  - Capacity enforcement
+  - Stacking for consumables/cargo
+  - Volume calculation
+  - Find by ID/DefId
+
+- **MG2ResourceTests.cs** - Resource operation tests:
+  - SpendCredits/AddCredits validation
+  - SpendFuel/AddFuel validation
+  - SpendParts/AddParts validation
+  - CanAfford checks
+  - Event emission
+
+- **MG2EquipmentTests.cs** - Equipment tests:
+  - Equip/unequip items
+  - Slot validation
+  - Auto-unequip previous item
+
+- **MG2SerializationTests.cs** - Serialization tests:
+  - Ship round-trip
+  - Inventory round-trip
+  - Equipment round-trip
+  - Save version 3
 
 ## Test Patterns
 

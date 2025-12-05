@@ -1,0 +1,58 @@
+{
+    "factions": [
+        {
+            "id": "corp",
+            "name": "Helix Corp",
+            "type": "Corporate",
+            "color": {
+                "r": 0.2,
+                "g": 0.4,
+                "b": 0.8
+            },
+            "hostilityDefault": 50,
+            "metrics": {
+                "militaryStrength": 3,
+                "economicPower": 5,
+                "influence": 4,
+                "desperation": 1,
+                "corruption": 3
+            }
+        },
+        {
+            "id": "rebels",
+            "name": "Free Colonies",
+            "type": "Independent",
+            "color": {
+                "r": 0.2,
+                "g": 0.7,
+                "b": 0.3
+            },
+            "hostilityDefault": 50,
+            "metrics": {
+                "militaryStrength": 2,
+                "economicPower": 2,
+                "influence": 2,
+                "desperation": 3,
+                "corruption": 1
+            }
+        },
+        {
+            "id": "pirates",
+            "name": "Red Claw",
+            "type": "Criminal",
+            "color": {
+                "r": 0.8,
+                "g": 0.2,
+                "b": 0.2
+            },
+            "hostilityDefault": 80,
+            "metrics": {
+                "militaryStrength": 3,
+                "economicPower": 2,
+                "influence": 1,
+                "desperation": 2,
+                "corruption": 4
+            }
+        }
+    ]
+}

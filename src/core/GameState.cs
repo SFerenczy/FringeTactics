@@ -47,7 +47,7 @@ public partial class GameState : Node
         Campaign = CampaignState.CreateNew();
         WireEventBus(Campaign);
         Mode = "sector";
-        GD.Print($"[GameState] New campaign started at {Campaign.GetCurrentNode()?.Name}");
+        GD.Print($"[GameState] New campaign started at {Campaign.GetCurrentSystem()?.Name}");
         GoToSectorView();
     }
     
@@ -70,16 +70,16 @@ public partial class GameState : Node
     }
 
     /// <summary>
-    /// Travel to a sector node.
+    /// Travel to a system.
     /// </summary>
-    public bool TravelTo(int nodeId)
+    public bool TravelTo(int systemId)
     {
         if (Campaign == null) return false;
 
-        var result = TravelSystem.Travel(Campaign, Campaign.Sector, nodeId);
+        var result = TravelSystem.Travel(Campaign, systemId);
         if (result == TravelResult.Success)
         {
-            GD.Print($"[GameState] Arrived at {Campaign.GetCurrentNode()?.Name}");
+            GD.Print($"[GameState] Arrived at {Campaign.World?.GetSystem(Campaign.CurrentNodeId)?.Name}");
 
             // Refresh available jobs at new location (only if no active job)
             if (Campaign.CurrentJob == null)

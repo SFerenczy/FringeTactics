@@ -65,6 +65,9 @@ public class CampaignStateData
     // Sector (world state)
     public SectorData Sector { get; set; }
 
+    // World state (WD1)
+    public WorldStateData World { get; set; }
+
     // Jobs
     public List<JobData> AvailableJobs { get; set; } = new();
     public JobData CurrentJob { get; set; }

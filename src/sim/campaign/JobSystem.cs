@@ -19,24 +19,24 @@ public static class JobSystem
     };
 
     /// <summary>
-    /// Generate job offers for a given node.
+    /// Generate job offers for a given system.
     /// </summary>
-    public static List<Job> GenerateJobsForNode(CampaignState campaign, int nodeId, Random rng, int count = 3)
+    public static List<Job> GenerateJobsForNode(CampaignState campaign, int systemId, Random rng, int count = 3)
     {
         var jobs = new List<Job>();
-        var sector = campaign.Sector;
-        if (sector == null) return jobs;
+        var world = campaign.World;
+        if (world == null) return jobs;
 
-        var originNode = sector.GetNode(nodeId);
-        if (originNode == null) return jobs;
+        var originSystem = world.GetSystem(systemId);
+        if (originSystem == null) return jobs;
 
-        // Get potential target nodes (connected or nearby)
-        var potentialTargets = GetPotentialTargets(sector, nodeId);
+        // Get potential target systems (connected or nearby)
+        var potentialTargets = GetPotentialTargets(world, systemId);
         if (potentialTargets.Count == 0) return jobs;
 
         for (int i = 0; i < count; i++)
         {
-            var job = GenerateSingleJob(campaign, sector, originNode, potentialTargets, rng);
+            var job = GenerateSingleJob(campaign, world, originSystem, potentialTargets, rng);
             if (job != null)
             {
                 jobs.Add(job);
@@ -46,34 +46,34 @@ public static class JobSystem
         return jobs;
     }
 
-    private static List<int> GetPotentialTargets(Sector sector, int originId)
+    private static List<int> GetPotentialTargets(WorldState world, int originId)
     {
         var targets = new List<int>();
-        var originNode = sector.GetNode(originId);
-        if (originNode == null) return targets;
+        var originSystem = world.GetSystem(originId);
+        if (originSystem == null) return targets;
 
-        // Include connected nodes
-        foreach (var connId in originNode.Connections)
+        // Include connected systems
+        foreach (var connId in originSystem.Connections)
         {
-            var node = sector.GetNode(connId);
-            if (node != null && node.Type != NodeType.Station) // Stations are safe, not targets
+            var system = world.GetSystem(connId);
+            if (system != null && system.Type != SystemType.Station) // Stations are safe, not targets
             {
                 targets.Add(connId);
             }
         }
 
-        // Also include nodes connected to connected nodes (2-hop)
-        foreach (var connId in originNode.Connections)
+        // Also include systems connected to connected systems (2-hop)
+        foreach (var connId in originSystem.Connections)
         {
-            var connNode = sector.GetNode(connId);
-            if (connNode == null) continue;
+            var connSystem = world.GetSystem(connId);
+            if (connSystem == null) continue;
 
-            foreach (var secondHop in connNode.Connections)
+            foreach (var secondHop in connSystem.Connections)
             {
                 if (secondHop != originId && !targets.Contains(secondHop))
                 {
-                    var node = sector.GetNode(secondHop);
-                    if (node != null && node.Type != NodeType.Station)
+                    var system = world.GetSystem(secondHop);
+                    if (system != null && system.Type != SystemType.Station)
                     {
                         targets.Add(secondHop);
                     }
@@ -84,23 +84,23 @@ public static class JobSystem
         return targets;
     }
 
-    private static Job GenerateSingleJob(CampaignState campaign, Sector sector, SectorNode origin, List<int> potentialTargets, Random rng)
+    private static Job GenerateSingleJob(CampaignState campaign, WorldState world, StarSystem origin, List<int> potentialTargets, Random rng)
     {
         if (potentialTargets.Count == 0) return null;
 
         // Pick random target
         var targetId = potentialTargets[rng.Next(potentialTargets.Count)];
-        var targetNode = sector.GetNode(targetId);
-        if (targetNode == null) return null;
+        var targetSystem = world.GetSystem(targetId);
+        if (targetSystem == null) return null;
 
         // Determine difficulty based on target type
-        var difficulty = DetermineJobDifficulty(targetNode, rng);
+        var difficulty = DetermineJobDifficulty(targetSystem, rng);
 
-        // Pick employer faction (origin node's faction, or random if unclaimed)
-        var employerFaction = origin.FactionId;
+        // Pick employer faction (origin system's faction, or random if unclaimed)
+        var employerFaction = origin.OwningFactionId;
         if (string.IsNullOrEmpty(employerFaction))
         {
-            var factionIds = new List<string>(sector.Factions.Keys);
+            var factionIds = new List<string>(world.Factions.Keys);
             if (factionIds.Count > 0)
             {
                 employerFaction = factionIds[rng.Next(factionIds.Count)];
@@ -108,13 +108,13 @@ public static class JobSystem
         }
 
         // Target faction is whoever controls the target, or pirates by default
-        var targetFaction = targetNode.FactionId ?? "pirates";
+        var targetFaction = targetSystem.OwningFactionId ?? "pirates";
 
         // Generate job using campaign's ID generator
         var job = new Job(campaign.GenerateJobId())
         {
             Title = AssaultTitles[rng.Next(AssaultTitles.Length)],
-            Description = $"Assault operation at {targetNode.Name}",
+            Description = $"Assault operation at {targetSystem.Name}",
             Type = JobType.Assault,
             Difficulty = difficulty,
             OriginNodeId = origin.Id,
@@ -131,16 +131,16 @@ public static class JobSystem
         return job;
     }
 
-    private static JobDifficulty DetermineJobDifficulty(SectorNode target, Random rng)
+    private static JobDifficulty DetermineJobDifficulty(StarSystem target, Random rng)
     {
-        // Base difficulty on node type
+        // Base difficulty on system type
         var baseDifficulty = target.Type switch
         {
-            NodeType.Contested => JobDifficulty.Hard,
-            NodeType.Derelict => JobDifficulty.Medium,
-            NodeType.Asteroid => JobDifficulty.Easy,
-            NodeType.Outpost => JobDifficulty.Medium,
-            NodeType.Nebula => JobDifficulty.Medium,
+            SystemType.Contested => JobDifficulty.Hard,
+            SystemType.Derelict => JobDifficulty.Medium,
+            SystemType.Asteroid => JobDifficulty.Easy,
+            SystemType.Outpost => JobDifficulty.Medium,
+            SystemType.Nebula => JobDifficulty.Medium,
             _ => JobDifficulty.Easy
         };
 

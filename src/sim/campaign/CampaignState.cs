@@ -27,6 +27,9 @@ public class CampaignState
     public Sector Sector { get; set; }
     public int CurrentNodeId { get; set; } = 0;
 
+    // World state (WD1)
+    public WorldState World { get; set; }
+
     // Crew roster
     public List<CrewMember> Crew { get; set; } = new();
     private int nextCrewId = 0;
@@ -96,6 +99,9 @@ public class CampaignState
         campaign.Sector = Sector.GenerateTestSector(sectorSeed);
         campaign.CurrentNodeId = 0; // Start at Haven Station
 
+        // Initialize world state (WD1)
+        campaign.World = WorldState.CreateSingleHub("Haven Station", "corp");
+
         // Initialize faction reputation (50 = neutral)
         foreach (var factionId in campaign.Sector.Factions.Keys)
         {
@@ -121,7 +127,7 @@ public class CampaignState
     {
         var rng = CreateSeededRandom();
         AvailableJobs = JobSystem.GenerateJobsForNode(this, CurrentNodeId, rng);
-        SimLog.Log($"[Campaign] Generated {AvailableJobs.Count} jobs at {GetCurrentNode()?.Name}");
+        SimLog.Log($"[Campaign] Generated {AvailableJobs.Count} jobs at {GetCurrentSystem()?.Name}");
     }
 
     /// <summary>
@@ -228,8 +234,17 @@ public class CampaignState
     }
 
     /// <summary>
-    /// Get the current sector node.
+    /// Get the current system.
     /// </summary>
+    public StarSystem GetCurrentSystem()
+    {
+        return World?.GetSystem(CurrentNodeId);
+    }
+
+    /// <summary>
+    /// Get the current sector node (deprecated - use GetCurrentSystem).
+    /// </summary>
+    [System.Obsolete("Use GetCurrentSystem() instead")]
     public SectorNode GetCurrentNode()
     {
         return Sector?.GetNode(CurrentNodeId);
@@ -682,7 +697,8 @@ public class CampaignState
                 TotalMoneyEarned = TotalMoneyEarned,
                 TotalCrewDeaths = TotalCrewDeaths
             },
-            Sector = Sector?.GetState()
+            Sector = Sector?.GetState(),
+            World = World?.GetState()
         };
 
         // Serialize crew
@@ -754,6 +770,12 @@ public class CampaignState
         if (data.Sector != null)
         {
             campaign.Sector = Sector.FromState(data.Sector);
+        }
+
+        // Restore world state (WD1)
+        if (data.World != null)
+        {
+            campaign.World = WorldState.FromState(data.World);
         }
 
         // Restore jobs

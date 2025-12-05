@@ -210,12 +210,12 @@ public class SF2IntegrationTests
         var received = new List<TravelCompletedEvent>();
         bus.Subscribe<TravelCompletedEvent>(e => received.Add(e));
 
-        // Find a connected node to travel to
-        var currentNode = campaign.GetCurrentNode();
-        if (currentNode != null && currentNode.Connections.Count > 0)
+        // Find a connected system to travel to
+        var currentSystem = campaign.GetCurrentSystem();
+        if (currentSystem != null && currentSystem.Connections.Count > 0)
         {
-            int targetId = currentNode.Connections[0];
-            var result = TravelSystem.Travel(campaign, campaign.Sector, targetId);
+            int targetId = currentSystem.Connections[0];
+            var result = TravelSystem.Travel(campaign, targetId);
 
             if (result == TravelResult.Success)
             {
@@ -238,12 +238,12 @@ public class SF2IntegrationTests
         var received = new List<ResourceChangedEvent>();
         bus.Subscribe<ResourceChangedEvent>(e => received.Add(e));
 
-        // Find a connected node to travel to
-        var currentNode = campaign.GetCurrentNode();
-        if (currentNode != null && currentNode.Connections.Count > 0)
+        // Find a connected system to travel to
+        var currentSystem = campaign.GetCurrentSystem();
+        if (currentSystem != null && currentSystem.Connections.Count > 0)
         {
-            int targetId = currentNode.Connections[0];
-            var result = TravelSystem.Travel(campaign, campaign.Sector, targetId);
+            int targetId = currentSystem.Connections[0];
+            var result = TravelSystem.Travel(campaign, targetId);
 
             if (result == TravelResult.Success)
             {

@@ -295,9 +295,9 @@ public partial class SectorView : Control
         titleLabel.AddThemeColorOverride("font_color", diffColor);
         infoVbox.AddChild(titleLabel);
 
-        var targetNode = campaign.Sector.GetNode(job.TargetNodeId);
+        var targetSystem = campaign.World?.GetSystem(job.TargetNodeId);
         var targetLabel = new Label();
-        targetLabel.Text = $"Target: {targetNode?.Name ?? "Unknown"}";
+        targetLabel.Text = $"Target: {targetSystem?.Name ?? "Unknown"}";
         targetLabel.AddThemeFontSizeOverride("font_size", 12);
         infoVbox.AddChild(targetLabel);
 
@@ -344,30 +344,30 @@ public partial class SectorView : Control
     private void DrawSector()
     {
         var campaign = GameState.Instance?.Campaign;
-        if (campaign?.Sector == null) return;
+        if (campaign?.World == null) return;
 
-        var sector = campaign.Sector;
+        var world = campaign.World;
 
         // Draw connections first (behind nodes)
-        foreach (var node in sector.Nodes)
+        foreach (var system in world.GetAllSystems())
         {
-            foreach (var connId in node.Connections)
+            foreach (var connId in system.Connections)
             {
-                if (connId > node.Id) // Draw each connection once
+                if (connId > system.Id) // Draw each connection once
                 {
-                    var other = sector.GetNode(connId);
+                    var other = world.GetSystem(connId);
                     if (other != null)
                     {
-                        DrawConnection(node.Position, other.Position);
+                        DrawConnection(system.Position, other.Position);
                     }
                 }
             }
         }
 
-        // Draw nodes
-        foreach (var node in sector.Nodes)
+        // Draw systems
+        foreach (var system in world.GetAllSystems())
         {
-            CreateNodeButton(node, campaign.CurrentNodeId == node.Id);
+            CreateSystemButton(system, campaign.CurrentNodeId == system.Id);
         }
     }
 
@@ -381,15 +381,15 @@ public partial class SectorView : Control
         mapContainer.AddChild(line);
     }
 
-    private void CreateNodeButton(SectorNode node, bool isCurrent)
+    private void CreateSystemButton(StarSystem system, bool isCurrent)
     {
         var btn = new Button();
         btn.CustomMinimumSize = new Vector2(NODE_RADIUS * 2, NODE_RADIUS * 2);
-        btn.Position = node.Position - new Vector2(NODE_RADIUS, NODE_RADIUS);
+        btn.Position = system.Position - new Vector2(NODE_RADIUS, NODE_RADIUS);
         btn.Text = ""; // We'll draw custom visuals
 
         // Style based on type
-        var color = GetNodeColor(node.Type);
+        var color = GetSystemColor(system.Type);
         if (isCurrent)
         {
             color = CurrentNodeColor;
@@ -419,9 +419,9 @@ public partial class SectorView : Control
         panel.AddThemeStyleboxOverride("panel", style);
         btn.AddChild(panel);
 
-        // Node name label
+        // System name label
         var nameLabel = new Label();
-        nameLabel.Text = node.Name;
+        nameLabel.Text = system.Name;
         nameLabel.Position = new Vector2(-30, NODE_RADIUS * 2 + 5);
         nameLabel.AddThemeFontSizeOverride("font_size", 10);
         nameLabel.HorizontalAlignment = HorizontalAlignment.Center;
@@ -429,8 +429,9 @@ public partial class SectorView : Control
         nameLabel.MouseFilter = MouseFilterEnum.Ignore;
         btn.AddChild(nameLabel);
 
-        // Job indicator
-        if (node.HasJob)
+        // Job indicator (check if any station in system has jobs - for now just show if current job targets this)
+        var campaign = GameState.Instance?.Campaign;
+        if (campaign?.CurrentJob != null && campaign.CurrentJob.TargetNodeId == system.Id)
         {
             var jobIndicator = new Label();
             jobIndicator.Text = "!";
@@ -441,23 +442,23 @@ public partial class SectorView : Control
             btn.AddChild(jobIndicator);
         }
 
-        var nodeId = node.Id;
-        btn.Pressed += () => OnNodeClicked(nodeId);
+        var systemId = system.Id;
+        btn.Pressed += () => OnNodeClicked(systemId);
 
         mapContainer.AddChild(btn);
-        nodeButtons[node.Id] = btn;
+        nodeButtons[system.Id] = btn;
     }
 
-    private Color GetNodeColor(NodeType type)
+    private Color GetSystemColor(SystemType type)
     {
         return type switch
         {
-            NodeType.Station => StationColor,
-            NodeType.Outpost => OutpostColor,
-            NodeType.Derelict => DerelictColor,
-            NodeType.Asteroid => AsteroidColor,
-            NodeType.Nebula => NebulaColor,
-            NodeType.Contested => ContestedColor,
+            SystemType.Station => StationColor,
+            SystemType.Outpost => OutpostColor,
+            SystemType.Derelict => DerelictColor,
+            SystemType.Asteroid => AsteroidColor,
+            SystemType.Nebula => NebulaColor,
+            SystemType.Contested => ContestedColor,
             _ => Colors.White
         };
     }
@@ -473,36 +474,36 @@ public partial class SectorView : Control
         var campaign = GameState.Instance?.Campaign;
         if (campaign == null) return;
 
-        var currentNode = campaign.GetCurrentNode();
+        var currentSystem = campaign.GetCurrentSystem();
 
         // Location
-        locationLabel.Text = $"@ {currentNode?.Name ?? "Unknown"}";
+        locationLabel.Text = $"@ {currentSystem?.Name ?? "Unknown"}";
 
         // Resources
         resourcesLabel.Text = $"Fuel: {campaign.Fuel}\n" +
                               $"Money: ${campaign.Money}\n" +
                               $"Ammo: {campaign.Ammo}";
 
-        // Selected node info
-        if (selectedNodeId.HasValue)
+        // Selected system info
+        if (selectedNodeId.HasValue && campaign.World != null)
         {
-            var node = campaign.Sector.GetNode(selectedNodeId.Value);
-            if (node != null)
+            var system = campaign.World.GetSystem(selectedNodeId.Value);
+            if (system != null)
             {
-                var factionName = node.FactionId != null
-                    ? campaign.Sector.Factions.GetValueOrDefault(node.FactionId, "Unknown")
+                var factionName = system.OwningFactionId != null
+                    ? campaign.World.GetFactionName(system.OwningFactionId)
                     : "Unclaimed";
 
-                var fuelCost = TravelSystem.CalculateFuelCost(campaign.Sector, campaign.CurrentNodeId, node.Id);
-                var canTravel = TravelSystem.CanTravel(campaign, campaign.Sector, node.Id);
+                var fuelCost = TravelSystem.CalculateFuelCost(campaign.World, campaign.CurrentNodeId, system.Id);
+                var canTravel = TravelSystem.CanTravel(campaign, system.Id);
 
-                nodeInfoLabel.Text = $"{node.Name}\n" +
-                                     $"Type: {node.Type}\n" +
+                nodeInfoLabel.Text = $"{system.Name}\n" +
+                                     $"Type: {system.Type}\n" +
                                      $"Faction: {factionName}\n" +
                                      $"Travel cost: {fuelCost} fuel";
 
                 // Update travel button
-                if (node.Id == campaign.CurrentNodeId)
+                if (system.Id == campaign.CurrentNodeId)
                 {
                     travelButton.Text = "You are here";
                     travelButton.Disabled = true;
@@ -514,7 +515,7 @@ public partial class SectorView : Control
                 }
                 else
                 {
-                    var reason = TravelSystem.GetTravelBlockReason(campaign, campaign.Sector, node.Id);
+                    var reason = TravelSystem.GetTravelBlockReason(campaign, system.Id);
                     travelButton.Text = reason ?? "Cannot travel";
                     travelButton.Disabled = true;
                 }
@@ -530,9 +531,9 @@ public partial class SectorView : Control
         // Current job display
         if (campaign.CurrentJob != null)
         {
-            var targetNode = campaign.Sector.GetNode(campaign.CurrentJob.TargetNodeId);
+            var targetSystem = campaign.World?.GetSystem(campaign.CurrentJob.TargetNodeId);
             currentJobLabel.Text = $"Active Job: {campaign.CurrentJob.Title}\n" +
-                                   $"Target: {targetNode?.Name ?? "Unknown"}";
+                                   $"Target: {targetSystem?.Name ?? "Unknown"}";
             currentJobLabel.Visible = true;
             jobBoardButton.Disabled = true;
             jobBoardButton.Text = "Job Active";
@@ -564,8 +565,8 @@ public partial class SectorView : Control
         {
             // Have job but not at target
             missionButton.Visible = true;
-            var targetNode = campaign.Sector.GetNode(campaign.CurrentJob.TargetNodeId);
-            missionButton.Text = $"Travel to {targetNode?.Name ?? "target"}";
+            var targetSystem = campaign.World?.GetSystem(campaign.CurrentJob.TargetNodeId);
+            missionButton.Text = $"Travel to {targetSystem?.Name ?? "target"}";
             missionButton.Disabled = true;
         }
         else
@@ -580,9 +581,11 @@ public partial class SectorView : Control
 
     private void UpdateNodeHighlights(CampaignState campaign)
     {
+        if (campaign.World == null) return;
+        
         foreach (var kvp in nodeButtons)
         {
-            var nodeId = kvp.Key;
+            var systemId = kvp.Key;
             var btn = kvp.Value;
             var panel = btn.GetChild<Panel>(0);
             if (panel == null) continue;
@@ -590,8 +593,8 @@ public partial class SectorView : Control
             var style = panel.GetThemeStylebox("panel") as StyleBoxFlat;
             if (style == null) continue;
 
-            var node = campaign.Sector.GetNode(nodeId);
-            if (node == null) continue;
+            var system = campaign.World.GetSystem(systemId);
+            if (system == null) continue;
 
             // Reset border
             style.BorderWidthTop = 0;
@@ -599,7 +602,7 @@ public partial class SectorView : Control
             style.BorderWidthLeft = 0;
             style.BorderWidthRight = 0;
 
-            if (nodeId == campaign.CurrentNodeId)
+            if (systemId == campaign.CurrentNodeId)
             {
                 style.BgColor = CurrentNodeColor;
                 style.BorderWidthTop = 3;
@@ -608,7 +611,7 @@ public partial class SectorView : Control
                 style.BorderWidthRight = 3;
                 style.BorderColor = Colors.White;
             }
-            else if (nodeId == selectedNodeId)
+            else if (systemId == selectedNodeId)
             {
                 style.BgColor = SelectedNodeColor;
                 style.BorderWidthTop = 2;
@@ -619,7 +622,7 @@ public partial class SectorView : Control
             }
             else
             {
-                style.BgColor = GetNodeColor(node.Type);
+                style.BgColor = GetSystemColor(system.Type);
             }
         }
     }

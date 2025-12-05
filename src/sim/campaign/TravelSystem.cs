@@ -31,21 +31,21 @@ public static class TravelSystem
     public const float AMBUSH_CHANCE = 0.15f;
 
     /// <summary>
-    /// Calculate fuel cost to travel between two nodes.
+    /// Calculate fuel cost to travel between two systems.
     /// </summary>
-    public static int CalculateFuelCost(Sector sector, int fromId, int toId)
+    public static int CalculateFuelCost(WorldState world, int fromId, int toId)
     {
-        var distance = sector.GetTravelDistance(fromId, toId);
+        var distance = world.GetTravelDistance(fromId, toId);
         var cost = (int)(distance * FUEL_PER_DISTANCE);
         return Math.Max(cost, MIN_FUEL_COST);
     }
 
     /// <summary>
-    /// Calculate time cost in days to travel between two nodes.
+    /// Calculate time cost in days to travel between two systems.
     /// </summary>
-    public static int CalculateTravelDays(Sector sector, int fromId, int toId)
+    public static int CalculateTravelDays(WorldState world, int fromId, int toId)
     {
-        var distance = sector.GetTravelDistance(fromId, toId);
+        var distance = world.GetTravelDistance(fromId, toId);
         var days = (int)Math.Ceiling(distance * DAYS_PER_DISTANCE);
         return Math.Max(days, MIN_TRAVEL_DAYS);
     }
@@ -53,27 +53,30 @@ public static class TravelSystem
     /// <summary>
     /// Check if travel is possible (connected and enough fuel).
     /// </summary>
-    public static bool CanTravel(CampaignState campaign, Sector sector, int toId)
+    public static bool CanTravel(CampaignState campaign, int toId)
     {
+        if (campaign.World == null) return false;
         if (campaign.CurrentNodeId == toId) return false;
-        if (!sector.AreConnected(campaign.CurrentNodeId, toId)) return false;
+        if (!campaign.World.AreConnected(campaign.CurrentNodeId, toId)) return false;
 
-        var fuelCost = CalculateFuelCost(sector, campaign.CurrentNodeId, toId);
+        var fuelCost = CalculateFuelCost(campaign.World, campaign.CurrentNodeId, toId);
         return campaign.Fuel >= fuelCost;
     }
 
     /// <summary>
     /// Get reason why travel is blocked.
     /// </summary>
-    public static string GetTravelBlockReason(CampaignState campaign, Sector sector, int toId)
+    public static string GetTravelBlockReason(CampaignState campaign, int toId)
     {
+        if (campaign.World == null) return "No world data";
+        
         if (campaign.CurrentNodeId == toId)
             return "Already at this location";
 
-        if (!sector.AreConnected(campaign.CurrentNodeId, toId))
+        if (!campaign.World.AreConnected(campaign.CurrentNodeId, toId))
             return "No route to this location";
 
-        var fuelCost = CalculateFuelCost(sector, campaign.CurrentNodeId, toId);
+        var fuelCost = CalculateFuelCost(campaign.World, campaign.CurrentNodeId, toId);
         if (campaign.Fuel < fuelCost)
             return $"Need {fuelCost} fuel (have {campaign.Fuel})";
 
@@ -83,32 +86,36 @@ public static class TravelSystem
     /// <summary>
     /// Get a summary of travel costs for display.
     /// </summary>
-    public static string GetTravelCostSummary(CampaignState campaign, Sector sector, int toId)
+    public static string GetTravelCostSummary(CampaignState campaign, int toId)
     {
-        var fuelCost = CalculateFuelCost(sector, campaign.CurrentNodeId, toId);
-        var timeCost = CalculateTravelDays(sector, campaign.CurrentNodeId, toId);
+        if (campaign.World == null) return "N/A";
+        var fuelCost = CalculateFuelCost(campaign.World, campaign.CurrentNodeId, toId);
+        var timeCost = CalculateTravelDays(campaign.World, campaign.CurrentNodeId, toId);
         return $"{fuelCost} fuel, {CampaignTime.FormatDuration(timeCost)}";
     }
 
     /// <summary>
-    /// Attempt to travel to a node. Returns result and consumes fuel on success.
+    /// Attempt to travel to a system. Returns result and consumes fuel on success.
     /// </summary>
-    public static TravelResult Travel(CampaignState campaign, Sector sector, int toId, Random rng = null)
+    public static TravelResult Travel(CampaignState campaign, int toId, Random rng = null)
     {
+        if (campaign.World == null)
+            return TravelResult.NotConnected;
+            
         if (campaign.CurrentNodeId == toId)
             return TravelResult.AlreadyThere;
 
-        if (!sector.AreConnected(campaign.CurrentNodeId, toId))
+        if (!campaign.World.AreConnected(campaign.CurrentNodeId, toId))
             return TravelResult.NotConnected;
 
-        var fuelCost = CalculateFuelCost(sector, campaign.CurrentNodeId, toId);
+        var fuelCost = CalculateFuelCost(campaign.World, campaign.CurrentNodeId, toId);
         if (campaign.Fuel < fuelCost)
             return TravelResult.NotEnoughFuel;
 
         // Calculate costs
-        var fromNode = sector.GetNode(campaign.CurrentNodeId);
-        var toNode = sector.GetNode(toId);
-        var timeCost = CalculateTravelDays(sector, campaign.CurrentNodeId, toId);
+        var fromSystem = campaign.World.GetSystem(campaign.CurrentNodeId);
+        var toSystem = campaign.World.GetSystem(toId);
+        var timeCost = CalculateTravelDays(campaign.World, campaign.CurrentNodeId, toId);
         var fromNodeId = campaign.CurrentNodeId;
 
         // Consume resources
@@ -117,7 +124,7 @@ public static class TravelSystem
         campaign.Time.AdvanceDays(timeCost);
         campaign.CurrentNodeId = toId;
 
-        SimLog.Log($"[Travel] Traveled from {fromNode?.Name} to {toNode?.Name}. Cost: {fuelCost} fuel, {timeCost} day(s). (Fuel remaining: {campaign.Fuel})");
+        SimLog.Log($"[Travel] Traveled from {fromSystem?.Name} to {toSystem?.Name}. Cost: {fuelCost} fuel, {timeCost} day(s). (Fuel remaining: {campaign.Fuel})");
         
         // Publish events
         campaign.EventBus?.Publish(new ResourceChangedEvent(
@@ -131,13 +138,13 @@ public static class TravelSystem
         campaign.EventBus?.Publish(new TravelCompletedEvent(
             FromNodeId: fromNodeId,
             ToNodeId: toId,
-            ToNodeName: toNode?.Name ?? "Unknown",
+            ToNodeName: toSystem?.Name ?? "Unknown",
             FuelCost: fuelCost,
             DaysCost: timeCost
         ));
 
         // Random encounter check (for future use)
-        if (rng != null && toNode?.Type == NodeType.Contested)
+        if (rng != null && toSystem?.Type == SystemType.Contested)
         {
             if (rng.NextDouble() < AMBUSH_CHANCE)
             {

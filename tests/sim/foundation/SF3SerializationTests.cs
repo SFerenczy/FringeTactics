@@ -194,7 +194,7 @@ public class SF3SectorSerializationTests
     [RequireGodotRuntime]
     public void SectorNode_RoundTrip_PreservesPosition()
     {
-        var node = new SectorNode(3, "Test Station", NodeType.Contested, new Vector2(150.5f, 275.25f))
+        var node = new SectorNode(3, "Test Station", SystemType.Contested, new Vector2(150.5f, 275.25f))
         {
             FactionId = "rebels",
             HasJob = true,
@@ -206,7 +206,7 @@ public class SF3SectorSerializationTests
 
         AssertInt(restored.Id).IsEqual(3);
         AssertString(restored.Name).IsEqual("Test Station");
-        AssertThat(restored.Type).IsEqual(NodeType.Contested);
+        AssertThat(restored.Type).IsEqual(SystemType.Contested);
         AssertString(restored.FactionId).IsEqual("rebels");
         AssertFloat(restored.Position.X).IsEqualApprox(150.5f, 0.01f);
         AssertFloat(restored.Position.Y).IsEqualApprox(275.25f, 0.01f);
@@ -229,7 +229,7 @@ public class SF3SectorSerializationTests
 
         var restored = SectorNode.FromState(data);
 
-        AssertThat(restored.Type).IsEqual(NodeType.Station);
+        AssertThat(restored.Type).IsEqual(SystemType.Station);
     }
 
     [TestCase]
@@ -245,8 +245,8 @@ public class SF3SectorSerializationTests
                 { "rebels", "Free Colonies" }
             }
         };
-        sector.Nodes.Add(new SectorNode(0, "Node A", NodeType.Station, new Vector2(100, 100)));
-        sector.Nodes.Add(new SectorNode(1, "Node B", NodeType.Outpost, new Vector2(200, 200)));
+        sector.Nodes.Add(new SectorNode(0, "Node A", SystemType.Station, new Vector2(100, 100)));
+        sector.Nodes.Add(new SectorNode(1, "Node B", SystemType.Outpost, new Vector2(200, 200)));
 
         var state = sector.GetState();
         var restored = Sector.FromState(state);

@@ -5,32 +5,21 @@ using System.Collections.Generic;
 namespace FringeTactics;
 
 /// <summary>
-/// Types of sector nodes.
-/// </summary>
-public enum NodeType
-{
-    Station,    // Trade hub, safe
-    Outpost,    // Small settlement
-    Derelict,   // Abandoned, risky
-    Asteroid,   // Mining opportunity
-    Nebula,     // Hiding spot, sensor interference
-    Contested   // Active conflict zone
-}
-
-/// <summary>
 /// A node in the sector graph.
+/// Deprecated: Use StarSystem from WorldState instead.
 /// </summary>
+[System.Obsolete("Use StarSystem from WorldState instead")]
 public class SectorNode
 {
     public int Id { get; set; }
     public string Name { get; set; }
-    public NodeType Type { get; set; }
+    public SystemType Type { get; set; }
     public string FactionId { get; set; } // null = unclaimed
     public Vector2 Position { get; set; } // For visual layout
     public List<int> Connections { get; set; } = new(); // Connected node IDs
     public bool HasJob { get; set; } = false;
 
-    public SectorNode(int id, string name, NodeType type, Vector2 position)
+    public SectorNode(int id, string name, SystemType type, Vector2 position)
     {
         Id = id;
         Name = name;
@@ -64,7 +53,7 @@ public class SectorNode
         var node = new SectorNode(
             data.Id,
             data.Name,
-            Enum.TryParse<NodeType>(data.Type, out var type) ? type : NodeType.Station,
+            Enum.TryParse<SystemType>(data.Type, out var type) ? type : SystemType.Station,
             new Vector2(data.PositionX, data.PositionY)
         )
         {
@@ -120,7 +109,7 @@ public class Sector
 
         // Create nodes in a rough layout
         // Center station (safe starting point)
-        var startNode = new SectorNode(nodeId++, "Haven Station", NodeType.Station, new Vector2(300, 250))
+        var startNode = new SectorNode(nodeId++, "Haven Station", SystemType.Station, new Vector2(300, 250))
         {
             FactionId = "corp"
         };
@@ -139,16 +128,16 @@ public class Sector
             new Vector2(300, 420),  // Bottom
         };
 
-        var nodeConfigs = new (string name, NodeType type, string faction)[]
+        var nodeConfigs = new (string name, SystemType type, string faction)[]
         {
-            ("Dusty Rock", NodeType.Outpost, "rebels"),
-            ("Port Meridian", NodeType.Station, "corp"),
-            ("Rich Vein", NodeType.Asteroid, null),
-            ("Ghost Ship Graveyard", NodeType.Derelict, null),
-            ("Miner's Rest", NodeType.Outpost, "rebels"),
-            ("Red Claw Den", NodeType.Contested, "pirates"),
-            ("Nebula's Edge", NodeType.Nebula, null),
-            ("Ore Field Alpha", NodeType.Asteroid, null),
+            ("Dusty Rock", SystemType.Outpost, "rebels"),
+            ("Port Meridian", SystemType.Station, "corp"),
+            ("Rich Vein", SystemType.Asteroid, null),
+            ("Ghost Ship Graveyard", SystemType.Derelict, null),
+            ("Miner's Rest", SystemType.Outpost, "rebels"),
+            ("Red Claw Den", SystemType.Contested, "pirates"),
+            ("Nebula's Edge", SystemType.Nebula, null),
+            ("Ore Field Alpha", SystemType.Asteroid, null),
         };
 
         for (int i = 0; i < nodeConfigs.Length; i++)
