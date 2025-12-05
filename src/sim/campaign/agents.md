@@ -22,11 +22,30 @@ Campaign/meta-game state: crew management, resources, mission tracking, jobs.
   - `Rest()` heals injuries and advances time
   - `ShouldRest()` checks if rest would be beneficial
   - `IsCampaignOver()` checks if all crew are dead
+  - `HireCrew(name, role, cost)` - hire crew member, deducts money (MG1)
+  - `FireCrew(crewId)` - remove crew from roster (MG1)
+  - `AssignTrait(crewId, traitId)` - add trait to crew (MG1)
+  - `RemoveTrait(crewId, traitId)` - remove non-permanent trait (MG1)
 - **CrewMember.cs** - Individual crew member:
   - Identity: id, name, role (Soldier/Medic/Tech/Scout)
-  - Status: IsDead, Injuries list
-  - Progression: Level, Xp, stats (Aim, Toughness, Reflexes)
-  - Methods: AddXp(), CanDeploy(), AddInjury(), HealInjury()
+  - Status: IsDead, Injuries list, TraitIds list
+  - Progression: Level, Xp, UnspentStatPoints
+  - Primary stats (MG1): Grit, Reflexes, Aim, Tech, Savvy, Resolve
+  - Derived stats: GetMaxHp(), GetHitBonus(), GetHackBonus(), GetTalkBonus(), GetStressThreshold()
+  - Trait methods: HasTrait(), AddTrait(), RemoveTrait(), GetTraits(), GetTraitModifier(), GetEffectiveStat()
+  - Factory: `CreateWithRole(id, name, role)` - creates crew with role-based starting stats
+  - Methods: AddXp() (grants stat point on level up), SpendStatPoint(), CanDeploy(), AddInjury(), HealInjury()
+- **StatType.cs** - CrewStatType enum for primary stats (MG1)
+- **Trait.cs** - Trait system infrastructure (MG1):
+  - TraitCategory enum: Background, Personality, Acquired, Injury
+  - CrewStatModifier struct: stat type and flat bonus
+  - TraitDef class: id, name, description, category, modifiers, tags, IsPermanent
+- **TraitRegistry.cs** - Static registry of trait definitions (MG1):
+  - 14 default traits across 4 categories
+  - Background: ex_military, smuggler, corporate, frontier_born, spacer
+  - Personality: brave, cautious, reckless, cold_blooded, empathetic
+  - Acquired: vengeful, hardened, scarred
+  - Injury (permanent): damaged_eye, shattered_knee, nerve_damage, head_trauma, chronic_pain
 - **Sector.cs** - Sector map:
   - SectorNode: id, name, type, faction, position, connections
   - NodeType enum: Station, Outpost, Derelict, Asteroid, Nebula, Contested

@@ -176,3 +176,32 @@ public readonly record struct CrewDiedEvent(
     string CrewName,
     string Cause
 );
+
+/// <summary>
+/// Published when a crew member is hired.
+/// </summary>
+public readonly record struct CrewHiredEvent(
+    int CrewId,
+    string CrewName,
+    CrewRole Role,
+    int Cost
+);
+
+/// <summary>
+/// Published when a crew member is fired.
+/// </summary>
+public readonly record struct CrewFiredEvent(
+    int CrewId,
+    string CrewName
+);
+
+/// <summary>
+/// Published when a crew member gains or loses a trait.
+/// </summary>
+public readonly record struct CrewTraitChangedEvent(
+    int CrewId,
+    string CrewName,
+    string TraitId,
+    string TraitName,
+    bool Gained
+);

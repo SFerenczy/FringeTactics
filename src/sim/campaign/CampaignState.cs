@@ -235,15 +235,123 @@ public class CampaignState
         return Sector?.GetNode(CurrentNodeId);
     }
 
+    /// <summary>
+    /// Add a crew member without cost (for initial setup, testing).
+    /// </summary>
     public CrewMember AddCrew(string name, CrewRole role = CrewRole.Soldier)
     {
-        var crew = new CrewMember(nextCrewId, name)
+        return CreateAndAddCrew(name, role);
+    }
+
+    /// <summary>
+    /// Hire a new crew member. Costs credits.
+    /// </summary>
+    /// <param name="name">Crew member name</param>
+    /// <param name="role">Crew role</param>
+    /// <param name="cost">Hiring cost in credits</param>
+    /// <returns>The hired crew member, or null if can't afford</returns>
+    public CrewMember HireCrew(string name, CrewRole role, int cost)
+    {
+        if (Money < cost)
         {
-            Role = role
-        };
+            SimLog.Log($"[Campaign] Cannot hire {name}: insufficient funds ({Money}/{cost})");
+            return null;
+        }
+
+        int oldMoney = Money;
+        Money -= cost;
+
+        var crew = CreateAndAddCrew(name, role);
+
+        SimLog.Log($"[Campaign] Hired {name} ({role}) for {cost} credits");
+
+        EventBus?.Publish(new ResourceChangedEvent(
+            ResourceTypes.Money, oldMoney, Money, -cost, "hire_crew"));
+        EventBus?.Publish(new CrewHiredEvent(crew.Id, crew.Name, role, cost));
+
+        return crew;
+    }
+
+    /// <summary>
+    /// Internal: creates crew and adds to roster.
+    /// </summary>
+    private CrewMember CreateAndAddCrew(string name, CrewRole role)
+    {
+        var crew = CrewMember.CreateWithRole(nextCrewId, name, role);
         nextCrewId++;
         Crew.Add(crew);
         return crew;
+    }
+
+    /// <summary>
+    /// Fire a crew member. They are removed from the roster.
+    /// </summary>
+    /// <param name="crewId">ID of crew to fire</param>
+    /// <returns>True if fired, false if not found, dead, or last crew</returns>
+    public bool FireCrew(int crewId)
+    {
+        var crew = GetCrewById(crewId);
+        if (crew == null)
+        {
+            SimLog.Log($"[Campaign] Cannot fire crew {crewId}: not found");
+            return false;
+        }
+
+        if (crew.IsDead)
+        {
+            SimLog.Log($"[Campaign] Cannot fire {crew.Name}: already dead");
+            return false;
+        }
+
+        if (GetAliveCrew().Count <= 1)
+        {
+            SimLog.Log($"[Campaign] Cannot fire {crew.Name}: last crew member");
+            return false;
+        }
+
+        string name = crew.Name;
+        Crew.Remove(crew);
+        SimLog.Log($"[Campaign] Fired {name}");
+
+        EventBus?.Publish(new CrewFiredEvent(crewId, name));
+
+        return true;
+    }
+
+    /// <summary>
+    /// Assign a trait to a crew member.
+    /// </summary>
+    public bool AssignTrait(int crewId, string traitId)
+    {
+        var crew = GetCrewById(crewId);
+        if (crew == null || crew.IsDead) return false;
+
+        if (!crew.AddTrait(traitId)) return false;
+
+        var trait = TraitRegistry.Get(traitId);
+        SimLog.Log($"[Campaign] {crew.Name} gained trait: {trait?.Name ?? traitId}");
+
+        EventBus?.Publish(new CrewTraitChangedEvent(
+            crewId, crew.Name, traitId, trait?.Name ?? traitId, true));
+        return true;
+    }
+
+    /// <summary>
+    /// Remove a trait from a crew member.
+    /// </summary>
+    public bool RemoveTrait(int crewId, string traitId)
+    {
+        var crew = GetCrewById(crewId);
+        if (crew == null) return false;
+
+        if (!crew.RemoveTrait(traitId)) return false;
+
+        var trait = TraitRegistry.Get(traitId);
+        SimLog.Log($"[Campaign] {crew.Name} lost trait: {trait?.Name ?? traitId}");
+
+        EventBus?.Publish(new CrewTraitChangedEvent(
+            crewId, crew.Name, traitId, trait?.Name ?? traitId, false));
+        return true;
     }
 
     public List<CrewMember> GetAliveCrew()

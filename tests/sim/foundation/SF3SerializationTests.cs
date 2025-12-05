@@ -18,8 +18,11 @@ public class SF3CrewMemberSerializationTests
             Level = 3,
             Xp = 75,
             Aim = 5,
-            Toughness = 2,
+            Grit = 2,
             Reflexes = 1,
+            Tech = 3,
+            Savvy = 1,
+            Resolve = 2,
             PreferredWeaponId = "smg"
         };
         crew.AddInjury("wounded");
@@ -35,8 +38,11 @@ public class SF3CrewMemberSerializationTests
         AssertInt(restored.Level).IsEqual(3);
         AssertInt(restored.Xp).IsEqual(75);
         AssertInt(restored.Aim).IsEqual(5);
-        AssertInt(restored.Toughness).IsEqual(2);
+        AssertInt(restored.Grit).IsEqual(2);
         AssertInt(restored.Reflexes).IsEqual(1);
+        AssertInt(restored.Tech).IsEqual(3);
+        AssertInt(restored.Savvy).IsEqual(1);
+        AssertInt(restored.Resolve).IsEqual(2);
         AssertString(restored.PreferredWeaponId).IsEqual("smg");
         AssertInt(restored.Injuries.Count).IsEqual(2);
         AssertBool(restored.Injuries.Contains("wounded")).IsTrue();

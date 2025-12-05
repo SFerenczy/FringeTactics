@@ -8,10 +8,11 @@ namespace FringeTactics;
 /// </summary>
 public static class SaveVersion
 {
-    public const int Current = 1;
+    public const int Current = 2;
 
     // Version history:
     // 1 - Initial save format (SF3)
+    // 2 - MG1: Expanded crew stats (Grit, Tech, Savvy, Resolve), stat points
 }
 
 /// <summary>
@@ -115,11 +116,21 @@ public class CrewMemberData
     // Progression
     public int Level { get; set; }
     public int Xp { get; set; }
+    public int UnspentStatPoints { get; set; }
 
-    // Stats
-    public int Aim { get; set; }
-    public int Toughness { get; set; }
+    // Primary stats (MG1)
+    public int Grit { get; set; }
     public int Reflexes { get; set; }
+    public int Aim { get; set; }
+    public int Tech { get; set; }
+    public int Savvy { get; set; }
+    public int Resolve { get; set; }
+
+    // Legacy field for backward compatibility (v1 saves)
+    public int Toughness { get; set; }
+
+    // Traits (MG1 Phase 2)
+    public List<string> TraitIds { get; set; } = new();
 
     // Equipment
     public string PreferredWeaponId { get; set; }
