@@ -36,7 +36,7 @@ Finalize design decisions for contracts, archetypes, and generation context.
 **Why first:**  
 Generation is data-driven. Getting templates right avoids rework.
 
-**Status:** ⚠️ Partially complete (CAMPAIGN_FOUNDATIONS covers contracts, needs archetype details)
+**Status:** Done (see `GN0_IMPLEMENTATION.md` for detailed breakdown)
 
 ---
 

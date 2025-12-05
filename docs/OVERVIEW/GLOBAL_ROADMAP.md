@@ -43,22 +43,18 @@ Have a robust RTwP tactical sandbox running in isolation, plus core Systems Foun
 
 | Item | Status | Notes |
 |------|--------|-------|
-| **Tactical M0–M7** | Complete | Core tactical loop done |
-| **SF0 – RNG & Config** | Partial | Exists ad-hoc, needs formalization |
-| **SF1 – Time System** | Partial | Tactical ticks exist, campaign time needed |
-| **SF2 – Event Bus** | Pending | Interface only for G0 |
-| **Concept: Resources** | Complete | CAMPAIGN_FOUNDATIONS.md §1 |
-| **Concept: Crew** | Complete | CAMPAIGN_FOUNDATIONS.md §3 |
-| **Concept: Contracts** | Complete | CAMPAIGN_FOUNDATIONS.md §2 |
-| **Concept: World Metrics** | Complete | CAMPAIGN_FOUNDATIONS.md §4 |
-| **Concept: Mission I/O** | Complete | CAMPAIGN_FOUNDATIONS.md §7 |
+| **Tactical M0–M7** | ✅ Complete | Core tactical loop done |
+| **SF0 – RNG & Config** | ✅ Complete | RngService, ConfigRegistry |
+| **SF1 – Time System** | ✅ Complete | GameTime with campaign days and tactical ticks |
+| **SF2 – Event Bus** | ✅ Complete | EventBus with typed events |
+| **SF3 – Save/Load** | ✅ Complete | Campaign state persistence |
+| **Concept: Resources** | ✅ Complete | CAMPAIGN_FOUNDATIONS.md §1 |
+| **Concept: Crew** | ✅ Complete | CAMPAIGN_FOUNDATIONS.md §3 |
+| **Concept: Contracts** | ✅ Complete | CAMPAIGN_FOUNDATIONS.md §2 |
+| **Concept: World Metrics** | ✅ Complete | CAMPAIGN_FOUNDATIONS.md §4 |
+| **Concept: Mission I/O** | ✅ Complete | CAMPAIGN_FOUNDATIONS.md §7 |
 
-### Remaining G0 Work
-
-1. **SF0 – Formalize RNG Streams**: Extract existing RNG usage into `RngService` with separate streams.
-2. **SF0 – Formalize Config Loading**: Create `ConfigRegistry` for typed access to weapon/ability/enemy data.
-3. **SF1 – Campaign Time**: Add `CampaignDay` to `TimeState` (tactical ticks already exist).
-4. **SF2 – Event Bus Interface**: Define `EventBus` class and initial event types (implementation can be minimal).
+**G0 Status: ✅ COMPLETE** – Proceed to G1.
 
 ### Playable state
 
