@@ -67,12 +67,16 @@ Implement the core player state with crew management.
 - Unit tests for crew operations.
 - Test data for starting crew.
 
+**Status:** ✅ Complete (see `MG1_IMPLEMENTATION.md`)
+
 ---
 
 ## MG2 – Ship & Resources (G1)
 
 **Goal:**  
 Implement ship state and resource management.
+
+**Implementation:** See `MG2_IMPLEMENTATION.md` for detailed breakdown.
 
 **Key capabilities:**
 

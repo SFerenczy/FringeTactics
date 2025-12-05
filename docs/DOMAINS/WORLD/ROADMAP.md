@@ -65,6 +65,8 @@ Implement minimal world with one system and one station for the G1 jobbing loop.
 - Test world with one hub.
 - Unit tests for queries.
 
+**Implementation:** See `WD1_IMPLEMENTATION.md` for detailed breakdown.
+
 ---
 
 ## WD2 – Sector Topology (G2)

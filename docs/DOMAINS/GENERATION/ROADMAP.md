@@ -45,6 +45,8 @@ Generation is data-driven. Getting templates right avoids rework.
 **Goal:**  
 Generate mission offers for a single hub.
 
+**Status:** ⏳ Pending (see `GN1_IMPLEMENTATION.md` for detailed breakdown)
+
 **Key capabilities:**
 
 - `ContractGenerator` class:

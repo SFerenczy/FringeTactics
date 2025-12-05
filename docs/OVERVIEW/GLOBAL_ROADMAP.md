@@ -137,6 +137,27 @@ From the player’s perspective (and roughly matching GAME_DESIGN core loop):
 * You validate contract schema, mission I/O, and the Management consequences loop without touching the complexity of travel or sim.
 * You already exercise the crew/trait model (through Tactical) and resource flows (through rewards/repairs).
 
+### G1 Checklist
+
+| Item | Status | Notes |
+|------|--------|-------|
+| **MG0 – Concept** | ✅ Complete | See `MG0_IMPLEMENTATION.md` |
+| **WD0 – Concept** | ✅ Complete | See `WD0_IMPLEMENTATION.md` |
+| **GN0 – Concept** | ✅ Complete | See `GN0_IMPLEMENTATION.md` |
+| **MG1 – PlayerState & Crew** | ✅ Complete | See `MG1_IMPLEMENTATION.md` |
+| **WD1 – Single Hub World** | ⏳ Pending | See `WD1_IMPLEMENTATION.md` |
+| **MG2 – Ship & Resources** | ⏳ Pending | See `MG2_IMPLEMENTATION.md` |
+| **GN1 – Contract Generation** | ⏳ Pending | See `GN1_IMPLEMENTATION.md` |
+| **MG3 – Tactical Integration** | ⏳ Pending | `CreateMissionInput` / `ApplyMissionResult` |
+
+### Recommended Implementation Order
+
+1. **MG1 – PlayerState & Crew Core**: Foundation that World and Generation reference
+2. **WD1 – Single Hub World**: Minimal world with one station and facilities
+3. **MG2 – Ship & Resources**: Complete player state with ship and inventory
+4. **GN1 – Contract Generation**: Generate contracts using player power and hub metrics
+5. **MG3 – Tactical Integration**: Wire mission I/O to complete the loop
+
 ---
 
 ## 5. G2 – Sector Map, Travel, and Encounters (no full sim yet)
