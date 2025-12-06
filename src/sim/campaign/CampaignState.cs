@@ -27,6 +27,15 @@ public class CampaignState
     public WorldState World { get; set; }
     public int CurrentNodeId { get; set; } = 0;
     
+    /// <summary>
+    /// Alias for CurrentNodeId for consistency with Travel domain naming.
+    /// </summary>
+    public int CurrentSystemId
+    {
+        get => CurrentNodeId;
+        set => CurrentNodeId = value;
+    }
+    
     // Ship (MG2)
     public Ship Ship { get; set; }
 
@@ -85,8 +94,7 @@ public class CampaignState
             Rng = new RngService(sectorSeed)
         };
 
-        // Initialize world state (G1: single hub)
-        campaign.World = WorldState.CreateSingleHub("Haven Station", "corp");
+        campaign.World = WorldState.CreateTestSector();
         campaign.CurrentNodeId = 0; // Start at Haven Station
 
         // Create starter ship (MG2)

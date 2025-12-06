@@ -756,8 +756,8 @@ public partial class SectorView : Control
                     ? campaign.World.GetFactionName(system.OwningFactionId)
                     : "Unclaimed";
 
-                var fuelCost = TravelSystem.CalculateFuelCost(campaign.World, campaign.CurrentNodeId, system.Id);
-                var canTravel = TravelSystem.CanTravel(campaign, system.Id);
+                var fuelCost = TravelPlanner.GetFuelCost(campaign, system.Id);
+                var canTravel = TravelPlanner.CanTravel(campaign, system.Id);
 
                 nodeInfoLabel.Text = $"{system.Name}\n" +
                                      $"Type: {system.Type}\n" +
@@ -777,7 +777,7 @@ public partial class SectorView : Control
                 }
                 else
                 {
-                    var reason = TravelSystem.GetTravelBlockReason(campaign, system.Id);
+                    var reason = TravelPlanner.GetTravelBlockReason(campaign, system.Id);
                     travelButton.Text = reason ?? "Cannot travel";
                     travelButton.Disabled = true;
                 }

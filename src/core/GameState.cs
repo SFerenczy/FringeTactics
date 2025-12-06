@@ -70,14 +70,25 @@ public partial class GameState : Node
     }
 
     /// <summary>
-    /// Travel to a system.
+    /// Travel to a system using the TV2 travel execution system.
     /// </summary>
     public bool TravelTo(int systemId)
     {
         if (Campaign == null) return false;
 
-        var result = TravelSystem.Travel(Campaign, systemId);
-        if (result == TravelResult.Success)
+        var planner = new TravelPlanner(Campaign.World);
+        var plan = planner.PlanRoute(Campaign.CurrentNodeId, systemId);
+        
+        if (!plan.IsValid)
+        {
+            GD.Print($"[GameState] Travel failed: {plan.InvalidReason}");
+            return false;
+        }
+        
+        var executor = new TravelExecutor(Campaign.Rng);
+        var result = executor.Execute(plan, Campaign);
+        
+        if (result.Status == TravelResultStatus.Completed)
         {
             GD.Print($"[GameState] Arrived at {Campaign.World?.GetSystem(Campaign.CurrentNodeId)?.Name}");
 
@@ -89,14 +100,20 @@ public partial class GameState : Node
 
             return true;
         }
-        else if (result == TravelResult.Ambush)
+        else if (result.Status == TravelResultStatus.Interrupted)
         {
-            // Future: trigger combat encounter
-            GD.Print("[GameState] Ambush encountered!");
-            return true;
+            if (result.InterruptReason == TravelInterruptReason.InsufficientFuel)
+            {
+                GD.Print("[GameState] Travel failed: insufficient fuel");
+            }
+            else
+            {
+                GD.Print($"[GameState] Travel interrupted: {result.InterruptReason}");
+            }
+            return false;
         }
 
-        GD.Print($"[GameState] Travel failed: {result}");
+        GD.Print($"[GameState] Travel failed: {result.Status}");
         return false;
     }
 

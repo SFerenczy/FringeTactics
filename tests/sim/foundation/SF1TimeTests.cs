@@ -307,12 +307,11 @@ public class JobDeadlineTests
 public class TravelTimeTests
 {
     [TestCase]
-    public void TravelSystem_CalculateTravelDays_ReturnsMinimumOne()
+    public void TravelCosts_CalculateTimeDays_ReturnsMinimumOne()
     {
-        var world = WorldState.CreateSingleHub();
-        // Even for very close nodes, minimum is 1 day
-        int days = TravelSystem.CalculateTravelDays(world, 0, 0);
-        AssertBool(days >= TravelSystem.MIN_TRAVEL_DAYS).IsTrue();
+        // Even for very short distances, minimum is 1 day
+        int days = TravelCosts.CalculateTimeDays(10f, 100f);
+        AssertBool(days >= 1).IsTrue();
     }
 
     [TestCase]
@@ -326,17 +325,20 @@ public class TravelTimeTests
         if (currentSystem != null && currentSystem.Connections.Count > 0)
         {
             int targetId = currentSystem.Connections[0];
-            int expectedDays = TravelSystem.CalculateTravelDays(campaign.World, campaign.CurrentNodeId, targetId);
+            var planner = new TravelPlanner(campaign.World);
+            var plan = planner.PlanRoute(campaign.CurrentNodeId, targetId);
+            int expectedDays = plan.TotalTimeDays;
 
-            var result = TravelSystem.Travel(campaign, targetId);
+            var executor = new TravelExecutor(campaign.Rng);
+            var result = executor.Execute(plan, campaign);
 
-            AssertObject(result).IsEqual(TravelResult.Success);
+            AssertThat(result.Status).IsEqual(TravelResultStatus.Completed);
             AssertInt(campaign.Time.CurrentDay).IsEqual(startDay + expectedDays);
         }
     }
 
     [TestCase]
-    public void TravelSystem_GetTravelCostSummary_IncludesTimeAndFuel()
+    public void TravelPlanner_CanTravel_ChecksFuelAndRoute()
     {
         var campaign = CampaignState.CreateNew();
 
@@ -344,16 +346,15 @@ public class TravelTimeTests
         if (currentSystem != null && currentSystem.Connections.Count > 0)
         {
             int targetId = currentSystem.Connections[0];
-            string summary = TravelSystem.GetTravelCostSummary(campaign, targetId);
+            bool canTravel = TravelPlanner.CanTravel(campaign, targetId);
 
-            // Should contain both fuel and day information
-            AssertBool(summary.Contains("fuel")).IsTrue();
-            AssertBool(summary.Contains("day")).IsTrue();
+            // Should be able to travel with starting fuel
+            AssertBool(canTravel).IsTrue();
         }
     }
 
     [TestCase]
-    public void TravelSystem_MultipleTravels_AccumulateTime()
+    public void TravelExecutor_MultipleTravels_AccumulateTime()
     {
         var campaign = CampaignState.CreateNew();
         int startDay = campaign.Time.CurrentDay;
@@ -362,14 +363,19 @@ public class TravelTimeTests
         var currentSystem = campaign.GetCurrentSystem();
         if (currentSystem != null && currentSystem.Connections.Count > 0)
         {
+            var planner = new TravelPlanner(campaign.World);
+            var executor = new TravelExecutor(campaign.Rng);
+
             // Travel to first connected system
             int firstTarget = currentSystem.Connections[0];
-            totalDays += TravelSystem.CalculateTravelDays(campaign.World, campaign.CurrentNodeId, firstTarget);
-            TravelSystem.Travel(campaign, firstTarget);
+            var plan1 = planner.PlanRoute(campaign.CurrentNodeId, firstTarget);
+            totalDays += plan1.TotalTimeDays;
+            executor.Execute(plan1, campaign);
 
             // Travel back
-            totalDays += TravelSystem.CalculateTravelDays(campaign.World, campaign.CurrentNodeId, 0);
-            TravelSystem.Travel(campaign, 0);
+            var plan2 = planner.PlanRoute(campaign.CurrentNodeId, 0);
+            totalDays += plan2.TotalTimeDays;
+            executor.Execute(plan2, campaign);
 
             AssertInt(campaign.Time.CurrentDay).IsEqual(startDay + totalDays);
         }

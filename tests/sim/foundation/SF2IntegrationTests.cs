@@ -215,20 +215,23 @@ public class SF2IntegrationTests
         if (currentSystem != null && currentSystem.Connections.Count > 0)
         {
             int targetId = currentSystem.Connections[0];
-            var result = TravelSystem.Travel(campaign, targetId);
+            var planner = new TravelPlanner(campaign.World);
+            var plan = planner.PlanRoute(campaign.CurrentNodeId, targetId);
+            var executor = new TravelExecutor(campaign.Rng);
+            var result = executor.Execute(plan, campaign);
 
-            if (result == TravelResult.Success)
+            if (result.Status == TravelResultStatus.Completed)
             {
                 AssertInt(received.Count).IsEqual(1);
-                AssertInt(received[0].ToNodeId).IsEqual(targetId);
-                AssertInt(received[0].FuelCost).IsGreater(0);
-                AssertInt(received[0].DaysCost).IsGreater(0);
+                AssertInt(received[0].ToSystemId).IsEqual(targetId);
+                AssertInt(received[0].TotalFuel).IsGreater(0);
+                AssertInt(received[0].TotalDays).IsGreater(0);
             }
         }
     }
 
     [TestCase]
-    public void TravelSystem_PublishesResourceChangedEvent()
+    public void TravelExecutor_PublishesResourceChangedEvent()
     {
         var bus = new EventBus();
         var campaign = CampaignState.CreateNew();
@@ -243,9 +246,12 @@ public class SF2IntegrationTests
         if (currentSystem != null && currentSystem.Connections.Count > 0)
         {
             int targetId = currentSystem.Connections[0];
-            var result = TravelSystem.Travel(campaign, targetId);
+            var planner = new TravelPlanner(campaign.World);
+            var plan = planner.PlanRoute(campaign.CurrentNodeId, targetId);
+            var executor = new TravelExecutor(campaign.Rng);
+            var result = executor.Execute(plan, campaign);
 
-            if (result == TravelResult.Success)
+            if (result.Status == TravelResultStatus.Completed)
             {
                 // Should have at least one fuel resource change
                 var fuelEvents = received.FindAll(e => e.ResourceType == "fuel");

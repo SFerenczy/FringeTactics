@@ -262,18 +262,18 @@ public class SF2EventTypesTests
     public void TravelCompletedEvent_ContainsCorrectData()
     {
         var evt = new TravelCompletedEvent(
-            FromNodeId: 0,
-            ToNodeId: 2,
-            ToNodeName: "Mining Station",
-            FuelCost: 15,
-            DaysCost: 2
+            FromSystemId: 0,
+            ToSystemId: 2,
+            TotalDays: 2,
+            TotalFuel: 15,
+            EncounterCount: 0
         );
 
-        AssertInt(evt.FromNodeId).IsEqual(0);
-        AssertInt(evt.ToNodeId).IsEqual(2);
-        AssertString(evt.ToNodeName).IsEqual("Mining Station");
-        AssertInt(evt.FuelCost).IsEqual(15);
-        AssertInt(evt.DaysCost).IsEqual(2);
+        AssertInt(evt.FromSystemId).IsEqual(0);
+        AssertInt(evt.ToSystemId).IsEqual(2);
+        AssertInt(evt.TotalDays).IsEqual(2);
+        AssertInt(evt.TotalFuel).IsEqual(15);
+        AssertInt(evt.EncounterCount).IsEqual(0);
     }
 
     [TestCase]

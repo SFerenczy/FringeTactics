@@ -14,12 +14,22 @@ namespace FringeTactics;
 //   - ResourceChangedEvent (TravelSystem, CampaignState)
 //   - JobAcceptedEvent (CampaignState.AcceptJob)
 //   - JobCompletedEvent (CampaignState.ApplyMissionOutput) [MG3]
-//   - TravelCompletedEvent (TravelSystem.Travel)
+//   - TravelCompletedEvent (TravelExecutor)
 //   - FactionRepChangedEvent (CampaignState.ModifyFactionRep)
 //   - CrewDiedEvent (CampaignState.ApplyMissionOutput) [MG3]
 //   - CrewInjuredEvent (CampaignState.ApplyMissionOutput) [MG3]
 //   - CrewLeveledUpEvent (CampaignState.ApplyMissionOutput) [MG3]
 //   - LootAcquiredEvent (CampaignState.ApplyMissionOutput) [MG3]
+//
+// TV2 Travel Execution events (TravelExecutor):
+//   - TravelStartedEvent
+//   - TravelSegmentStartedEvent
+//   - TravelSegmentCompletedEvent
+//   - TravelEncounterTriggeredEvent
+//   - TravelEncounterResolvedEvent
+//   - TravelCompletedEvent (consolidated)
+//   - TravelInterruptedEvent
+//   - PlayerMovedEvent
 //
 // Planned events (defined but not yet published):
 //   - MissionPhaseChangedEvent
@@ -167,14 +177,14 @@ public readonly record struct JobCompletedEvent(
 );
 
 /// <summary>
-/// Published when player travels to a new node.
+/// Published when travel execution completes successfully.
 /// </summary>
 public readonly record struct TravelCompletedEvent(
-    int FromNodeId,
-    int ToNodeId,
-    string ToNodeName,
-    int FuelCost,
-    int DaysCost
+    int FromSystemId,
+    int ToSystemId,
+    int TotalDays,
+    int TotalFuel,
+    int EncounterCount
 );
 
 /// <summary>
@@ -361,4 +371,72 @@ public readonly record struct LootAcquiredEvent(
     string ItemName,
     int Quantity,
     string Source
+);
+
+// ============================================================================
+// TRAVEL EXECUTION EVENTS (TV2)
+// ============================================================================
+
+/// <summary>
+/// Published when travel execution begins.
+/// </summary>
+public readonly record struct TravelStartedEvent(
+    int FromSystemId,
+    int ToSystemId,
+    int EstimatedDays,
+    int EstimatedFuel
+);
+
+/// <summary>
+/// Published when a travel segment begins.
+/// </summary>
+public readonly record struct TravelSegmentStartedEvent(
+    int FromSystemId,
+    int ToSystemId,
+    int SegmentIndex,
+    int SegmentDays
+);
+
+/// <summary>
+/// Published when a travel segment completes.
+/// </summary>
+public readonly record struct TravelSegmentCompletedEvent(
+    int FromSystemId,
+    int ToSystemId,
+    int FuelConsumed,
+    int DaysElapsed
+);
+
+/// <summary>
+/// Published when an encounter is triggered during travel.
+/// </summary>
+public readonly record struct TravelEncounterTriggeredEvent(
+    int SystemId,
+    string EncounterType,
+    string EncounterId
+);
+
+/// <summary>
+/// Published when a travel encounter is resolved.
+/// </summary>
+public readonly record struct TravelEncounterResolvedEvent(
+    string EncounterId,
+    string Outcome
+);
+
+/// <summary>
+/// Published when travel execution is interrupted.
+/// </summary>
+public readonly record struct TravelInterruptedEvent(
+    int CurrentSystemId,
+    string Reason
+);
+
+/// <summary>
+/// Published when player position changes during travel.
+/// </summary>
+public readonly record struct PlayerMovedEvent(
+    int FromSystemId,
+    int ToSystemId,
+    string SystemName
 );

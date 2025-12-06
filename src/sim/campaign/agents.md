@@ -58,13 +58,6 @@ Campaign/meta-game state: crew management, resources, mission tracking, jobs.
   - Personality: brave, cautious, reckless, cold_blooded, empathetic
   - Acquired: vengeful, hardened, scarred
   - Injury (permanent): damaged_eye, shattered_knee, nerve_damage, head_trauma, chronic_pain
-- **TravelSystem.cs** - Travel between nodes:
-  - Fuel cost based on distance
-  - Time cost based on distance (minimum 1 day)
-  - `CanTravel()`, `Travel()` methods
-  - `CalculateTravelDays()`, `GetTravelCostSummary()`
-  - Publishes TravelCompletedEvent and ResourceChangedEvent (SF2)
-  - Future: ambush encounters
 - **Job.cs** - Job/contract definition:
   - JobDifficulty enum: Easy, Medium, Hard
   - JobReward: money, parts, fuel, ammo
@@ -119,5 +112,6 @@ Campaign/meta-game state: crew management, resources, mission tracking, jobs.
 ## Conventions
 
 - State objects are mutable containers
-- Business logic in stateless system classes (JobSystem, TravelSystem)
+- Business logic in stateless system classes (JobSystem)
+- Travel logic moved to `src/sim/travel/` (TravelPlanner, TravelExecutor)
 - Events for significant state changes
