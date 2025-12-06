@@ -44,7 +44,7 @@ Travel touches World, Management, and Encounter. Clear contracts prevent rework.
 
 **Implementation:** See `TV0_IMPLEMENTATION.md` for detailed breakdown.
 
-**Status:** 🔄 In Progress
+**Status:** ✅ Complete
 
 ---
 

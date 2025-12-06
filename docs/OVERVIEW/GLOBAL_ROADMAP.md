@@ -227,7 +227,7 @@ Now a typical 30–60 minute session starts looking like your intended experienc
 |------|--------|-------|
 | **WD2 – Sector Topology** | ✅ Complete | Multi-system graph with routes |
 | **WD3 – Metrics & Tags** | ✅ Complete | Live metrics and tag system (see `WD3_IMPLEMENTATION.md`) |
-| **TV0 – Concept** | 🔄 In Progress | Travel design finalization (see `TV0_IMPLEMENTATION.md`) |
+| **TV0 – Concept** | ✅ Complete | Travel design finalization (see `TV0_IMPLEMENTATION.md`) |
 | **TV1 – Route Planning** | ⬜ Pending | Pathfinding and travel plans |
 | **TV2 – Travel Execution** | ⬜ Pending | Time/fuel consumption, encounter triggers |
 | **EN0 – Concept** | ⬜ Pending | Encounter design finalization |
