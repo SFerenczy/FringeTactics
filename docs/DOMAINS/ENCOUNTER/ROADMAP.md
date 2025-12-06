@@ -63,7 +63,11 @@ Encounters are data-driven. Template structure must be stable before runtime.
 **Goal:**  
 Implement the encounter state machine that runs encounter instances.
 
-**Depends on:** EN0 ✅
+**Depends on:** EN0 (can proceed in parallel with minimal design)
+
+**Status:** ✅ Complete
+
+**Implementation:** See `EN1_IMPLEMENTATION.md` for detailed breakdown.
 
 **Key capabilities:**
 
@@ -133,8 +137,6 @@ Implement the encounter state machine that runs encounter instances.
 | `src/sim/encounter/EncounterContext.cs` | Evaluation context |
 | `src/sim/encounter/EncounterRunner.cs` | State machine |
 | `tests/sim/encounter/EN1*.cs` | Test files |
-
-**Status:** ⬜ Pending
 
 ---
 

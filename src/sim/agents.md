@@ -19,6 +19,7 @@ Pure game logic. The "inside" of the hexagonal architecture.
 - **campaign/** - Strategic layer: crew, ship, jobs, sector state
 - **combat/** - Tactical layer: actors, combat resolution, time system
 - **data/** - Configuration structs and data definitions
+- **encounter/** - Encounter runtime: templates, conditions, effects (EN1+)
 - **generation/** - Procedural content generation (contracts, encounters)
 - **travel/** - Route planning and travel execution (TV1+)
 - **world/** - World state, systems, routes, factions

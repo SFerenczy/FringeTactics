@@ -22,29 +22,29 @@ This document defines the **implementation order** for the Travel domain.
 **Goal:**  
 Finalize design decisions for travel mechanics before implementation.
 
-**Key deliverables:**
+**Depends on:** WD2 (Sector Topology) ✅, WD3 (Metrics & Tags) ✅
 
-- Review DOMAIN.md and CAMPAIGN_FOUNDATIONS.md sections 1, 4, 5.
-- Define travel cost model:
-  - Fuel consumption formula (distance × ship efficiency).
-  - Time cost formula (distance / ship speed).
-  - Supplies consumption (optional for G2).
-- Define risk model:
-  - Base encounter chance per route segment.
-  - Modifiers from route tags, system metrics, cargo.
-- Define `TravelPlan` structure:
-  - Route segments, total cost, risk estimate.
-- Define `TravelState` structure:
-  - Current position, progress, pending encounters.
-- Document route preference options:
-  - Fast vs safe, avoid faction, etc.
-
-**Why first:**  
-Travel touches World, Management, and Encounter. Clear contracts prevent rework.
+**Status:** ✅ Complete
 
 **Implementation:** See `TV0_IMPLEMENTATION.md` for detailed breakdown.
 
-**Status:** ✅ Complete
+**Key deliverables:**
+
+- [x] Review DOMAIN.md and CAMPAIGN_FOUNDATIONS.md sections 1, 4, 5
+- [x] Define travel cost model:
+  - Fuel: `ceil(distance * 0.1 / efficiency)`
+  - Time: `max(1, ceil(distance / speed))`
+- [x] Define risk model:
+  - Base: `hazard * 0.1` per day
+  - Tag modifiers (patrolled -10%, dangerous +10%, etc.)
+  - Metric modifiers (security, criminal activity)
+- [x] Define data structures:
+  - `TravelSegment`, `TravelPlan`, `TravelState`, `TravelContext`
+- [x] Document edge cases:
+  - Out of fuel, no route, encounter outcomes
+
+**Why first:**  
+Travel touches World, Management, and Encounter. Clear contracts prevent rework.
 
 ---
 
@@ -53,48 +53,46 @@ Travel touches World, Management, and Encounter. Clear contracts prevent rework.
 **Goal:**  
 Implement route calculation and travel plan creation.
 
-**Depends on:** WD2 (Sector Topology) ✅, WD3 (Metrics & Tags) ✅, TV0 (Concept) ✅
-
-**Status:** ✅ Complete
-
-**Implementation:** See `TV1_IMPLEMENTATION.md` for detailed breakdown.
+**Depends on:** WD2 (Sector Topology) ✅
 
 **Key capabilities:**
 
 - `TravelPlanner` class:
-  - Input: origin system, destination system.
+  - Input: origin system, destination system, preferences.
   - Output: `TravelPlan` with segments, costs, risk.
-  - A* pathfinding with weighted cost function.
+- Pathfinding over world graph:
+  - A* or Dijkstra with configurable cost function.
+  - Cost function weights: distance, time, fuel, risk.
 - `TravelSegment` class:
   - From/to system IDs.
-  - Distance, fuel cost, time cost.
-  - Encounter chance with tag/metric modifiers.
+  - Distance, base time, base fuel cost.
+  - Route tags and hazard modifiers.
 - `TravelPlan` class:
   - Ordered list of segments.
-  - Computed totals: fuel, time, hazard, encounter chance.
-  - Validity check (route exists, fuel sufficient).
-- `TravelCosts` utility:
-  - Fuel formula: `ceil(distance * 0.1 / efficiency)`
-  - Time formula: `ceil(distance / speed)`
-  - Encounter chance: `hazard * 0.1 + tagModifiers + metricModifiers`
+  - Computed totals: time, fuel, risk score.
+  - Validity check (enough fuel, route exists).
+- Route preference support:
+  - `TravelPreferences`: prioritize speed, safety, or fuel efficiency.
+  - Avoid specific factions or system tags.
 
 **Deliverables:**
-- `TravelPlanner`, `TravelPlan`, `TravelSegment`, `TravelCosts` classes
-- A* pathfinding implementation
-- Unit tests (~25 tests across 3 files)
-- Integration with test sector (8 systems, 7 routes)
+- `TravelPlanner`, `TravelPlan`, `TravelSegment` classes.
+- Pathfinding implementation.
+- Unit tests for route calculation.
+- Test sector with 5-10 systems for validation.
 
 **Files to create:**
 | File | Purpose |
 |------|---------|
-| `src/sim/travel/agents.md` | Directory documentation |
-| `src/sim/travel/TravelSegment.cs` | Single route step with costs |
-| `src/sim/travel/TravelPlan.cs` | Complete route with aggregates |
-| `src/sim/travel/TravelCosts.cs` | Cost calculation utilities |
-| `src/sim/travel/TravelPlanner.cs` | A* pathfinding and plan creation |
-| `tests/sim/travel/TV1TravelCostsTests.cs` | Cost formula tests |
-| `tests/sim/travel/TV1TravelSegmentTests.cs` | Segment tests |
-| `tests/sim/travel/TV1TravelPlannerTests.cs` | Planner tests |
+| `src/sim/travel/TravelSegment.cs` | Single route step |
+| `src/sim/travel/TravelPlan.cs` | Complete route with costs |
+| `src/sim/travel/TravelPreferences.cs` | Route preference options |
+| `src/sim/travel/TravelPlanner.cs` | Pathfinding and plan creation |
+| `tests/sim/travel/TV1*.cs` | Test files |
+
+**Status:** ✅ Complete
+
+**Implementation:** See `TV1_IMPLEMENTATION.md` for detailed breakdown.
 
 ---
 
@@ -103,37 +101,30 @@ Implement route calculation and travel plan creation.
 **Goal:**  
 Execute travel plans: consume resources, advance time, trigger encounters.
 
-**Depends on:** TV1 ✅
-
-**Soft dependencies** (can be stubbed): EN1 (Encounter Runtime), MG4 (Encounter Integration)
-
-**Status:** ✅ Complete
-
-**Implementation:** See `TV2_IMPLEMENTATION.md` for detailed breakdown.
+**Depends on:** TV1 ✅, EN1 (Encounter Runtime) 🔄, MG4 (Encounter Integration) 🔄
 
 **Key capabilities:**
 
 - `TravelExecutor` class:
   - Input: `TravelPlan`, `CampaignState`.
   - Output: `TravelResult` with events that occurred.
-  - Day-by-day execution with encounter rolls.
 - Resource consumption:
-  - Deduct fuel proportionally per day.
+  - Deduct fuel per segment via Management.
   - Fail gracefully if fuel runs out mid-travel.
 - Time advancement:
-  - Advance campaign time per day.
+  - Advance campaign time per segment.
   - Use `CampaignTime` from Systems Foundation.
 - Encounter triggering:
-  - Roll for encounters each day based on segment risk.
-  - Create `TravelContext` for encounter generation.
-  - Stub auto-resolves encounters (EN1 integration later).
+  - Roll for encounters per segment based on risk.
+  - Pass `TravelContext` to Generation for encounter instantiation.
+  - Pause travel when encounter fires.
 - `TravelState` class:
-  - Current segment index, day within segment.
+  - Current segment index, progress within segment.
   - Pending encounter (if any).
   - Resume capability after encounter resolution.
 - `TravelResult` class:
-  - Completed/Interrupted/PausedForEncounter status.
-  - Fuel consumed, days elapsed, encounter history.
+  - Success/failure/interrupted status.
+  - List of events (encounters, fuel consumed, time passed).
   - Final position.
 - `TravelContext` class:
   - Current route, segment, system tags.
@@ -142,11 +133,11 @@ Execute travel plans: consume resources, advance time, trigger encounters.
 
 **Deliverables:**
 - `TravelExecutor`, `TravelState`, `TravelResult`, `TravelContext` classes.
-- Integration with Management (fuel consumption via `SpendFuel()`).
+- Integration with Management (fuel consumption).
 - Integration with CampaignTime (time advancement).
-- Encounter trigger hooks with stub (real integration in EN1).
-- Travel events for UI/logging.
-- Unit tests (~15 tests across 3 files).
+- Encounter trigger hooks (calls Generation, pauses for Encounter).
+- Unit tests for execution flow.
+- Integration tests with mock encounters.
 
 **Files to create:**
 | File | Purpose |
@@ -155,21 +146,20 @@ Execute travel plans: consume resources, advance time, trigger encounters.
 | `src/sim/travel/TravelResult.cs` | Completed travel outcome |
 | `src/sim/travel/TravelContext.cs` | Context for encounter generation |
 | `src/sim/travel/TravelExecutor.cs` | Main execution logic |
-| `tests/sim/travel/TV2TravelStateTests.cs` | State tests |
-| `tests/sim/travel/TV2TravelExecutorTests.cs` | Executor tests |
-| `tests/sim/travel/TV2TravelResultTests.cs` | Result tests |
+| `tests/sim/travel/TV2*.cs` | Test files |
 
 **Events to add:**
 ```csharp
-public record TravelStartedEvent(int FromSystemId, int ToSystemId, int EstimatedDays, int EstimatedFuel);
-public record TravelSegmentStartedEvent(int FromSystemId, int ToSystemId, int SegmentIndex, int SegmentDays);
-public record TravelSegmentCompletedEvent(int FromSystemId, int ToSystemId, int FuelConsumed, int DaysElapsed);
-public record TravelEncounterTriggeredEvent(int SystemId, string EncounterType, string EncounterId);
-public record TravelEncounterResolvedEvent(string EncounterId, string Outcome);
+public record TravelStartedEvent(int FromSystemId, int ToSystemId, int EstimatedDays);
+public record TravelSegmentCompletedEvent(int FromSystemId, int ToSystemId, int FuelConsumed);
+public record TravelEncounterTriggeredEvent(int SystemId, string EncounterType);
 public record TravelCompletedEvent(int DestinationSystemId, int TotalDays, int TotalFuel);
 public record TravelInterruptedEvent(int CurrentSystemId, string Reason);
-public record PlayerMovedEvent(int FromSystemId, int ToSystemId, string SystemName);
 ```
+
+**Status:** ✅ Complete
+
+**Implementation:** See `TV2_IMPLEMENTATION.md` for detailed breakdown.
 
 ---
 
@@ -202,12 +192,12 @@ Travel risk responds to live simulation metrics.
 
 ## G2 Scope Summary
 
-| Milestone | Phase | Notes |
-|-----------|-------|-------|
-| TV0 | G2 | Concept finalization |
-| TV1 | G2 | Route planning |
-| TV2 | G2 | Travel execution |
-| TV3 | G3 | Simulation integration |
+| Milestone | Phase | Status | Notes |
+|-----------|-------|--------|-------|
+| TV0 | G2 | ✅ Complete | Concept finalization |
+| TV1 | G2 | ✅ Complete | Route planning |
+| TV2 | G2 | ✅ Complete | Travel execution |
+| TV3 | G3 | ⬜ Pending | Simulation integration |
 
 ---
 

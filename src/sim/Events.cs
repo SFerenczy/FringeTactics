@@ -31,6 +31,12 @@ namespace FringeTactics;
 //   - TravelInterruptedEvent
 //   - PlayerMovedEvent
 //
+// EN1 Encounter events (EncounterRunner):
+//   - EncounterStartedEvent
+//   - EncounterNodeEnteredEvent
+//   - EncounterOptionSelectedEvent
+//   - EncounterCompletedEvent
+//
 // Planned events (defined but not yet published):
 //   - MissionPhaseChangedEvent
 //   - AlarmStateChangedEvent
@@ -439,4 +445,46 @@ public readonly record struct PlayerMovedEvent(
     int FromSystemId,
     int ToSystemId,
     string SystemName
+);
+
+// ============================================================================
+// ENCOUNTER EVENTS (EN1)
+// ============================================================================
+
+/// <summary>
+/// Published when an encounter starts.
+/// </summary>
+public readonly record struct EncounterStartedEvent(
+    string EncounterId,
+    string TemplateId,
+    string TemplateName
+);
+
+/// <summary>
+/// Published when entering a new node in an encounter.
+/// </summary>
+public readonly record struct EncounterNodeEnteredEvent(
+    string EncounterId,
+    string NodeId,
+    bool RequiresInput
+);
+
+/// <summary>
+/// Published when the player selects an option in an encounter.
+/// </summary>
+public readonly record struct EncounterOptionSelectedEvent(
+    string EncounterId,
+    string NodeId,
+    string OptionId,
+    int OptionIndex
+);
+
+/// <summary>
+/// Published when an encounter completes.
+/// </summary>
+public readonly record struct EncounterCompletedEvent(
+    string EncounterId,
+    string TemplateId,
+    int EffectCount,
+    int NodesVisited
 );
