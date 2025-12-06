@@ -488,3 +488,21 @@ public readonly record struct EncounterCompletedEvent(
     int EffectCount,
     int NodesVisited
 );
+
+/// <summary>
+/// Published when a skill check is resolved during an encounter (EN2).
+/// </summary>
+public readonly record struct SkillCheckResolvedEvent(
+    string EncounterId,
+    string CrewName,
+    string StatName,
+    int Difficulty,
+    int Roll,
+    int StatValue,
+    int TraitBonus,
+    int Total,
+    bool Success,
+    int Margin,
+    bool IsCriticalSuccess,
+    bool IsCriticalFailure
+);

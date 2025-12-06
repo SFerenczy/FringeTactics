@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -73,7 +74,7 @@ public class EncounterRunner
             optionIndex
         ));
 
-        var outcome = ResolveOutcome(option, context);
+        var outcome = ResolveOutcome(option, context, instance.InstanceId);
 
         if (outcome == null)
         {
@@ -192,16 +193,37 @@ public class EncounterRunner
 
     // === Private Methods ===
 
-    private EncounterOutcome ResolveOutcome(EncounterOption option, EncounterContext context)
+    private EncounterOutcome ResolveOutcome(EncounterOption option, EncounterContext context, string encounterId)
     {
         if (option == null) return null;
 
-        // EN2 will add skill check resolution here
-        // For now, just return the direct outcome
         if (option.HasSkillCheck)
         {
-            // Stub: always succeed for EN1
-            return option.SuccessOutcome ?? option.Outcome;
+            if (context?.Rng == null)
+            {
+                SimLog.Log("[Encounter] Warning: No RNG provided for skill check, using random seed");
+            }
+            var rng = context?.Rng ?? new RngStream("encounter_fallback", Environment.TickCount);
+            var result = SkillCheck.Resolve(option.SkillCheck, context, rng);
+
+            eventBus?.Publish(new SkillCheckResolvedEvent(
+                encounterId,
+                result.Crew?.Name ?? "Unknown",
+                result.Stat.ToString(),
+                result.Difficulty,
+                result.Roll,
+                result.StatValue,
+                result.TraitBonus,
+                result.Total,
+                result.Success,
+                result.Margin,
+                result.IsCriticalSuccess,
+                result.IsCriticalFailure
+            ));
+
+            return result.Success
+                ? option.SuccessOutcome ?? option.Outcome
+                : option.FailureOutcome ?? option.Outcome;
         }
 
         return option.Outcome;

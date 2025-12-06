@@ -81,6 +81,58 @@ public class EncounterContext
         return Crew.OrderByDescending(c => c.GetStat(stat)).First();
     }
 
+    // === Trait Query Methods (EN2) ===
+
+    /// <summary>
+    /// Get all unique traits across all crew members.
+    /// </summary>
+    public HashSet<string> GetAllCrewTraits()
+    {
+        var traits = new HashSet<string>();
+        foreach (var crew in Crew)
+        {
+            foreach (var trait in crew.TraitIds ?? new List<string>())
+            {
+                traits.Add(trait);
+            }
+        }
+        return traits;
+    }
+
+    /// <summary>
+    /// Get crew members with a specific trait.
+    /// </summary>
+    public List<CrewSnapshot> GetCrewWithTrait(string traitId)
+    {
+        if (string.IsNullOrEmpty(traitId)) return new List<CrewSnapshot>();
+        return Crew.Where(c => c.TraitIds?.Contains(traitId) ?? false).ToList();
+    }
+
+    /// <summary>
+    /// Count how many crew members have a specific trait.
+    /// </summary>
+    public int CountCrewWithTrait(string traitId)
+    {
+        if (string.IsNullOrEmpty(traitId)) return 0;
+        return Crew.Count(c => c.TraitIds?.Contains(traitId) ?? false);
+    }
+
+    /// <summary>
+    /// Get the best crew member for a skill check, considering trait bonuses.
+    /// </summary>
+    public CrewSnapshot GetBestCrewForCheck(SkillCheckDef check)
+    {
+        return SkillCheck.SelectBestCrew(check, this);
+    }
+
+    /// <summary>
+    /// Preview success chance for a skill check.
+    /// </summary>
+    public int GetSuccessChance(SkillCheckDef check)
+    {
+        return SkillCheck.GetSuccessChance(check, this);
+    }
+
     // === Factory Methods ===
 
     public static EncounterContext FromCampaign(CampaignState campaign)

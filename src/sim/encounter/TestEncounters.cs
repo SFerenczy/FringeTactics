@@ -422,4 +422,274 @@ public static class TestEncounters
             }
         };
     }
+
+    // ========================================================================
+    // EN2 SKILL CHECK TEST ENCOUNTERS
+    // ========================================================================
+
+    /// <summary>
+    /// Encounter with skill check options.
+    /// Tests skill check resolution with trait bonuses.
+    /// </summary>
+    public static EncounterTemplate CreateSkillCheckEncounter()
+    {
+        return new EncounterTemplate
+        {
+            Id = "test_skillcheck",
+            Name = "Skill Check Test Encounter",
+            Tags = new HashSet<string> { "test", "skillcheck" },
+            EntryNodeId = "start",
+            Nodes = new Dictionary<string, EncounterNode>
+            {
+                ["start"] = new EncounterNode
+                {
+                    Id = "start",
+                    TextKey = "test.skillcheck.start",
+                    Options = new List<EncounterOption>
+                    {
+                        new EncounterOption
+                        {
+                            Id = "hack_terminal",
+                            TextKey = "test.skillcheck.hack",
+                            SkillCheck = new SkillCheckDef
+                            {
+                                Stat = CrewStatType.Tech,
+                                Difficulty = 12,
+                                BonusTraits = new List<string> { "corporate", "spacer" }
+                            },
+                            SuccessOutcome = EncounterOutcome.GotoWith("success",
+                                EncounterEffect.AddCredits(200)),
+                            FailureOutcome = EncounterOutcome.GotoWith("failure",
+                                EncounterEffect.TimeDelay(1))
+                        },
+                        new EncounterOption
+                        {
+                            Id = "talk_guard",
+                            TextKey = "test.skillcheck.talk",
+                            SkillCheck = new SkillCheckDef
+                            {
+                                Stat = CrewStatType.Savvy,
+                                Difficulty = 10,
+                                BonusTraits = new List<string> { "smuggler", "empathetic" },
+                                PenaltyTraits = new List<string> { "reckless" }
+                            },
+                            SuccessOutcome = EncounterOutcome.Goto("success"),
+                            FailureOutcome = EncounterOutcome.GotoWith("caught",
+                                EncounterEffect.FactionRep("security", -10))
+                        },
+                        new EncounterOption
+                        {
+                            Id = "force_entry",
+                            TextKey = "test.skillcheck.force",
+                            Outcome = EncounterOutcome.GotoWith("alarm",
+                                EncounterEffect.ShipDamage(15))
+                        }
+                    }
+                },
+                ["success"] = new EncounterNode
+                {
+                    Id = "success",
+                    TextKey = "test.skillcheck.success",
+                    AutoTransition = EncounterOutcome.EndWith(
+                        EncounterEffect.AddCredits(100))
+                },
+                ["failure"] = new EncounterNode
+                {
+                    Id = "failure",
+                    TextKey = "test.skillcheck.failure",
+                    AutoTransition = EncounterOutcome.End()
+                },
+                ["caught"] = new EncounterNode
+                {
+                    Id = "caught",
+                    TextKey = "test.skillcheck.caught",
+                    AutoTransition = EncounterOutcome.End()
+                },
+                ["alarm"] = new EncounterNode
+                {
+                    Id = "alarm",
+                    TextKey = "test.skillcheck.alarm",
+                    AutoTransition = EncounterOutcome.End()
+                }
+            }
+        };
+    }
+
+    /// <summary>
+    /// Encounter with easy skill check (difficulty 5).
+    /// For testing guaranteed success with moderate stats.
+    /// </summary>
+    public static EncounterTemplate CreateEasySkillCheckEncounter()
+    {
+        return new EncounterTemplate
+        {
+            Id = "test_easy_skillcheck",
+            Name = "Easy Skill Check Test",
+            Tags = new HashSet<string> { "test", "skillcheck" },
+            EntryNodeId = "start",
+            Nodes = new Dictionary<string, EncounterNode>
+            {
+                ["start"] = new EncounterNode
+                {
+                    Id = "start",
+                    TextKey = "test.easy.start",
+                    Options = new List<EncounterOption>
+                    {
+                        new EncounterOption
+                        {
+                            Id = "easy_check",
+                            TextKey = "test.easy.check",
+                            SkillCheck = new SkillCheckDef
+                            {
+                                Stat = CrewStatType.Tech,
+                                Difficulty = 5
+                            },
+                            SuccessOutcome = EncounterOutcome.EndWith(
+                                EncounterEffect.AddCredits(50)),
+                            FailureOutcome = EncounterOutcome.End()
+                        }
+                    }
+                }
+            }
+        };
+    }
+
+    /// <summary>
+    /// Encounter with hard skill check (difficulty 25).
+    /// For testing guaranteed failure without extreme stats.
+    /// </summary>
+    public static EncounterTemplate CreateHardSkillCheckEncounter()
+    {
+        return new EncounterTemplate
+        {
+            Id = "test_hard_skillcheck",
+            Name = "Hard Skill Check Test",
+            Tags = new HashSet<string> { "test", "skillcheck" },
+            EntryNodeId = "start",
+            Nodes = new Dictionary<string, EncounterNode>
+            {
+                ["start"] = new EncounterNode
+                {
+                    Id = "start",
+                    TextKey = "test.hard.start",
+                    Options = new List<EncounterOption>
+                    {
+                        new EncounterOption
+                        {
+                            Id = "hard_check",
+                            TextKey = "test.hard.check",
+                            SkillCheck = new SkillCheckDef
+                            {
+                                Stat = CrewStatType.Tech,
+                                Difficulty = 25
+                            },
+                            SuccessOutcome = EncounterOutcome.EndWith(
+                                EncounterEffect.AddCredits(1000)),
+                            FailureOutcome = EncounterOutcome.EndWith(
+                                EncounterEffect.ShipDamage(10))
+                        }
+                    }
+                }
+            }
+        };
+    }
+
+    /// <summary>
+    /// Encounter with trait-dependent skill check.
+    /// Tests trait bonus calculation.
+    /// </summary>
+    public static EncounterTemplate CreateTraitBonusEncounter()
+    {
+        return new EncounterTemplate
+        {
+            Id = "test_trait_bonus",
+            Name = "Trait Bonus Test",
+            Tags = new HashSet<string> { "test", "skillcheck", "traits" },
+            EntryNodeId = "start",
+            Nodes = new Dictionary<string, EncounterNode>
+            {
+                ["start"] = new EncounterNode
+                {
+                    Id = "start",
+                    TextKey = "test.trait.start",
+                    Options = new List<EncounterOption>
+                    {
+                        new EncounterOption
+                        {
+                            Id = "smuggle_check",
+                            TextKey = "test.trait.smuggle",
+                            SkillCheck = new SkillCheckDef
+                            {
+                                Stat = CrewStatType.Savvy,
+                                Difficulty = 14,
+                                BonusTraits = new List<string> { "smuggler" }
+                            },
+                            SuccessOutcome = EncounterOutcome.EndWith(
+                                EncounterEffect.AddCredits(300)),
+                            FailureOutcome = EncounterOutcome.EndWith(
+                                EncounterEffect.LoseCredits(100),
+                                EncounterEffect.FactionRep("security", -15))
+                        },
+                        new EncounterOption
+                        {
+                            Id = "military_check",
+                            TextKey = "test.trait.military",
+                            SkillCheck = new SkillCheckDef
+                            {
+                                Stat = CrewStatType.Aim,
+                                Difficulty = 14,
+                                BonusTraits = new List<string> { "ex_military", "cold_blooded" }
+                            },
+                            SuccessOutcome = EncounterOutcome.EndWith(
+                                EncounterEffect.AddCredits(200),
+                                EncounterEffect.CrewXp(15)),
+                            FailureOutcome = EncounterOutcome.EndWith(
+                                EncounterEffect.ShipDamage(20))
+                        }
+                    }
+                }
+            }
+        };
+    }
+
+    /// <summary>
+    /// Encounter testing penalty traits.
+    /// </summary>
+    public static EncounterTemplate CreatePenaltyTraitEncounter()
+    {
+        return new EncounterTemplate
+        {
+            Id = "test_penalty_trait",
+            Name = "Penalty Trait Test",
+            Tags = new HashSet<string> { "test", "skillcheck", "traits" },
+            EntryNodeId = "start",
+            Nodes = new Dictionary<string, EncounterNode>
+            {
+                ["start"] = new EncounterNode
+                {
+                    Id = "start",
+                    TextKey = "test.penalty.start",
+                    Options = new List<EncounterOption>
+                    {
+                        new EncounterOption
+                        {
+                            Id = "stealth_check",
+                            TextKey = "test.penalty.stealth",
+                            SkillCheck = new SkillCheckDef
+                            {
+                                Stat = CrewStatType.Reflexes,
+                                Difficulty = 12,
+                                BonusTraits = new List<string> { "cautious" },
+                                PenaltyTraits = new List<string> { "reckless" }
+                            },
+                            SuccessOutcome = EncounterOutcome.EndWith(
+                                EncounterEffect.AddCredits(150)),
+                            FailureOutcome = EncounterOutcome.EndWith(
+                                EncounterEffect.ShipDamage(25))
+                        }
+                    }
+                }
+            }
+        };
+    }
 }

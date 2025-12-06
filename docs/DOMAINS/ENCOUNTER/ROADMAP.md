@@ -147,52 +147,53 @@ Implement skill checks that use crew stats and traits.
 
 **Depends on:** EN1 ✅, MG1 (Crew Stats) ✅
 
+**Status:** ✅ Complete
+
+**Implementation:** See `EN2_IMPLEMENTATION.md` for detailed breakdown.
+
 **Key capabilities:**
 
-- `SkillCheck` class:
-  - Stat type (Aim, Tech, Savvy, Resolve, etc.).
-  - Base difficulty (1-10 scale).
-  - Optional trait bonuses/penalties.
-- Skill check resolution:
-  - `crewStat + traitBonus + roll vs difficulty`.
-  - Roll is d10 or similar (configurable).
-  - Returns success/failure + margin.
-- Crew selection for checks:
-  - Default: best available crew member for stat.
-  - Optional: player chooses crew member.
-  - Injured/dead crew excluded.
-- Trait-based option visibility:
-  - Options can require specific traits.
-  - Options can be hidden without traits.
-  - Traits can add bonus options.
-- `EncounterContext` crew integration:
-  - `GetBestCrewForStat(stat) -> CrewMember`.
-  - `HasCrewWithTrait(traitId) -> bool`.
-  - `GetCrewStatBonus(stat) -> int`.
-
-**Deliverables:**
-- `SkillCheck` class with resolution logic.
-- Crew stat integration in context.
-- Trait-based condition types.
-- Unit tests for skill checks.
-- Test encounters with skill checks.
-
-**Files to create/modify:**
-| File | Purpose |
-|------|---------|
-| `src/sim/encounter/SkillCheck.cs` | Skill check definition and resolution |
-| `src/sim/encounter/EncounterContext.cs` | Add crew query methods |
-| `tests/sim/encounter/EN2*.cs` | Test files |
+- `SkillCheck` static class with resolution logic
+- `SkillCheckResult` class capturing all check details
+- Automatic best-crew selection for checks
+- Trait-based bonuses (+2) and penalties (-2)
+- Success chance preview for UI
+- Skill check events for feedback
 
 **Skill Check Formula:**
 ```
-roll = rng.Next(1, 11)  // 1-10
-total = crewStat + traitBonus + roll
+roll = rng.NextInt(1, 11)  // 1-10 inclusive
+statValue = crew.GetStat(stat)
+traitBonus = +2 per bonus trait, -2 per penalty trait
+total = roll + statValue + traitBonus
 success = total >= difficulty
 margin = total - difficulty
 ```
 
-**Status:** ⬜ Pending
+**Deliverables:**
+- `SkillCheck.cs` – Resolution logic
+- `SkillCheckResult.cs` – Result data structure
+- `SkillCheckResolvedEvent` – Event for UI
+- Updated `EncounterRunner.ResolveOutcome()` – Skill check integration
+- Updated `EncounterContext` – Trait query methods
+- Test encounters with skill checks
+- Unit tests (~25-30 tests)
+
+**Files to create:**
+| File | Purpose |
+|------|---------|
+| `src/sim/encounter/SkillCheck.cs` | Skill check resolution |
+| `src/sim/encounter/SkillCheckResult.cs` | Result data structure |
+| `tests/sim/encounter/EN2SkillCheckTests.cs` | Unit tests |
+| `tests/sim/encounter/EN2RunnerIntegrationTests.cs` | Integration tests |
+
+**Files to modify:**
+| File | Changes |
+|------|---------|
+| `src/sim/encounter/EncounterRunner.cs` | Update `ResolveOutcome()` |
+| `src/sim/encounter/EncounterContext.cs` | Add trait queries |
+| `src/sim/encounter/TestEncounters.cs` | Add skill check encounters |
+| `src/sim/Events.cs` | Add `SkillCheckResolvedEvent` |
 
 ---
 

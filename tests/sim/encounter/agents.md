@@ -10,6 +10,8 @@ Unit tests for the Encounter domain.
 | `EN1ConditionTests.cs` | Tests for EncounterCondition evaluation |
 | `EN1TemplateTests.cs` | Tests for EncounterTemplate validation and test templates |
 | `EN1RunnerTests.cs` | Tests for EncounterRunner state machine |
+| `EN2SkillCheckTests.cs` | Tests for SkillCheck resolution and trait bonuses |
+| `EN2RunnerIntegrationTests.cs` | Tests for EncounterRunner skill check integration |
 
 ## Test Coverage
 
@@ -30,13 +32,28 @@ Unit tests for the Encounter domain.
 - Node and option structure
 - Template validity checks
 
-### EN1RunnerTests (~25 tests)
+### EN1RunnerTests (~21 tests)
 - Node navigation and transitions
 - Option filtering by conditions
 - Effect accumulation
 - Auto-transition processing
 - Branching path handling
 - Error cases
+
+### EN2SkillCheckTests (~27 tests)
+- Basic skill check resolution
+- Trait bonus/penalty calculation
+- Crew selection for checks
+- Success chance preview
+- Determinism verification
+- Critical success/failure thresholds
+
+### EN2RunnerIntegrationTests (~16 tests)
+- Skill check integration with EncounterRunner
+- Success/failure outcome branching
+- Trait bonus effects on outcomes
+- Template validation for skill check encounters
+- EncounterContext helper methods
 
 ## Running Tests
 

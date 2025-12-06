@@ -22,7 +22,9 @@ Handle non-combat events and lightweight interactive scenes: text-based choices,
 | `EncounterInstance.cs` | Runtime state + serialization (EncounterInstanceData) |
 | `EncounterRunner.cs` | Stateless state machine with EventBus integration |
 | `EncounterStepResult.cs` | Result of an encounter step |
-| `SkillCheckDef.cs` | Skill check definition (EN2 stub) |
+| `SkillCheckDef.cs` | Skill check definition (stat, difficulty, traits) |
+| `SkillCheck.cs` | Skill check resolution logic (EN2) |
+| `SkillCheckResult.cs` | Result of skill check with all details (EN2) |
 | `CrewSnapshot.cs` | Lightweight crew snapshot for condition evaluation |
 | `TestEncounters.cs` | Factory methods for test encounter templates |
 

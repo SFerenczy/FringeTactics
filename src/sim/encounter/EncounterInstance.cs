@@ -91,7 +91,7 @@ public class EncounterInstance
     public static EncounterInstance Create(EncounterTemplate template, RngStream rng)
     {
         var id = rng != null
-            ? $"enc_{template?.Id}_{rng.Next(0, 999999)}"
+            ? $"enc_{template?.Id}_{rng.NextInt(999999)}"
             : $"enc_{template?.Id}_0";
         return Create(template, id);
     }
