@@ -221,6 +221,43 @@ Now a typical 30–60 minute session starts looking like your intended experienc
 * Encounters and Travel are inherently about *moment-to-moment* play; they don’t actually need the sim at first if you’re willing to author simple rules and probabilities.
 * You can test whether the campaign pacing (time, fuel, job density) feels good *before* you let metrics drift systemically.
 
+### G2 Checklist
+
+| Item | Status | Notes |
+|------|--------|-------|
+| **WD2 – Sector Topology** | ✅ Complete | Multi-system graph with routes |
+| **WD3 – Metrics & Tags** | ✅ Complete | Live metrics and tag system (see `WD3_IMPLEMENTATION.md`) |
+| **TV0 – Concept** | 🔄 In Progress | Travel design finalization (see `TV0_IMPLEMENTATION.md`) |
+| **TV1 – Route Planning** | ⬜ Pending | Pathfinding and travel plans |
+| **TV2 – Travel Execution** | ⬜ Pending | Time/fuel consumption, encounter triggers |
+| **EN0 – Concept** | ⬜ Pending | Encounter design finalization |
+| **EN1 – Runtime Core** | ⬜ Pending | State machine, conditions, outcomes |
+| **EN2 – Skill Checks** | ⬜ Pending | Crew-based checks and modifiers |
+| **GN2 – Galaxy Generation** | ⬜ Pending | Sector graph generation |
+| **GN3 – Encounter Instantiation** | ⬜ Pending | Template selection and parameterization |
+| **MG4 – Encounter Integration** | ⬜ Pending | Apply encounter outcomes to player state |
+
+### Recommended Implementation Order
+
+**Phase A: World Foundation (WD2 → WD3)**
+1. **WD2 – Sector Topology**: Multi-system graph, routes, connections
+2. **WD3 – Metrics & Tags**: System-level metrics and tag vocabulary
+
+**Phase B: Travel System (TV0 → TV1 → TV2)**
+3. **TV0 – Concept**: Finalize travel mechanics design
+4. **TV1 – Route Planning**: Pathfinding, travel plan creation
+5. **TV2 – Travel Execution**: Time/fuel consumption, encounter trigger points
+
+**Phase C: Encounter System (EN0 → EN1 → EN2)**
+6. **EN0 – Concept**: Finalize encounter structure and templates
+7. **EN1 – Runtime Core**: State machine, node traversal, outcomes
+8. **EN2 – Skill Checks**: Crew stat integration, trait-based options
+
+**Phase D: Generation & Integration (GN2 → GN3 → MG4)**
+9. **GN2 – Galaxy Generation**: Generate sector at campaign start
+10. **GN3 – Encounter Instantiation**: Select and parameterize encounters
+11. **MG4 – Encounter Integration**: Apply outcomes to player state
+
 ---
 
 ## 6. G3 – Simulation-Driven Sector

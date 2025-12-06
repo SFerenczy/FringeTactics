@@ -60,11 +60,12 @@ public class WorldStateTests
     }
 
     [TestCase]
-    public void GetSecurityLevel_ReturnsCorrectValue()
+    public void GetSystemMetric_ReturnsCorrectValue()
     {
         var world = WorldState.CreateSingleHub();
 
-        AssertInt(world.GetSecurityLevel(0)).IsEqual(4);
+        AssertInt(world.GetSystemMetric(0, SystemMetricType.SecurityLevel)).IsEqual(4);
+        AssertInt(world.GetSystemMetric(0, SystemMetricType.CriminalActivity)).IsEqual(1);
     }
 
     [TestCase]

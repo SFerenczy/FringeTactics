@@ -1,3 +1,5 @@
+using System;
+
 namespace FringeTactics;
 
 /// <summary>
@@ -89,6 +91,77 @@ public class SystemMetrics
             _ => new SystemMetrics()
         };
     }
+
+    // ========== Typed Accessors ==========
+
+    /// <summary>
+    /// Get metric value by type.
+    /// </summary>
+    public int Get(SystemMetricType type)
+    {
+        return type switch
+        {
+            SystemMetricType.Stability => Stability,
+            SystemMetricType.SecurityLevel => SecurityLevel,
+            SystemMetricType.CriminalActivity => CriminalActivity,
+            SystemMetricType.EconomicActivity => EconomicActivity,
+            SystemMetricType.LawEnforcementPresence => LawEnforcementPresence,
+            _ => 0
+        };
+    }
+
+    /// <summary>
+    /// Set metric value by type. Automatically clamps to 0-5.
+    /// </summary>
+    public void Set(SystemMetricType type, int value)
+    {
+        value = Math.Clamp(value, 0, 5);
+        switch (type)
+        {
+            case SystemMetricType.Stability: Stability = value; break;
+            case SystemMetricType.SecurityLevel: SecurityLevel = value; break;
+            case SystemMetricType.CriminalActivity: CriminalActivity = value; break;
+            case SystemMetricType.EconomicActivity: EconomicActivity = value; break;
+            case SystemMetricType.LawEnforcementPresence: LawEnforcementPresence = value; break;
+        }
+    }
+
+    /// <summary>
+    /// Modify metric by delta. Automatically clamps to 0-5.
+    /// </summary>
+    public void Modify(SystemMetricType type, int delta)
+    {
+        Set(type, Get(type) + delta);
+    }
+
+    /// <summary>
+    /// Clamp all metrics to valid 0-5 range.
+    /// </summary>
+    public void ClampAll()
+    {
+        Stability = Math.Clamp(Stability, 0, 5);
+        SecurityLevel = Math.Clamp(SecurityLevel, 0, 5);
+        CriminalActivity = Math.Clamp(CriminalActivity, 0, 5);
+        EconomicActivity = Math.Clamp(EconomicActivity, 0, 5);
+        LawEnforcementPresence = Math.Clamp(LawEnforcementPresence, 0, 5);
+    }
+
+    /// <summary>
+    /// Create a copy of these metrics.
+    /// </summary>
+    public SystemMetrics Clone()
+    {
+        return new SystemMetrics
+        {
+            Stability = Stability,
+            SecurityLevel = SecurityLevel,
+            CriminalActivity = CriminalActivity,
+            EconomicActivity = EconomicActivity,
+            LawEnforcementPresence = LawEnforcementPresence
+        };
+    }
+
+    // ========== Serialization ==========
 
     public SystemMetricsData GetState()
     {

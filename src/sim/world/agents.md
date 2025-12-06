@@ -10,15 +10,18 @@ Owns galaxy topology, locations, factions, and world-attached metrics. Provides 
 
 | File | Purpose |
 |------|---------|
-| `WorldState.cs` | Main world container with query APIs |
+| `WorldState.cs` | Main world container with query APIs and factories |
 | `StarSystem.cs` | Star system with metrics and tags |
-| `Station.cs` | Station with facilities |
+| `Station.cs` | Station with facilities and factory methods |
+| `Route.cs` | Route between systems with distance, hazard, tags (WD2) |
 | `Facility.cs` | Station facility (shop, mission_board, etc.) |
 | `Faction.cs` | Faction with type and metrics |
 | `FactionRegistry.cs` | Loads factions from data/factions.json |
-| `SystemMetrics.cs` | System-level metrics (security, economy, etc.) |
+| `SystemMetrics.cs` | System-level metrics with typed accessors (WD3) |
+| `SystemMetricType.cs` | Enum for typed metric access (WD3) |
 | `SystemType.cs` | System type enum (canonical, replaces NodeType) |
-| `WorldTags.cs` | Well-known tag constants |
+| `WorldTags.cs` | Well-known tag constants with category validation (WD3) |
+| `EncounterContext.cs` | Context classes for Encounter domain (WD3) |
 
 ## Key Patterns
 

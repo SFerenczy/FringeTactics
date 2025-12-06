@@ -46,6 +46,11 @@ public class Station
         }
     }
 
+    public bool HasTag(string tag)
+    {
+        return Tags.Contains(tag);
+    }
+
     /// <summary>
     /// Create a standard hub station with common facilities.
     /// </summary>
@@ -63,6 +68,99 @@ public class Station
         station.AddFacility(FacilityType.Bar, 1);
         station.AddFacility(FacilityType.Recruitment, 1);
         station.AddFacility(FacilityType.FuelDepot, 1);
+
+        return station;
+    }
+
+    /// <summary>
+    /// Create a minor outpost with basic facilities.
+    /// </summary>
+    public static Station CreateOutpost(int id, string name, int systemId, string factionId)
+    {
+        var station = new Station(id, name, systemId)
+        {
+            OwningFactionId = factionId,
+            Tags = new HashSet<string> { WorldTags.Frontier }
+        };
+
+        station.AddFacility(FacilityType.Shop, 1);
+        station.AddFacility(FacilityType.MissionBoard, 1);
+        station.AddFacility(FacilityType.FuelDepot, 1);
+
+        return station;
+    }
+
+    /// <summary>
+    /// Create a mining station with repair focus.
+    /// </summary>
+    public static Station CreateMining(int id, string name, int systemId, string factionId)
+    {
+        var station = new Station(id, name, systemId)
+        {
+            OwningFactionId = factionId,
+            Tags = new HashSet<string> { WorldTags.Industrial }
+        };
+
+        station.AddFacility(FacilityType.Shop, 1);
+        station.AddFacility(FacilityType.MissionBoard, 1);
+        station.AddFacility(FacilityType.RepairYard, 2);
+        station.AddFacility(FacilityType.FuelDepot, 2);
+
+        return station;
+    }
+
+    /// <summary>
+    /// Create a pirate den with black market.
+    /// </summary>
+    public static Station CreatePirateDen(int id, string name, int systemId, string factionId)
+    {
+        var station = new Station(id, name, systemId)
+        {
+            OwningFactionId = factionId,
+            Tags = new HashSet<string> { WorldTags.BlackMarket }
+        };
+
+        station.AddFacility(FacilityType.Bar, 2);
+        station.AddFacility(FacilityType.BlackMarket, 2);
+        station.AddFacility(FacilityType.Recruitment, 1);
+        station.AddFacility(FacilityType.RepairYard, 1);
+
+        return station;
+    }
+
+    /// <summary>
+    /// Create a military station with medical focus.
+    /// </summary>
+    public static Station CreateMilitary(int id, string name, int systemId, string factionId)
+    {
+        var station = new Station(id, name, systemId)
+        {
+            OwningFactionId = factionId,
+            Tags = new HashSet<string> { WorldTags.Military }
+        };
+
+        station.AddFacility(FacilityType.MissionBoard, 2);
+        station.AddFacility(FacilityType.RepairYard, 2);
+        station.AddFacility(FacilityType.Medical, 2);
+        station.AddFacility(FacilityType.FuelDepot, 2);
+
+        return station;
+    }
+
+    /// <summary>
+    /// Create a black market station.
+    /// </summary>
+    public static Station CreateBlackMarket(int id, string name, int systemId, string factionId)
+    {
+        var station = new Station(id, name, systemId)
+        {
+            OwningFactionId = factionId,
+            Tags = new HashSet<string> { WorldTags.BlackMarket }
+        };
+
+        station.AddFacility(FacilityType.Bar, 1);
+        station.AddFacility(FacilityType.BlackMarket, 3);
+        station.AddFacility(FacilityType.Recruitment, 1);
 
         return station;
     }
