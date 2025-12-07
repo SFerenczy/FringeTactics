@@ -767,4 +767,142 @@ public class MG4EffectTests
         AssertInt(campaign.Money).IsEqual(1100);
         AssertInt(campaign.Fuel).IsEqual(120);
     }
+
+    // ========================================================================
+    // Add Crew Effect Tests (EN-CONTENT2)
+    // ========================================================================
+
+    [TestCase]
+    public void AddCrewEffect_AddsSoldier()
+    {
+        var campaign = CreateTestCampaign();
+        int initialCrewCount = campaign.Crew.Count;
+        var effects = new List<EncounterEffect> { EncounterEffect.AddCrew("NewRecruit", "Soldier") };
+        var instance = CreateTestInstance(effects);
+
+        var result = campaign.ApplyEncounterOutcome(instance);
+
+        AssertInt(result).IsEqual(1);
+        AssertInt(campaign.Crew.Count).IsEqual(initialCrewCount + 1);
+        var newCrew = campaign.Crew.Find(c => c.Name == "NewRecruit");
+        AssertObject(newCrew).IsNotNull();
+        AssertObject(newCrew.Role).IsEqual(CrewRole.Soldier);
+    }
+
+    [TestCase]
+    public void AddCrewEffect_AddsMedic()
+    {
+        var campaign = CreateTestCampaign();
+        var effects = new List<EncounterEffect> { EncounterEffect.AddCrew("DocRescue", "Medic") };
+        var instance = CreateTestInstance(effects);
+
+        campaign.ApplyEncounterOutcome(instance);
+
+        var newCrew = campaign.Crew.Find(c => c.Name == "DocRescue");
+        AssertObject(newCrew).IsNotNull();
+        AssertObject(newCrew.Role).IsEqual(CrewRole.Medic);
+    }
+
+    [TestCase]
+    public void AddCrewEffect_AddsTech()
+    {
+        var campaign = CreateTestCampaign();
+        var effects = new List<EncounterEffect> { EncounterEffect.AddCrew("Specialist", "Tech") };
+        var instance = CreateTestInstance(effects);
+
+        campaign.ApplyEncounterOutcome(instance);
+
+        var newCrew = campaign.Crew.Find(c => c.Name == "Specialist");
+        AssertObject(newCrew).IsNotNull();
+        AssertObject(newCrew.Role).IsEqual(CrewRole.Tech);
+    }
+
+    [TestCase]
+    public void AddCrewEffect_AddsScout()
+    {
+        var campaign = CreateTestCampaign();
+        var effects = new List<EncounterEffect> { EncounterEffect.AddCrew("Deserter", "Scout") };
+        var instance = CreateTestInstance(effects);
+
+        campaign.ApplyEncounterOutcome(instance);
+
+        var newCrew = campaign.Crew.Find(c => c.Name == "Deserter");
+        AssertObject(newCrew).IsNotNull();
+        AssertObject(newCrew.Role).IsEqual(CrewRole.Scout);
+    }
+
+    [TestCase]
+    public void AddCrewEffect_DefaultsToSoldierForInvalidRole()
+    {
+        var campaign = CreateTestCampaign();
+        var effects = new List<EncounterEffect> { EncounterEffect.AddCrew("Drifter", "InvalidRole") };
+        var instance = CreateTestInstance(effects);
+
+        campaign.ApplyEncounterOutcome(instance);
+
+        var newCrew = campaign.Crew.Find(c => c.Name == "Drifter");
+        AssertObject(newCrew).IsNotNull();
+        AssertObject(newCrew.Role).IsEqual(CrewRole.Soldier);
+    }
+
+    [TestCase]
+    public void AddCrewEffect_DefaultsToSoldierWhenRoleOmitted()
+    {
+        var campaign = CreateTestCampaign();
+        var effect = EncounterEffect.AddCrew("Wanderer");
+        var instance = CreateTestInstance(new List<EncounterEffect> { effect });
+
+        campaign.ApplyEncounterOutcome(instance);
+
+        var newCrew = campaign.Crew.Find(c => c.Name == "Wanderer");
+        AssertObject(newCrew).IsNotNull();
+        AssertObject(newCrew.Role).IsEqual(CrewRole.Soldier);
+    }
+
+    [TestCase]
+    public void AddCrewEffect_FailsForMissingName()
+    {
+        var campaign = CreateTestCampaign();
+        int initialCrewCount = campaign.Crew.Count;
+        var effect = new EncounterEffect { Type = EffectType.AddCrew, StringParam = "Soldier" };
+        var instance = CreateTestInstance(new List<EncounterEffect> { effect });
+
+        var result = campaign.ApplyEncounterOutcome(instance);
+
+        AssertInt(result).IsEqual(0);
+        AssertInt(campaign.Crew.Count).IsEqual(initialCrewCount);
+    }
+
+    [TestCase]
+    public void AddCrewEffect_EmitsCrewRecruitedEvent()
+    {
+        var campaign = CreateTestCampaign();
+        var eventBus = new EventBus();
+        campaign.EventBus = eventBus;
+        var effects = new List<EncounterEffect> { EncounterEffect.AddCrew("EventTest", "Tech") };
+        var instance = CreateTestInstance(effects);
+
+        CrewRecruitedEvent? receivedEvent = null;
+        eventBus.Subscribe<CrewRecruitedEvent>(e => receivedEvent = e);
+
+        campaign.ApplyEncounterOutcome(instance);
+
+        AssertObject(receivedEvent).IsNotNull();
+        AssertString(receivedEvent.Value.CrewName).IsEqual("EventTest");
+        AssertObject(receivedEvent.Value.Role).IsEqual(CrewRole.Tech);
+    }
+
+    [TestCase]
+    public void AddCrewEffect_NewCrewHasRoleStats()
+    {
+        var campaign = CreateTestCampaign();
+        var effects = new List<EncounterEffect> { EncounterEffect.AddCrew("TechRecruit", "Tech") };
+        var instance = CreateTestInstance(effects);
+
+        campaign.ApplyEncounterOutcome(instance);
+
+        var newCrew = campaign.Crew.Find(c => c.Name == "TechRecruit");
+        AssertObject(newCrew).IsNotNull();
+        AssertInt(newCrew.Tech).IsGreater(0);
+    }
 }

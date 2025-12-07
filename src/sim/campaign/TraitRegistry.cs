@@ -80,6 +80,37 @@ public static class TraitRegistry
         }
     }
 
+    /// <summary>
+    /// Get all traits that can be rolled at crew creation.
+    /// Excludes Injury and Acquired categories (those are gained through gameplay).
+    /// </summary>
+    public static List<TraitDef> GetRollableTraits()
+    {
+        EnsureInitialized();
+        var rollable = new List<TraitDef>();
+        foreach (var trait in traits.Values)
+        {
+            if (trait.Category == TraitCategory.Background ||
+                trait.Category == TraitCategory.Personality)
+            {
+                rollable.Add(trait);
+            }
+        }
+        return rollable;
+    }
+
+    /// <summary>
+    /// Get a random trait from the rollable pool.
+    /// </summary>
+    /// <param name="rng">RNG stream to use for selection.</param>
+    /// <returns>A random rollable trait, or null if none available.</returns>
+    public static TraitDef GetRandomTrait(RngStream rng)
+    {
+        var rollable = GetRollableTraits();
+        if (rollable.Count == 0 || rng == null) return null;
+        return rng.Pick(rollable);
+    }
+
     private static void RegisterInternal(TraitDef trait)
     {
         traits[trait.Id] = trait;

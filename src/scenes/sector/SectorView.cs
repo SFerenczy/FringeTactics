@@ -32,6 +32,12 @@ public partial class SectorView : Control
     private Label travelLogLabel;
     private List<string> travelLog = new();
 
+    // Travel Animation
+    private TravelAnimator travelAnimator;
+    private TravelResult pendingTravelResult;
+    private TravelPlan pendingTravelPlan;
+    private int travelFromSystemId;
+
     private Dictionary<int, Button> nodeButtons = new();
     private int? selectedNodeId = null;
 
@@ -87,6 +93,11 @@ public partial class SectorView : Control
         mapContainer = new Node2D();
         mapContainer.Position = new Vector2(50, 50);
         AddChild(mapContainer);
+
+        // Travel animator (child of map container for correct coordinates)
+        travelAnimator = new TravelAnimator();
+        travelAnimator.TravelAnimationCompleted += OnTravelAnimationCompleted;
+        mapContainer.AddChild(travelAnimator);
 
         // UI Panel (right side) - anchored to right edge, full height
         uiPanel = new Control();
@@ -600,20 +611,92 @@ public partial class SectorView : Control
     private void OnTravelPressed()
     {
         if (!selectedNodeId.HasValue) return;
+        if (!GodotObject.IsInstanceValid(mapContainer)) return;
+        if (!GodotObject.IsInstanceValid(travelAnimator))
+        {
+            travelAnimator = new TravelAnimator();
+            travelAnimator.TravelAnimationCompleted += OnTravelAnimationCompleted;
+            mapContainer.AddChild(travelAnimator);
+        }
+        if (travelAnimator.IsAnimating) return;
 
         var campaign = GameState.Instance?.Campaign;
-        var fromSystem = campaign?.World?.GetSystem(campaign.CurrentNodeId);
+        if (campaign?.World == null) return;
 
-        if (GameState.Instance.TravelTo(selectedNodeId.Value))
+        var fromSystem = campaign.World.GetSystem(campaign.CurrentNodeId);
+        var toSystem = campaign.World.GetSystem(selectedNodeId.Value);
+        if (fromSystem == null || toSystem == null) return;
+
+        // Store origin for animation
+        travelFromSystemId = campaign.CurrentNodeId;
+
+        // Execute travel in sim layer first
+        var planner = new TravelPlanner(campaign.World);
+        var plan = planner.PlanRoute(campaign.CurrentNodeId, selectedNodeId.Value);
+
+        if (!plan.IsValid)
         {
-            var toSystem = campaign?.World?.GetSystem(campaign.CurrentNodeId);
-
-            // Phase 5: Add to travel log
-            AddToTravelLog($"Traveled: {fromSystem?.Name} → {toSystem?.Name}");
-
-            // Refresh the view
-            RefreshSector();
+            GD.Print($"[SectorView] Travel failed: {plan.InvalidReason}");
+            return;
         }
+
+        var executor = new TravelExecutor(campaign.Rng);
+        var result = executor.Execute(plan, campaign);
+
+        // Store result for after animation
+        pendingTravelResult = result;
+        pendingTravelPlan = plan;
+
+        // Calculate encounter position (random 0.2-0.8 if encounter, 1.0 if none)
+        float encounterProgress = 1f;
+        if (result.Status == TravelResultStatus.PausedForEncounter)
+        {
+            encounterProgress = 0.2f + (float)GD.Randf() * 0.6f;
+        }
+
+        // Disable travel button during animation
+        travelButton.Disabled = true;
+        travelButton.Text = "Traveling...";
+
+        // Start animation
+        travelAnimator.StartAnimation(fromSystem.Position, toSystem.Position, encounterProgress);
+    }
+
+    private void OnTravelAnimationCompleted(float encounterProgress)
+    {
+        var campaign = GameState.Instance?.Campaign;
+        if (campaign == null || pendingTravelResult == null) return;
+
+        var fromSystem = campaign.World?.GetSystem(travelFromSystemId);
+        var toSystem = campaign.World?.GetSystem(pendingTravelPlan?.DestinationSystemId ?? 0);
+
+        // Handle result based on status
+        switch (pendingTravelResult.Status)
+        {
+            case TravelResultStatus.Completed:
+                AddToTravelLog($"Traveled: {fromSystem?.Name} → {toSystem?.Name}");
+                if (campaign.CurrentJob == null)
+                {
+                    campaign.RefreshJobsAtCurrentNode();
+                }
+                RefreshSector();
+                break;
+
+            case TravelResultStatus.PausedForEncounter:
+                // Store state in GameState and transition to encounter
+                GameState.Instance.SetPausedTravel(pendingTravelResult.PausedState, pendingTravelPlan);
+                GameState.Instance.GoToEncounter();
+                break;
+
+            case TravelResultStatus.Interrupted:
+                GD.Print($"[SectorView] Travel interrupted: {pendingTravelResult.InterruptReason}");
+                RefreshSector();
+                break;
+        }
+
+        // Clear pending state
+        pendingTravelResult = null;
+        pendingTravelPlan = null;
     }
 
     private void AddToTravelLog(string message)

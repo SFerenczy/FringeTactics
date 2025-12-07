@@ -143,6 +143,24 @@ public partial class GameState : Node
     }
     
     /// <summary>
+    /// Set paused travel state (called by SectorView after animation).
+    /// </summary>
+    public void SetPausedTravel(TravelState state, TravelPlan plan)
+    {
+        pausedTravelState = state;
+        pausedTravelPlan = plan;
+    }
+
+    /// <summary>
+    /// Transition to encounter screen.
+    /// </summary>
+    public void GoToEncounter()
+    {
+        Mode = "encounter";
+        GetTree().ChangeSceneToFile(EncounterScene);
+    }
+
+    /// <summary>
     /// Called when encounter completes. Applies effects and resumes travel.
     /// </summary>
     public void ResolveEncounter(string outcome = "completed")

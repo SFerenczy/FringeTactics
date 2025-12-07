@@ -12,6 +12,7 @@ public enum EffectType
     CrewInjury,
     CrewXp,
     CrewTrait,
+    AddCrew,
 
     // Ship effects
     ShipDamage,

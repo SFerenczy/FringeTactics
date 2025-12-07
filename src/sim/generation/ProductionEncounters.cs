@@ -26,6 +26,7 @@ public static class ProductionEncounters
         yield return CreateMysteriousSignal();
         yield return CreateMechanicalFailure();
         yield return CreateRefugeePlea();
+        yield return CreateTrialByFire();
     }
 
     // ========================================================================
@@ -1122,6 +1123,81 @@ public static class ProductionEncounters
                             Outcome = EncounterOutcome.Goto("declined")
                         }
                     }
+                }
+            }
+        };
+    }
+
+    // ========================================================================
+    // TRAIT-GRANTING ENCOUNTERS
+    // ========================================================================
+
+    /// <summary>
+    /// A dangerous situation that can harden a crew member.
+    /// Tags: travel, combat, skill_check, trait
+    /// </summary>
+    public static EncounterTemplate CreateTrialByFire()
+    {
+        return new EncounterTemplate
+        {
+            Id = "prod_trial_by_fire",
+            Name = "Trial by Fire",
+            Tags = new HashSet<string>
+            {
+                EncounterTags.Travel, EncounterTags.Combat,
+                EncounterTags.SkillCheck
+            },
+            EntryNodeId = "intro",
+            Nodes = new Dictionary<string, EncounterNode>
+            {
+                ["intro"] = new EncounterNode
+                {
+                    Id = "intro",
+                    TextKey = "encounter.trial_by_fire.intro",
+                    Options = new List<EncounterOption>
+                    {
+                        new EncounterOption
+                        {
+                            Id = "stand_ground",
+                            TextKey = "encounter.trial_by_fire.stand_ground",
+                            SkillCheck = new SkillCheckDef
+                            {
+                                Stat = CrewStatType.Resolve,
+                                Difficulty = Config.HardDifficulty,
+                                BonusTraits = new List<string> { "brave", "ex_military" }
+                            },
+                            SuccessOutcome = EncounterOutcome.Goto("hardened_success"),
+                            FailureOutcome = EncounterOutcome.GotoWith("shaken",
+                                EncounterEffect.ShipDamage(Config.FightDamage))
+                        },
+                        new EncounterOption
+                        {
+                            Id = "retreat",
+                            TextKey = "encounter.trial_by_fire.retreat",
+                            Outcome = EncounterOutcome.GotoWith("fled",
+                                EncounterEffect.TimeDelay(1))
+                        }
+                    }
+                },
+                ["hardened_success"] = new EncounterNode
+                {
+                    Id = "hardened_success",
+                    TextKey = "encounter.trial_by_fire.hardened_success",
+                    AutoTransition = EncounterOutcome.EndWith(
+                        EncounterEffect.AddTrait("hardened"),
+                        EncounterEffect.CrewXp(20))
+                },
+                ["shaken"] = new EncounterNode
+                {
+                    Id = "shaken",
+                    TextKey = "encounter.trial_by_fire.shaken",
+                    AutoTransition = EncounterOutcome.End()
+                },
+                ["fled"] = new EncounterNode
+                {
+                    Id = "fled",
+                    TextKey = "encounter.trial_by_fire.fled",
+                    AutoTransition = EncounterOutcome.End()
                 }
             }
         };

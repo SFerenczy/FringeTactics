@@ -266,6 +266,15 @@ public readonly record struct CrewFiredEvent(
 );
 
 /// <summary>
+/// Published when a crew member is recruited from an encounter.
+/// </summary>
+public readonly record struct CrewRecruitedEvent(
+    int CrewId,
+    string CrewName,
+    CrewRole Role
+);
+
+/// <summary>
 /// Published when a crew member gains or loses a trait.
 /// </summary>
 public readonly record struct CrewTraitChangedEvent(

@@ -692,4 +692,315 @@ public static class TestEncounters
             }
         };
     }
+
+    // ========================================================================
+    // EN-CONTENT2 RECRUITMENT ENCOUNTERS
+    // ========================================================================
+
+    /// <summary>
+    /// Drifter looking for passage. Can recruit a soldier.
+    /// </summary>
+    public static EncounterTemplate CreateDrifterEncounter()
+    {
+        return new EncounterTemplate
+        {
+            Id = "drifter_passage",
+            Name = "Drifter Seeking Passage",
+            Tags = new HashSet<string> { "travel", "social", "recruitment" },
+            EntryNodeId = "intro",
+            Nodes = new Dictionary<string, EncounterNode>
+            {
+                ["intro"] = new EncounterNode
+                {
+                    Id = "intro",
+                    TextKey = "encounter.drifter.intro",
+                    Options = new List<EncounterOption>
+                    {
+                        new EncounterOption
+                        {
+                            Id = "recruit",
+                            TextKey = "encounter.drifter.recruit",
+                            Outcome = EncounterOutcome.GotoWith("recruited",
+                                EncounterEffect.AddCrew("Drifter", "Soldier"))
+                        },
+                        new EncounterOption
+                        {
+                            Id = "pay_passage",
+                            TextKey = "encounter.drifter.pay_passage",
+                            Conditions = new List<EncounterCondition>
+                            {
+                                EncounterCondition.HasCredits(50)
+                            },
+                            Outcome = EncounterOutcome.GotoWith("paid",
+                                EncounterEffect.LoseCredits(50),
+                                EncounterEffect.AddCredits(100))
+                        },
+                        new EncounterOption
+                        {
+                            Id = "refuse",
+                            TextKey = "encounter.drifter.refuse",
+                            Outcome = EncounterOutcome.Goto("refused")
+                        }
+                    }
+                },
+                ["recruited"] = new EncounterNode
+                {
+                    Id = "recruited",
+                    TextKey = "encounter.drifter.recruited",
+                    AutoTransition = EncounterOutcome.End()
+                },
+                ["paid"] = new EncounterNode
+                {
+                    Id = "paid",
+                    TextKey = "encounter.drifter.paid",
+                    AutoTransition = EncounterOutcome.End()
+                },
+                ["refused"] = new EncounterNode
+                {
+                    Id = "refused",
+                    TextKey = "encounter.drifter.refused",
+                    AutoTransition = EncounterOutcome.End()
+                }
+            }
+        };
+    }
+
+    /// <summary>
+    /// Rescue a stranded specialist from a derelict. Can recruit a tech.
+    /// </summary>
+    public static EncounterTemplate CreateStrandedSpecialistEncounter()
+    {
+        return new EncounterTemplate
+        {
+            Id = "stranded_specialist",
+            Name = "Stranded Specialist",
+            Tags = new HashSet<string> { "travel", "distress", "recruitment" },
+            EntryNodeId = "signal",
+            Nodes = new Dictionary<string, EncounterNode>
+            {
+                ["signal"] = new EncounterNode
+                {
+                    Id = "signal",
+                    TextKey = "encounter.specialist.signal",
+                    Options = new List<EncounterOption>
+                    {
+                        new EncounterOption
+                        {
+                            Id = "investigate",
+                            TextKey = "encounter.specialist.investigate",
+                            Outcome = EncounterOutcome.Goto("derelict")
+                        },
+                        new EncounterOption
+                        {
+                            Id = "ignore",
+                            TextKey = "encounter.specialist.ignore",
+                            Outcome = EncounterOutcome.Goto("ignored")
+                        }
+                    }
+                },
+                ["derelict"] = new EncounterNode
+                {
+                    Id = "derelict",
+                    TextKey = "encounter.specialist.derelict",
+                    Options = new List<EncounterOption>
+                    {
+                        new EncounterOption
+                        {
+                            Id = "rescue",
+                            TextKey = "encounter.specialist.rescue",
+                            SkillCheck = new SkillCheckDef
+                            {
+                                Stat = CrewStatType.Tech,
+                                Difficulty = 10
+                            },
+                            SuccessOutcome = EncounterOutcome.GotoWith("rescued",
+                                EncounterEffect.AddCrew("Specialist", "Tech"),
+                                EncounterEffect.AddParts(10)),
+                            FailureOutcome = EncounterOutcome.GotoWith("failed_rescue",
+                                EncounterEffect.ShipDamage(15),
+                                EncounterEffect.TimeDelay(1))
+                        },
+                        new EncounterOption
+                        {
+                            Id = "salvage_only",
+                            TextKey = "encounter.specialist.salvage",
+                            Outcome = EncounterOutcome.GotoWith("salvaged",
+                                EncounterEffect.AddParts(20),
+                                EncounterEffect.AddCredits(50))
+                        }
+                    }
+                },
+                ["rescued"] = new EncounterNode
+                {
+                    Id = "rescued",
+                    TextKey = "encounter.specialist.rescued",
+                    AutoTransition = EncounterOutcome.EndWith(
+                        EncounterEffect.CrewXp(15))
+                },
+                ["failed_rescue"] = new EncounterNode
+                {
+                    Id = "failed_rescue",
+                    TextKey = "encounter.specialist.failed_rescue",
+                    AutoTransition = EncounterOutcome.End()
+                },
+                ["salvaged"] = new EncounterNode
+                {
+                    Id = "salvaged",
+                    TextKey = "encounter.specialist.salvaged",
+                    AutoTransition = EncounterOutcome.End()
+                },
+                ["ignored"] = new EncounterNode
+                {
+                    Id = "ignored",
+                    TextKey = "encounter.specialist.ignored",
+                    AutoTransition = EncounterOutcome.End()
+                }
+            }
+        };
+    }
+
+    /// <summary>
+    /// Deserter from a faction offers to join. Can recruit a scout.
+    /// </summary>
+    public static EncounterTemplate CreateDeserterEncounter()
+    {
+        return new EncounterTemplate
+        {
+            Id = "faction_deserter",
+            Name = "Faction Deserter",
+            Tags = new HashSet<string> { "travel", "social", "recruitment", "faction" },
+            EntryNodeId = "hail",
+            Nodes = new Dictionary<string, EncounterNode>
+            {
+                ["hail"] = new EncounterNode
+                {
+                    Id = "hail",
+                    TextKey = "encounter.deserter.hail",
+                    Options = new List<EncounterOption>
+                    {
+                        new EncounterOption
+                        {
+                            Id = "accept",
+                            TextKey = "encounter.deserter.accept",
+                            Outcome = EncounterOutcome.GotoWith("joined",
+                                EncounterEffect.AddCrew("Deserter", "Scout"),
+                                EncounterEffect.FactionRep("military", -10))
+                        },
+                        new EncounterOption
+                        {
+                            Id = "negotiate",
+                            TextKey = "encounter.deserter.negotiate",
+                            SkillCheck = new SkillCheckDef
+                            {
+                                Stat = CrewStatType.Savvy,
+                                Difficulty = 12,
+                                BonusTraits = new List<string> { "empathetic" }
+                            },
+                            SuccessOutcome = EncounterOutcome.GotoWith("joined_intel",
+                                EncounterEffect.AddCrew("Deserter", "Scout"),
+                                EncounterEffect.AddCredits(200)),
+                            FailureOutcome = EncounterOutcome.Goto("refused_deal")
+                        },
+                        new EncounterOption
+                        {
+                            Id = "turn_in",
+                            TextKey = "encounter.deserter.turn_in",
+                            Outcome = EncounterOutcome.GotoWith("turned_in",
+                                EncounterEffect.AddCredits(150),
+                                EncounterEffect.FactionRep("military", 15))
+                        },
+                        new EncounterOption
+                        {
+                            Id = "refuse",
+                            TextKey = "encounter.deserter.refuse",
+                            Outcome = EncounterOutcome.Goto("refused")
+                        }
+                    }
+                },
+                ["joined"] = new EncounterNode
+                {
+                    Id = "joined",
+                    TextKey = "encounter.deserter.joined",
+                    AutoTransition = EncounterOutcome.End()
+                },
+                ["joined_intel"] = new EncounterNode
+                {
+                    Id = "joined_intel",
+                    TextKey = "encounter.deserter.joined_intel",
+                    AutoTransition = EncounterOutcome.End()
+                },
+                ["refused_deal"] = new EncounterNode
+                {
+                    Id = "refused_deal",
+                    TextKey = "encounter.deserter.refused_deal",
+                    AutoTransition = EncounterOutcome.End()
+                },
+                ["turned_in"] = new EncounterNode
+                {
+                    Id = "turned_in",
+                    TextKey = "encounter.deserter.turned_in",
+                    AutoTransition = EncounterOutcome.End()
+                },
+                ["refused"] = new EncounterNode
+                {
+                    Id = "refused",
+                    TextKey = "encounter.deserter.refused",
+                    AutoTransition = EncounterOutcome.End()
+                }
+            }
+        };
+    }
+
+    /// <summary>
+    /// Simple test encounter for AddCrew effect.
+    /// </summary>
+    public static EncounterTemplate CreateAddCrewTestEncounter()
+    {
+        return new EncounterTemplate
+        {
+            Id = "test_add_crew",
+            Name = "Add Crew Test",
+            Tags = new HashSet<string> { "test", "recruitment" },
+            EntryNodeId = "start",
+            Nodes = new Dictionary<string, EncounterNode>
+            {
+                ["start"] = new EncounterNode
+                {
+                    Id = "start",
+                    TextKey = "test.addcrew.start",
+                    Options = new List<EncounterOption>
+                    {
+                        new EncounterOption
+                        {
+                            Id = "recruit_soldier",
+                            TextKey = "test.addcrew.soldier",
+                            Outcome = EncounterOutcome.EndWith(
+                                EncounterEffect.AddCrew("TestSoldier", "Soldier"))
+                        },
+                        new EncounterOption
+                        {
+                            Id = "recruit_medic",
+                            TextKey = "test.addcrew.medic",
+                            Outcome = EncounterOutcome.EndWith(
+                                EncounterEffect.AddCrew("TestMedic", "Medic"))
+                        },
+                        new EncounterOption
+                        {
+                            Id = "recruit_tech",
+                            TextKey = "test.addcrew.tech",
+                            Outcome = EncounterOutcome.EndWith(
+                                EncounterEffect.AddCrew("TestTech", "Tech"))
+                        },
+                        new EncounterOption
+                        {
+                            Id = "recruit_scout",
+                            TextKey = "test.addcrew.scout",
+                            Outcome = EncounterOutcome.EndWith(
+                                EncounterEffect.AddCrew("TestScout", "Scout"))
+                        }
+                    }
+                }
+            }
+        };
+    }
 }

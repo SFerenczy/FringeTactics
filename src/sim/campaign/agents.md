@@ -47,7 +47,7 @@ Campaign/meta-game state: crew management, resources, mission tracking, jobs.
   - Trait methods: HasTrait(), AddTrait(), RemoveTrait(), GetTraits(), GetTraitModifier(), GetEffectiveStat()
   - Equipment (MG2): EquippedWeaponId, EquippedArmorId, EquippedGadgetId
   - Equipment methods: GetEquipped(), SetEquipped(), HasEquipped(), ClearEquipped(), GetAllEquippedIds()
-  - Factory: `CreateWithRole(id, name, role)` - creates crew with role-based starting stats
+  - Factory: `CreateWithRole(id, name, role, rng?)` - creates crew with role-based starting stats; rolls random trait if RNG provided
   - Methods: AddXp() (grants stat point on level up), SpendStatPoint(), CanDeploy(), AddInjury(), HealInjury()
 - **StatType.cs** - CrewStatType enum for primary stats (MG1)
 - **Trait.cs** - Trait system infrastructure (MG1):
@@ -60,6 +60,8 @@ Campaign/meta-game state: crew management, resources, mission tracking, jobs.
   - Personality: brave, cautious, reckless, cold_blooded, empathetic
   - Acquired: vengeful, hardened, scarred
   - Injury (permanent): damaged_eye, shattered_knee, nerve_damage, head_trauma, chronic_pain
+  - `GetRollableTraits()` - returns Background and Personality traits (excludes Acquired/Injury)
+  - `GetRandomTrait(rng)` - picks random rollable trait using provided RNG stream
 - **Job.cs** - Job/contract definition:
   - JobDifficulty enum: Easy, Medium, Hard
   - JobReward: money, parts, fuel, ammo

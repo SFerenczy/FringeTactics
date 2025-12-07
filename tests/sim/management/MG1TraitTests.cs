@@ -382,4 +382,112 @@ public class MG1TraitTests
         AssertThat(restored.GetEffectiveStat(CrewStatType.Aim)).IsEqual(4); // 3 + 1
         AssertThat(restored.GetEffectiveStat(CrewStatType.Resolve)).IsEqual(2); // 0 + 2
     }
+
+    // === Trait Rolling Tests (G2.5) ===
+
+    [TestCase]
+    public void TraitRegistry_GetRollableTraits_ExcludesInjuries()
+    {
+        var rollable = TraitRegistry.GetRollableTraits();
+
+        foreach (var trait in rollable)
+        {
+            AssertThat(trait.Category).IsNotEqual(TraitCategory.Injury);
+        }
+    }
+
+    [TestCase]
+    public void TraitRegistry_GetRollableTraits_ExcludesAcquired()
+    {
+        var rollable = TraitRegistry.GetRollableTraits();
+
+        foreach (var trait in rollable)
+        {
+            AssertThat(trait.Category).IsNotEqual(TraitCategory.Acquired);
+        }
+    }
+
+    [TestCase]
+    public void TraitRegistry_GetRollableTraits_IncludesBackgroundAndPersonality()
+    {
+        var rollable = TraitRegistry.GetRollableTraits();
+
+        bool hasBackground = rollable.Any(t => t.Category == TraitCategory.Background);
+        bool hasPersonality = rollable.Any(t => t.Category == TraitCategory.Personality);
+
+        AssertThat(hasBackground).IsTrue();
+        AssertThat(hasPersonality).IsTrue();
+    }
+
+    [TestCase]
+    public void TraitRegistry_GetRandomTrait_ReturnsValidTrait()
+    {
+        var rng = new RngStream("test", 12345);
+
+        var trait = TraitRegistry.GetRandomTrait(rng);
+
+        AssertThat(trait).IsNotNull();
+        AssertThat(trait.Category == TraitCategory.Background ||
+                   trait.Category == TraitCategory.Personality).IsTrue();
+    }
+
+    [TestCase]
+    public void TraitRegistry_GetRandomTrait_ReturnsNullWithNullRng()
+    {
+        var trait = TraitRegistry.GetRandomTrait(null);
+        AssertThat(trait).IsNull();
+    }
+
+    [TestCase]
+    public void TraitRegistry_GetRandomTrait_IsDeterministic()
+    {
+        var rng1 = new RngStream("test", 12345);
+        var rng2 = new RngStream("test", 12345);
+
+        var trait1 = TraitRegistry.GetRandomTrait(rng1);
+        var trait2 = TraitRegistry.GetRandomTrait(rng2);
+
+        AssertThat(trait1.Id).IsEqual(trait2.Id);
+    }
+
+    [TestCase]
+    public void CrewMember_CreateWithRole_RollsTraitWithRng()
+    {
+        var rng = new RngStream("test", 12345);
+
+        var crew = CrewMember.CreateWithRole(1, "Test", CrewRole.Soldier, rng);
+
+        AssertThat(crew.TraitIds.Count).IsEqual(1);
+    }
+
+    [TestCase]
+    public void CrewMember_CreateWithRole_NoTraitWithoutRng()
+    {
+        var crew = CrewMember.CreateWithRole(1, "Test", CrewRole.Soldier, null);
+
+        AssertThat(crew.TraitIds.Count).IsEqual(0);
+    }
+
+    [TestCase]
+    public void CrewMember_CreateWithRole_TraitIsDeterministic()
+    {
+        var rng1 = new RngStream("test", 99999);
+        var rng2 = new RngStream("test", 99999);
+
+        var crew1 = CrewMember.CreateWithRole(1, "Test1", CrewRole.Soldier, rng1);
+        var crew2 = CrewMember.CreateWithRole(2, "Test2", CrewRole.Soldier, rng2);
+
+        AssertThat(crew1.TraitIds[0]).IsEqual(crew2.TraitIds[0]);
+    }
+
+    [TestCase]
+    public void CampaignState_CreateNew_CrewHaveTraits()
+    {
+        var campaign = CampaignState.CreateNew(12345);
+
+        foreach (var crew in campaign.Crew)
+        {
+            AssertThat(crew.TraitIds.Count).IsGreaterEqual(1);
+        }
+    }
 }

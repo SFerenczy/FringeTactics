@@ -247,11 +247,26 @@ public class CrewMember
 
     /// <summary>
     /// Create a crew member with role-appropriate starting stats.
+    /// If RNG is provided, rolls one random trait from the rollable pool.
     /// </summary>
-    public static CrewMember CreateWithRole(int id, string name, CrewRole role)
+    /// <param name="id">Unique crew ID.</param>
+    /// <param name="name">Crew member name.</param>
+    /// <param name="role">Crew role determining base stats.</param>
+    /// <param name="rng">Optional RNG for trait rolling. If null, no trait is assigned.</param>
+    public static CrewMember CreateWithRole(int id, string name, CrewRole role, RngStream rng = null)
     {
         var crew = new CrewMember(id, name) { Role = role };
         ApplyRoleStats(crew, role);
+        
+        if (rng != null)
+        {
+            var trait = TraitRegistry.GetRandomTrait(rng);
+            if (trait != null)
+            {
+                crew.AddTrait(trait.Id);
+            }
+        }
+        
         return crew;
     }
 

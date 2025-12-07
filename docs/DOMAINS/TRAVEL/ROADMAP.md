@@ -171,44 +171,47 @@ Expose travel and world systems to the player through UI enhancements.
 
 **Depends on:** TV2 ✅, WD3 ✅, GN2 ✅
 
-**Status:** ⬜ Pending
+**Status:** 🔄 In Progress
 
 **Implementation:** See `TV-UI_IMPLEMENTATION.md` for detailed breakdown.
 
 **Key capabilities:**
 
-- **System info panel** (SectorView):
+- **Travel animation** ✅:
+  - Visual dot moving along route during travel
+  - Animation stops at random point (0.2-0.8) if encounter triggers
+  - Brief but visible feedback (~0.8s duration)
+- **System info panel** (SectorView) ✅:
   - Display system metrics (security, crime, stability, economy, law)
   - Display system tags (Hub, Frontier, Lawless, etc.)
   - Display owning faction with reputation
   - Display station facilities
-- **Route info** (when selecting destination):
+- **Route info** (when selecting destination) ✅:
   - Show route hazard level
   - Show estimated encounter chance
   - Show route tags (Dangerous, Patrolled, etc.)
-- **Campaign time display**:
+- **Campaign time display** ✅:
   - Show current campaign day in sector view header
   - Show day advancement during travel
-- **Travel feedback**:
-  - Show travel progress ("Day X of Y")
+- **Travel feedback** ✅:
+  - Travel log shows recent journeys
   - Show fuel consumption per segment
-  - Show encounter log (what was rolled, even if auto-resolved)
-- **Ship status**:
+- **Ship status** ✅:
   - Show hull integrity in resources panel
-  - Show ship name
 
 **Deliverables:**
-- Enhanced `SectorView.cs` with system info panel
-- Campaign day display in header
-- Travel log/feedback panel
-- Ship hull display
+- ✅ `TravelAnimator.cs` - Visual travel animation component
+- ✅ Enhanced `SectorView.cs` with system info panel
+- ✅ Campaign day display in header
+- ✅ Travel log/feedback panel
+- ✅ Ship hull display
 - No new sim code required (display only)
 
-**Files to modify:**
-| File | Changes |
+**Files:**
+| File | Purpose |
 |------|---------|  
-| `src/scenes/sector/SectorView.cs` | Add system info, campaign day, travel feedback |
-| `src/scenes/sector/SectorView.tscn` | UI layout updates |
+| `src/scenes/sector/SectorView.cs` | System info, campaign day, travel feedback |
+| `src/scenes/sector/TravelAnimator.cs` | Animated travel dot |
 
 ---
 
@@ -246,7 +249,7 @@ Travel risk responds to live simulation metrics.
 | TV0 | G2 | ✅ Complete | Concept finalization |
 | TV1 | G2 | ✅ Complete | Route planning |
 | TV2 | G2 | ✅ Complete | Travel execution |
-| TV-UI | G2 | ⬜ Pending | Travel visibility |
+| TV-UI | G2 | 🔄 In Progress | Travel visibility (animation done) |
 | TV3 | G3 | ⬜ Pending | Simulation integration |
 
 ---

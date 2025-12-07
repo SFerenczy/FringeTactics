@@ -279,6 +279,8 @@ These methods already exist in `CampaignState` and will be called by effect hand
 
 **Status:** ⬜ Pending
 
+**Implementation:** See `MG-UI2_IMPLEMENTATION.md`
+
 - From crew detail, add "Fire" / "Dismiss" button.
 - Confirm dialog: summary of what will be lost (skills / role).
 - Call existing management operation to remove crew from campaign state.
@@ -292,6 +294,8 @@ These methods already exist in `CampaignState` and will be called by effect hand
 
 **Status:** ⬜ Pending
 
+**Implementation:** See `MG-SYS1_IMPLEMENTATION.md`
+
 - Each crew member has a small number of slots (e.g. main weapon, armor).
 - Equipment is purely stat modifiers at this stage (no new tactical rules):
   - e.g. +Aim, +HP, +Tech.
@@ -304,6 +308,10 @@ These methods already exist in `CampaignState` and will be called by effect hand
 **Goal:** A basic, usable equipment UX.
 
 **Status:** ⬜ Pending
+
+**Implementation:** See `MG-UI3_IMPLEMENTATION.md`
+
+**Depends on:** MG-SYS1
 
 - From crew detail, show current equipment slots.
 - Allow equipping/unequipping from global inventory list:

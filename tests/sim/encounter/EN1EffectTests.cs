@@ -137,4 +137,24 @@ public class EN1EffectTests
         AssertString(effect.TargetId).IsEqual("quest_started");
         AssertBool(effect.BoolParam).IsTrue();
     }
+
+    [TestCase]
+    public void AddCrew_CreatesCorrectEffect()
+    {
+        var effect = EncounterEffect.AddCrew("Recruit", "Tech");
+
+        AssertObject(effect.Type).IsEqual(EffectType.AddCrew);
+        AssertString(effect.TargetId).IsEqual("Recruit");
+        AssertString(effect.StringParam).IsEqual("Tech");
+    }
+
+    [TestCase]
+    public void AddCrew_DefaultsToSoldier()
+    {
+        var effect = EncounterEffect.AddCrew("Drifter");
+
+        AssertObject(effect.Type).IsEqual(EffectType.AddCrew);
+        AssertString(effect.TargetId).IsEqual("Drifter");
+        AssertString(effect.StringParam).IsEqual("Soldier");
+    }
 }

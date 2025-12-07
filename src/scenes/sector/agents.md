@@ -6,6 +6,9 @@ Visual representation of the sector map for navigation.
 
 - **SectorView.tscn** - Scene file
 - **SectorView.cs** - Sector map interface
+- **TravelAnimator.cs** - Visual travel animation (dot moving along route)
+- **JobBoardPanel.cs** - Job board overlay panel
+- **StationServicesPanel.cs** - Station services overlay panel
 
 ## Responsibilities
 

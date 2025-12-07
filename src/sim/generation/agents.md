@@ -21,7 +21,7 @@ Generate mission offers (contracts) and procedural galaxies based on player stat
 | `NameGenerator.cs` | Name generation utilities for systems, stations, and sectors |
 | `EncounterTemplateRegistry.cs` | Central registry for encounter templates with tag filtering and eligibility checking (GN3) |
 | `EncounterGenerator.cs` | Generates encounter instances from templates with weighted selection and parameter resolution (GN3) |
-| `ProductionEncounters.cs` | 10 gameplay encounter templates for travel (pirate, patrol, distress, trader, smuggler, derelict, faction, mystery, mechanical, refugee) (GN3) |
+| `ProductionEncounters.cs` | 11 gameplay encounter templates for travel (pirate, patrol, distress, trader, smuggler, derelict, faction, mystery, mechanical, refugee, trial_by_fire) (GN3) |
 | `EncounterWeightConfig.cs` | Configuration for encounter selection weights (balancing without code changes) (GN3) |
 | `EncounterValueConfig.cs` | Configuration for encounter effect values (rewards, costs, difficulties) (GN3) |
 

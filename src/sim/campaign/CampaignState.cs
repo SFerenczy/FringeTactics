@@ -833,10 +833,11 @@ public class CampaignState
 
     /// <summary>
     /// Internal: creates crew and adds to roster.
+    /// Uses campaign RNG to roll a starting trait.
     /// </summary>
     private CrewMember CreateAndAddCrew(string name, CrewRole role)
     {
-        var crew = CrewMember.CreateWithRole(nextCrewId, name, role);
+        var crew = CrewMember.CreateWithRole(nextCrewId, name, role, Rng?.Campaign);
         nextCrewId++;
         Crew.Add(crew);
         return crew;
@@ -1370,6 +1371,9 @@ public class CampaignState
                 case EffectType.CrewTrait:
                     return ApplyCrewTraitEffect(effect, instance);
 
+                case EffectType.AddCrew:
+                    return ApplyAddCrewEffect(effect);
+
                 case EffectType.ShipDamage:
                     return ApplyShipDamageEffect(effect);
 
@@ -1559,6 +1563,33 @@ public class CampaignState
         {
             return RemoveTrait(crew.Id, traitId);
         }
+    }
+
+    /// <summary>
+    /// Apply an add crew effect (recruitment from encounter).
+    /// </summary>
+    private bool ApplyAddCrewEffect(EncounterEffect effect)
+    {
+        string name = effect.TargetId;
+        string roleStr = effect.StringParam ?? "Soldier";
+
+        if (string.IsNullOrEmpty(name))
+        {
+            SimLog.Log("[Campaign] AddCrew effect missing name (TargetId)");
+            return false;
+        }
+
+        if (!Enum.TryParse<CrewRole>(roleStr, out var role))
+        {
+            role = CrewRole.Soldier;
+        }
+
+        var newCrew = AddCrew(name, role);
+
+        SimLog.Log($"[Campaign] Recruited {newCrew.Name} ({role}) from encounter");
+        EventBus?.Publish(new CrewRecruitedEvent(newCrew.Id, newCrew.Name, role));
+
+        return true;
     }
 
     /// <summary>

@@ -100,6 +100,18 @@ public class EncounterEffect
         BoolParam = false
     };
 
+    /// <summary>
+    /// Add a new crew member to the roster.
+    /// </summary>
+    /// <param name="name">Name of the new crew member.</param>
+    /// <param name="role">Role as string (Soldier, Medic, Tech, Scout). Defaults to Soldier if invalid.</param>
+    public static EncounterEffect AddCrew(string name, string role = "Soldier") => new()
+    {
+        Type = EffectType.AddCrew,
+        TargetId = name,
+        StringParam = role
+    };
+
     // === Ship Effects ===
 
     public static EncounterEffect ShipDamage(int amount) => new()

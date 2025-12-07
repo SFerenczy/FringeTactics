@@ -487,15 +487,22 @@ Nodes:
 
 **Goal:** Get new crew via narrative events.
 
-**Status:** ⬜ Pending
+**Status:** ✅ Complete
 
-- Add 2–3 encounters that can result in new crew members:
-  - Drifter looking for a ship.
-  - Rescued specialist.
-- Outcomes:
-  - On success, add a crew member with:
-    - Reasonable stats.
-    - A small, themed trait set.
+**Implementation:**
+- Added `EffectType.AddCrew` and `EncounterEffect.AddCrew(name, role)` factory method
+- Added `ApplyAddCrewEffect()` in `CampaignState` to handle recruitment
+- Added `CrewRecruitedEvent` for UI feedback
+- Created 3 recruitment encounter templates:
+  - `drifter_passage` – Drifter looking for passage (recruits Soldier)
+  - `stranded_specialist` – Rescue from derelict with skill check (recruits Tech)
+  - `faction_deserter` – Deserter with faction rep consequences (recruits Scout)
+- Added `test_add_crew` template for testing all roles
+- Unit tests in `MG4EffectTests.cs` and `EN1EffectTests.cs`
+
+**Outcomes:**
+- New crew members have role-appropriate stats via `CrewMember.CreateWithRole()`
+- Random trait assigned via campaign RNG
 
 ---
 
