@@ -127,6 +127,13 @@ public class TravelExecutor
                 ));
 
                 SimLog.Log($"[Travel] Segment {state.CurrentSegmentIndex + 1}/{state.Plan.Segments.Count}: {campaign.World?.GetSystem(segment.FromSystemId)?.Name} → {campaign.World?.GetSystem(segment.ToSystemId)?.Name}");
+
+                // Roll for encounter once per segment (at start)
+                var encounterResult = TryTriggerEncounter(state, campaign, segment);
+                if (encounterResult != null)
+                {
+                    return encounterResult;
+                }
             }
 
             // Process remaining days in current segment
@@ -160,13 +167,6 @@ public class TravelExecutor
                 campaign.Time.AdvanceDays(1);
                 state.DaysElapsed++;
                 state.CurrentDayInSegment++;
-
-                // Roll for encounter
-                var encounterResult = TryTriggerEncounter(state, campaign, segment);
-                if (encounterResult != null)
-                {
-                    return encounterResult;
-                }
             }
 
             // Segment complete - move to destination
