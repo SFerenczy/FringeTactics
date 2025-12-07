@@ -451,11 +451,10 @@ public partial class EncounterScreen : Control
     {
         if (string.IsNullOrEmpty(textKey)) return "";
         
-        // For now, use the text key directly as the text
-        // TODO: Implement localization lookup
-        string text = textKey;
+        // Look up localized text, falling back to key if not found
+        string text = Localization.Get(textKey);
         
-        // Replace parameter placeholders
+        // Replace parameter placeholders from encounter instance
         if (instance?.ResolvedParameters != null)
         {
             foreach (var (key, value) in instance.ResolvedParameters)

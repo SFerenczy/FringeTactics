@@ -28,6 +28,15 @@ Static configuration types and data definitions used across the sim layer.
 - **ValidationResult.cs** - Validation result accumulator for errors and warnings
 - **DataLoader.cs** - JSON loading utility. Uses Godot FileAccess for res:// paths.
 - **MissionConfig.cs** - Mission setup: grid size, map template, entry zone, crew spawns, enemy spawns.
+- **Localization.cs** - Localization system for text lookup:
+  - `Localization.Load(locale)` - Load JSON file from `data/localization/{locale}.json`
+  - `Localization.Get(key)` - Get localized string, returns key if not found
+  - `Localization.Get(key, params)` - Get string with parameter substitution
+  - `Localization.HasKey(key)` - Check if key exists
+- **LocalizationValidator.cs** - Validates localization files against encounter templates:
+  - `LocalizationValidator.Validate(locale)` - Check for missing/unused keys
+  - `LocalizationValidator.PrintValidation()` - Print validation to console (Shift+Alt+L)
+  - `LocalizationValidator.GenerateStubJson()` - Generate template with all required keys
 
 ## JSON Data Files
 
@@ -36,6 +45,7 @@ Located in `data/` folder at project root:
 - `data/weapons.json` - Weapon definitions
 - `data/enemies.json` - Enemy definitions  
 - `data/abilities.json` - Ability definitions
+- `data/localization/en.json` - English localization strings
 
 ## Responsibilities
 
