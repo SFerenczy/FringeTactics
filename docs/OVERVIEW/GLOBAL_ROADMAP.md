@@ -230,8 +230,8 @@ Now a typical 30–60 minute session starts looking like your intended experienc
 | **TV0 – Concept** | ✅ Complete | Travel design finalization (see `TV0_IMPLEMENTATION.md`) |
 | **TV1 – Route Planning** | ✅ Complete | Pathfinding and travel plans (see `TV1_IMPLEMENTATION.md`) |
 | **TV2 – Travel Execution** | ✅ Complete | Time/fuel consumption, encounter triggers (see `TV2_IMPLEMENTATION.md`) |
-| **EN0 – Concept** | ⬜ Pending | Encounter design finalization |
-| **EN1 – Runtime Core** | ✅ Complete | State machine, conditions, outcomes |
+| **EN0 – Concept** | ✅ Complete | Encounter design finalization | see `EN0_IMPLEMENTATION.md`
+| **EN1 – Runtime Core** | ✅ Complete | State machine, conditions, outcomes | see `EN1_IMPLEMENTATION.md` |
 | **EN2 – Skill Checks** | ✅ Complete | Crew-based checks and modifiers (see `EN2_IMPLEMENTATION.md`) |
 | **GN2 – Galaxy Generation** | ⬜ Pending | Sector graph generation |
 | **GN3 – Encounter Instantiation** | ⬜ Pending | Template selection and parameterization |
