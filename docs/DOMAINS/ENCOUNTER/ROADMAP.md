@@ -13,8 +13,9 @@ This document defines the **implementation order** for the Encounter domain.
 1. **EN0 – Concept Finalization (G2)**
 2. **EN1 – Runtime Core (G2)**
 3. **EN2 – Skill Checks & Crew Integration (G2)**
-4. **EN3 – Tactical Branching (G2+)**
-5. **EN4 – Simulation Integration (G3)**
+4. **EN-UI – Encounter Screen (G2)**
+5. **EN3 – Tactical Branching (G2+)**
+6. **EN4 – Simulation Integration (G3)**
 
 ---
 
@@ -151,6 +152,62 @@ Implement skill checks that use crew stats and traits.
 
 **Implementation:** See `EN2_IMPLEMENTATION.md` for detailed breakdown.
 
+---
+
+## EN-UI – Encounter Screen (G2)
+
+**Goal:**  
+Create an interactive encounter UI that presents encounters to the player instead of auto-resolving them.
+
+**Depends on:** EN1 ✅, EN2 ✅, MG4 ✅, TV-UI (recommended)
+
+**Status:** ⬜ Pending
+
+**Implementation:** See `EN-UI_IMPLEMENTATION.md` for detailed breakdown.
+
+**Key capabilities:**
+
+- **Encounter screen** (`EncounterScreen.tscn`):
+  - Display encounter narrative text
+  - Show available options with conditions
+  - Display skill check requirements and chances
+  - Show skill check results (success/failure, roll details)
+  - Display accumulated effects
+  - Handle encounter completion
+- **GameState integration**:
+  - Handle `TravelResult.Paused` state
+  - Transition to encounter screen when encounter triggers
+  - Resume travel after encounter resolution
+  - Apply effects via `ApplyEncounterOutcome()`
+- **Encounter flow**:
+  - Start encounter → show first node
+  - Player selects option → resolve outcome
+  - Show results → transition to next node or end
+  - On end → apply effects, return to sector view
+
+**Deliverables:**
+- `EncounterScreen.tscn` scene file
+- `EncounterScreen.cs` controller script
+- Updated `GameState.cs` for encounter flow
+- Integration with `EncounterRunner`
+- Integration with `ApplyEncounterOutcome`
+
+**Files to create:**
+| File | Purpose |
+|------|---------|
+| `src/scenes/encounter/EncounterScreen.tscn` | Encounter UI scene |
+| `src/scenes/encounter/EncounterScreen.cs` | Encounter UI controller |
+
+**Files to modify:**
+| File | Changes |
+|------|---------|
+| `src/core/GameState.cs` | Handle paused travel, encounter transitions |
+| `src/scenes/sector/SectorView.cs` | Trigger encounter screen on travel pause |
+
+---
+
+## EN2 – Skill Checks & Crew Integration (G2) (continued)
+
 **Key capabilities:**
 
 - `SkillCheck` static class with resolution logic
@@ -258,13 +315,14 @@ Encounters respond to and affect simulation state.
 
 ## G2 Scope Summary
 
-| Milestone | Phase | Notes |
-|-----------|-------|-------|
-| EN0 | G2 | Concept finalization |
-| EN1 | G2 | Runtime core |
-| EN2 | G2 | Skill checks |
-| EN3 | G2+ | Tactical branching (can defer) |
-| EN4 | G3 | Simulation integration |
+| Milestone | Phase | Status | Notes |
+|-----------|-------|--------|-------|
+| EN0 | G2 | ✅ Complete | Concept finalization |
+| EN1 | G2 | ✅ Complete | Runtime core |
+| EN2 | G2 | ✅ Complete | Skill checks |
+| EN-UI | G2 | ⬜ Pending | Encounter screen |
+| EN3 | G2+ | ⬜ Pending | Tactical branching (can defer) |
+| EN4 | G3 | ⬜ Pending | Simulation integration |
 
 ---
 
@@ -352,6 +410,7 @@ Nodes:
 |-----------|------------|
 | EN1 | EN0 |
 | EN2 | EN1, MG1 |
+| EN-UI | EN1, EN2, MG4 |
 | EN3 | EN2, MG3 |
 | EN4 | EN2, Simulation domain |
 
@@ -367,10 +426,19 @@ Nodes:
 - [ ] Deterministic given same inputs and choices
 
 ### EN2
-- [ ] Skill checks use crew stats
-- [ ] Traits affect check bonuses
-- [ ] Traits gate option visibility
-- [ ] Best crew auto-selected for checks
+- [x] Skill checks use crew stats
+- [x] Traits affect check bonuses
+- [x] Traits gate option visibility
+- [x] Best crew auto-selected for checks
+
+### EN-UI
+- [ ] Encounter screen displays narrative text
+- [ ] Options shown with availability conditions
+- [ ] Skill check chances displayed before selection
+- [ ] Skill check results shown (roll, bonuses, success/fail)
+- [ ] Effects displayed after resolution
+- [ ] Travel resumes after encounter completion
+- [ ] Effects applied via `ApplyEncounterOutcome()`
 
 ### EN3
 - [ ] Encounters can trigger tactical missions

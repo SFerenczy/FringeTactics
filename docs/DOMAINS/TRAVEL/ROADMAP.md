@@ -13,7 +13,8 @@ This document defines the **implementation order** for the Travel domain.
 1. **TV0 – Concept Finalization (G2)**
 2. **TV1 – Route Planning (G2)**
 3. **TV2 – Travel Execution (G2)**
-4. **TV3 – Simulation Integration (G3)**
+4. **TV-UI – Travel Visibility (G2)**
+5. **TV3 – Simulation Integration (G3)**
 
 ---
 
@@ -163,6 +164,54 @@ public record TravelInterruptedEvent(int CurrentSystemId, string Reason);
 
 ---
 
+## TV-UI – Travel Visibility (G2)
+
+**Goal:**  
+Expose travel and world systems to the player through UI enhancements.
+
+**Depends on:** TV2 ✅, WD3 ✅, GN2 ✅
+
+**Status:** ⬜ Pending
+
+**Implementation:** See `TV-UI_IMPLEMENTATION.md` for detailed breakdown.
+
+**Key capabilities:**
+
+- **System info panel** (SectorView):
+  - Display system metrics (security, crime, stability, economy, law)
+  - Display system tags (Hub, Frontier, Lawless, etc.)
+  - Display owning faction with reputation
+  - Display station facilities
+- **Route info** (when selecting destination):
+  - Show route hazard level
+  - Show estimated encounter chance
+  - Show route tags (Dangerous, Patrolled, etc.)
+- **Campaign time display**:
+  - Show current campaign day in sector view header
+  - Show day advancement during travel
+- **Travel feedback**:
+  - Show travel progress ("Day X of Y")
+  - Show fuel consumption per segment
+  - Show encounter log (what was rolled, even if auto-resolved)
+- **Ship status**:
+  - Show hull integrity in resources panel
+  - Show ship name
+
+**Deliverables:**
+- Enhanced `SectorView.cs` with system info panel
+- Campaign day display in header
+- Travel log/feedback panel
+- Ship hull display
+- No new sim code required (display only)
+
+**Files to modify:**
+| File | Changes |
+|------|---------|  
+| `src/scenes/sector/SectorView.cs` | Add system info, campaign day, travel feedback |
+| `src/scenes/sector/SectorView.tscn` | UI layout updates |
+
+---
+
 ## TV3 – Simulation Integration (G3)
 
 **Goal:**  
@@ -197,6 +246,7 @@ Travel risk responds to live simulation metrics.
 | TV0 | G2 | ✅ Complete | Concept finalization |
 | TV1 | G2 | ✅ Complete | Route planning |
 | TV2 | G2 | ✅ Complete | Travel execution |
+| TV-UI | G2 | ⬜ Pending | Travel visibility |
 | TV3 | G3 | ⬜ Pending | Simulation integration |
 
 ---
@@ -252,6 +302,7 @@ Per segment:
 |-----------|------------|
 | TV1 | WD2 (Sector Topology) |
 | TV2 | TV1, EN1 (partial), MG4 (partial) |
+| TV-UI | TV2, WD3, GN2 |
 | TV3 | TV2, Simulation domain |
 
 ---
@@ -270,6 +321,14 @@ Per segment:
 - [ ] Encounters trigger based on risk
 - [ ] Travel can be interrupted and resumed
 - [ ] Out-of-fuel handled gracefully
+
+### TV-UI
+- [ ] System metrics displayed when selecting node
+- [ ] System tags displayed (Hub, Frontier, Lawless, etc.)
+- [ ] Route hazard shown when planning travel
+- [ ] Campaign day shown in sector view
+- [ ] Ship hull shown in resources panel
+- [ ] Travel feedback shows fuel/time consumed
 
 ### TV3
 - [ ] Risk reflects live simulation state

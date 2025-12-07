@@ -233,30 +233,51 @@ Now a typical 30–60 minute session starts looking like your intended experienc
 | **EN0 – Concept** | ✅ Complete | Encounter design finalization | see `EN0_IMPLEMENTATION.md`
 | **EN1 – Runtime Core** | ✅ Complete | State machine, conditions, outcomes | see `EN1_IMPLEMENTATION.md` |
 | **EN2 – Skill Checks** | ✅ Complete | Crew-based checks and modifiers (see `EN2_IMPLEMENTATION.md`) |
-| **GN2 – Galaxy Generation** | ⬜ Pending | Sector graph generation (see `GN2_IMPLEMENTATION.md`) |
+| **GN2 – Galaxy Generation** | ✅ Complete | Sector graph generation (see `GN2_IMPLEMENTATION.md`) |
 | **GN3 – Encounter Instantiation** | ✅ Complete | Template selection and parameterization (see `GN3_IMPLEMENTATION.md`) |
-| **MG4 – Encounter Integration** | ⬜ Pending | Apply encounter outcomes to player state |
+| **MG4 – Encounter Integration** | ✅ Complete | Apply encounter outcomes to player state (see `MG4_IMPLEMENTATION.md`) |
+| **TV-UI – Travel Visibility** | ⬜ Pending | System info, travel feedback, campaign day display |
+| **EN-UI – Encounter Screen** | ⬜ Pending | Interactive encounter UI with choices and outcomes |
 
 ### Recommended Implementation Order
 
-**Phase A: World Foundation (WD2 → WD3)**
+**Phase A: World Foundation (WD2 → WD3)** ✅
 1. **WD2 – Sector Topology**: Multi-system graph, routes, connections
 2. **WD3 – Metrics & Tags**: System-level metrics and tag vocabulary
 
-**Phase B: Travel System (TV0 → TV1 → TV2)**
+**Phase B: Travel System (TV0 → TV1 → TV2)** ✅
 3. **TV0 – Concept**: Finalize travel mechanics design
 4. **TV1 – Route Planning**: Pathfinding, travel plan creation
 5. **TV2 – Travel Execution**: Time/fuel consumption, encounter trigger points
 
-**Phase C: Encounter System (EN0 → EN1 → EN2)**
+**Phase C: Encounter System (EN0 → EN1 → EN2)** ✅
 6. **EN0 – Concept**: Finalize encounter structure and templates
 7. **EN1 – Runtime Core**: State machine, node traversal, outcomes
 8. **EN2 – Skill Checks**: Crew stat integration, trait-based options
 
-**Phase D: Generation & Integration (GN2 → GN3 → MG4)**
+**Phase D: Generation & Integration (GN2 → GN3 → MG4)** ✅
 9. **GN2 – Galaxy Generation**: Generate sector at campaign start
 10. **GN3 – Encounter Instantiation**: Select and parameterize encounters
 11. **MG4 – Encounter Integration**: Apply outcomes to player state
+
+**Phase E: Visibility & UI (TV-UI → EN-UI)** ⬜
+12. **TV-UI – Travel Visibility**: Expose system info, travel feedback, campaign time
+13. **EN-UI – Encounter Screen**: Interactive encounter UI with player choices
+
+### G2 Completion Notes
+
+**Sim layer complete, UI integration pending.**
+
+All G2 simulation systems are implemented and tested:
+- Galaxy generation creates procedural sectors with factions, metrics, tags
+- Travel execution consumes fuel, advances time, rolls encounters
+- Encounter runner processes state machines with skill checks
+- Effect application modifies campaign state
+
+The gap is **visibility**: the UI doesn't expose most of this to the player. Phase E (TV-UI, EN-UI) bridges this gap by:
+1. Showing system metrics, tags, and route hazards in sector view
+2. Displaying campaign day and travel progress
+3. Presenting encounters interactively instead of auto-resolving
 
 ---
 

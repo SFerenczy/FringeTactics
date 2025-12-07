@@ -12,6 +12,7 @@ Godot scenes and their scripts. This is the "outside" of the hexagonal architect
 - **sector/** - Sector map view (travel between nodes)
 - **campaign/** - Ship/crew management screen
 - **mission/** - Tactical combat view and related UI
+- **encounter/** - Encounter screen for travel events (EN-UI)
 
 ## Responsibilities
 
