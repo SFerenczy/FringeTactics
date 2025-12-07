@@ -1,6 +1,6 @@
 # EN-UI – Encounter Screen: Implementation Plan
 
-**Status**: ⬜ Pending  
+**Status**: ✅ Complete  
 **Depends on**: EN1 ✅, EN2 ✅, MG4 ✅, TV-UI (recommended)  
 **Phase**: G2
 
@@ -722,30 +722,30 @@ private void ApplyStyles()
 
 ## EN-UI Deliverables Checklist
 
-### Phase 1: GameState Encounter Flow ⬜
-- [ ] **1.1** Add encounter state fields to GameState
-- [ ] **1.2** Modify TravelTo to handle Paused result
-- [ ] **1.3** Add ResolveEncounter method
-- [ ] **1.4** Handle multi-encounter journeys
+### Phase 1: GameState Encounter Flow ✅
+- [x] **1.1** Add encounter state fields to GameState
+- [x] **1.2** Modify TravelTo to handle Paused result
+- [x] **1.3** Add ResolveEncounter method
+- [x] **1.4** Handle multi-encounter journeys
 
-### Phase 2: Encounter Screen Scene ⬜
-- [ ] **2.1** Create EncounterScreen.tscn
-- [ ] **2.2** Create EncounterScreen.cs controller
-- [ ] **2.3** Display narrative text
-- [ ] **2.4** Display options as buttons
-- [ ] **2.5** Handle option selection
-- [ ] **2.6** Show results and effects
-- [ ] **2.7** Handle encounter completion
+### Phase 2: Encounter Screen Scene ✅
+- [x] **2.1** Create EncounterScreen.tscn
+- [x] **2.2** Create EncounterScreen.cs controller
+- [x] **2.3** Display narrative text
+- [x] **2.4** Display options as buttons
+- [x] **2.5** Handle option selection
+- [x] **2.6** Show results and effects
+- [x] **2.7** Handle encounter completion
 
-### Phase 3: Skill Check Display ⬜
-- [ ] **3.1** Subscribe to skill check events
-- [ ] **3.2** Show detailed skill check results
-- [ ] **3.3** Display success chance before selection
+### Phase 3: Skill Check Display ✅
+- [x] **3.1** Subscribe to skill check events
+- [x] **3.2** Show detailed skill check results
+- [x] **3.3** Display success chance before selection
 
-### Phase 4: Visual Polish ⬜
-- [ ] **4.1** Style panels consistently
-- [ ] **4.2** Add visual feedback for success/failure
-- [ ] **4.3** Polish text formatting
+### Phase 4: Visual Polish ✅
+- [x] **4.1** Style panels consistently
+- [x] **4.2** Add visual feedback for success/failure
+- [x] **4.3** Polish text formatting
 
 ---
 

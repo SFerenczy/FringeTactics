@@ -207,7 +207,9 @@ public class EncounterGenerator
 
         // === Faction ===
         instance.SetParameter("faction_id", context.SystemOwnerFactionId ?? "neutral");
-        var faction = campaign?.World?.GetFaction(context.SystemOwnerFactionId);
+        var faction = context.SystemOwnerFactionId != null 
+            ? campaign?.World?.GetFaction(context.SystemOwnerFactionId) 
+            : null;
         instance.SetParameter("faction_name", faction?.Name ?? "local authorities");
 
         // === NPCs ===

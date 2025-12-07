@@ -19,6 +19,8 @@ Orchestrates game flow and state transitions. Bridges sim logic with scene prese
 - `StartMission()` - Build CombatState via MissionFactory, publish `MissionStartedEvent`, load scene (MG3)
 - `StartSandboxMission()` - Build sandbox CombatState, load scene (no campaign)
 - `EndMission(outcome, combatState)` - Build output, publish `MissionEndedEvent`, apply to campaign (MG3)
+- `TravelTo(systemId)` - Execute travel, handle encounters via `HandleTravelResult()` (EN-UI)
+- `ResolveEncounter(outcome)` - Apply encounter effects, resume travel if paused (EN-UI)
 - `GoToMainMenu()` - Clear campaign and CurrentCombat, return to menu
 
 ## Key Properties

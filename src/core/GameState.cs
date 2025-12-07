@@ -24,6 +24,10 @@ public partial class GameState : Node
     
     // Track current sandbox mission config for restart
     private MissionConfig currentSandboxConfig = null;
+    
+    // Encounter flow state (EN-UI)
+    private TravelState pausedTravelState = null;
+    private TravelPlan pausedTravelPlan = null;
 
     // Scene paths
     private const string MainMenuScene = "res://src/scenes/menu/MainMenu.tscn";
@@ -31,6 +35,7 @@ public partial class GameState : Node
     private const string CampaignScene = "res://src/scenes/campaign/CampaignScreen.tscn";
     private const string SectorScene = "res://src/scenes/sector/SectorView.tscn";
     private const string CampaignOverScene = "res://src/scenes/menu/CampaignOverScreen.tscn";
+    private const string EncounterScene = "res://src/scenes/encounter/EncounterScreen.tscn";
 
     public override void _Ready()
     {
@@ -88,39 +93,98 @@ public partial class GameState : Node
         var executor = new TravelExecutor(Campaign.Rng);
         var result = executor.Execute(plan, Campaign);
         
-        if (result.Status == TravelResultStatus.Completed)
+        return HandleTravelResult(result, plan);
+    }
+    
+    /// <summary>
+    /// Handle travel result, transitioning to encounter screen if paused.
+    /// </summary>
+    private bool HandleTravelResult(TravelResult result, TravelPlan plan)
+    {
+        switch (result.Status)
         {
-            GD.Print($"[GameState] Arrived at {Campaign.World?.GetSystem(Campaign.CurrentNodeId)?.Name}");
-
-            // Refresh available jobs at new location (only if no active job)
-            if (Campaign.CurrentJob == null)
-            {
-                Campaign.RefreshJobsAtCurrentNode();
-            }
-
-            return true;
+            case TravelResultStatus.Completed:
+                GD.Print($"[GameState] Arrived at {Campaign.World?.GetSystem(Campaign.CurrentNodeId)?.Name}");
+                if (Campaign.CurrentJob == null)
+                {
+                    Campaign.RefreshJobsAtCurrentNode();
+                }
+                return true;
+                
+            case TravelResultStatus.PausedForEncounter:
+                GD.Print($"[GameState] Travel paused for encounter");
+                pausedTravelState = result.PausedState;
+                pausedTravelPlan = plan;
+                Mode = "encounter";
+                GetTree().ChangeSceneToFile(EncounterScene);
+                return true;
+                
+            case TravelResultStatus.Interrupted:
+                if (result.InterruptReason == TravelInterruptReason.InsufficientFuel)
+                {
+                    GD.Print("[GameState] Travel failed: insufficient fuel");
+                }
+                else
+                {
+                    GD.Print($"[GameState] Travel interrupted: {result.InterruptReason}");
+                }
+                return false;
+                
+            default:
+                GD.Print($"[GameState] Travel failed: {result.Status}");
+                return false;
         }
-        else if (result.Status == TravelResultStatus.Interrupted)
-        {
-            if (result.InterruptReason == TravelInterruptReason.InsufficientFuel)
-            {
-                GD.Print("[GameState] Travel failed: insufficient fuel");
-            }
-            else
-            {
-                GD.Print($"[GameState] Travel interrupted: {result.InterruptReason}");
-            }
-            return false;
-        }
-
-        GD.Print($"[GameState] Travel failed: {result.Status}");
-        return false;
     }
 
     public void GoToSectorView()
     {
         Mode = "sector";
         GetTree().ChangeSceneToFile(SectorScene);
+    }
+    
+    /// <summary>
+    /// Called when encounter completes. Applies effects and resumes travel.
+    /// </summary>
+    public void ResolveEncounter(string outcome = "completed")
+    {
+        if (Campaign?.ActiveEncounter == null)
+        {
+            GD.PrintErr("[GameState] No active encounter to resolve");
+            GoToSectorView();
+            return;
+        }
+        
+        // Apply accumulated effects
+        int effectsApplied = Campaign.ApplyEncounterOutcome(Campaign.ActiveEncounter);
+        GD.Print($"[GameState] Applied {effectsApplied} encounter effects");
+        
+        // Clear active encounter
+        Campaign.ActiveEncounter = null;
+        
+        // Resume travel if we have paused state
+        if (pausedTravelState != null && pausedTravelPlan != null)
+        {
+            var executor = new TravelExecutor(Campaign.Rng);
+            var result = executor.Resume(pausedTravelState, Campaign, outcome);
+            
+            var plan = pausedTravelPlan;
+            pausedTravelState = null;
+            pausedTravelPlan = null;
+            
+            // Handle resumed travel result (may pause again for another encounter)
+            if (!HandleTravelResult(result, plan))
+            {
+                GoToSectorView();
+            }
+            else if (result.Status == TravelResultStatus.Completed)
+            {
+                GoToSectorView();
+            }
+        }
+        else
+        {
+            GoToSectorView();
+        }
     }
 
     public void StartMission()

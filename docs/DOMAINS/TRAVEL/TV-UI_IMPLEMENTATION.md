@@ -1,6 +1,6 @@
 # TV-UI – Travel Visibility: Implementation Plan
 
-**Status**: ⬜ Pending  
+**Status**: ✅ Complete  
 **Depends on**: TV2 ✅, WD3 ✅, GN2 ✅  
 **Phase**: G2
 
@@ -355,24 +355,24 @@ private void UpdateTravelLog()
 
 ## TV-UI Deliverables Checklist
 
-### Phase 1: System Info Enhancement ⬜
-- [ ] **1.1** Add metrics display (5 metrics with bars)
-- [ ] **1.2** Add tags display
-- [ ] **1.3** Add faction reputation display
+### Phase 1: System Info Enhancement ✅
+- [x] **1.1** Add metrics display (5 metrics with bars)
+- [x] **1.2** Add tags display
+- [x] **1.3** Add faction reputation display
 
-### Phase 2: Route Info ⬜
-- [ ] **2.1** Display route hazard level
-- [ ] **2.2** Show encounter chance percentage
+### Phase 2: Route Info ✅
+- [x] **2.1** Display route hazard level
+- [x] **2.2** Show encounter chance percentage
 
-### Phase 3: Campaign Time ⬜
-- [ ] **3.1** Add campaign day to header
+### Phase 3: Campaign Time ✅
+- [x] **3.1** Add campaign day to header
 
-### Phase 4: Ship Status ⬜
-- [ ] **4.1** Add hull to resources panel
+### Phase 4: Ship Status ✅
+- [x] **4.1** Add hull to resources panel
 
-### Phase 5: Travel Feedback ⬜
-- [ ] **5.1** Add travel log panel
-- [ ] **5.2** Populate log after travel
+### Phase 5: Travel Feedback ✅
+- [x] **5.1** Add travel log panel
+- [x] **5.2** Populate log after travel
 
 ---
 
