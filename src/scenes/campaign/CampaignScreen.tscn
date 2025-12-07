@@ -118,3 +118,90 @@ size_flags_vertical = 3
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
+
+[node name="CrewDetailPanel" type="PanelContainer" parent="MainLayout"]
+unique_name_in_owner = true
+visible = false
+custom_minimum_size = Vector2(350, 0)
+layout_mode = 2
+
+[node name="DetailMargin" type="MarginContainer" parent="MainLayout/CrewDetailPanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 15
+theme_override_constants/margin_top = 15
+theme_override_constants/margin_right = 15
+theme_override_constants/margin_bottom = 15
+
+[node name="DetailContent" type="VBoxContainer" parent="MainLayout/CrewDetailPanel/DetailMargin"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="DetailHeader" type="HBoxContainer" parent="MainLayout/CrewDetailPanel/DetailMargin/DetailContent"]
+layout_mode = 2
+
+[node name="DetailNameLabel" type="Label" parent="MainLayout/CrewDetailPanel/DetailMargin/DetailContent/DetailHeader"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 20
+text = "Crew Name"
+
+[node name="CloseDetailButton" type="Button" parent="MainLayout/CrewDetailPanel/DetailMargin/DetailContent/DetailHeader"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(30, 30)
+layout_mode = 2
+text = "X"
+
+[node name="DetailRoleLabel" type="Label" parent="MainLayout/CrewDetailPanel/DetailMargin/DetailContent"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.7, 0.7, 0.7, 1)
+theme_override_font_sizes/font_size = 14
+text = "Soldier"
+
+[node name="DetailLevelLabel" type="Label" parent="MainLayout/CrewDetailPanel/DetailMargin/DetailContent"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.8, 0, 1)
+theme_override_font_sizes/font_size = 14
+text = "Level 1 (0/100 XP)"
+
+[node name="StatsSeparator" type="HSeparator" parent="MainLayout/CrewDetailPanel/DetailMargin/DetailContent"]
+layout_mode = 2
+
+[node name="StatsTitle" type="Label" parent="MainLayout/CrewDetailPanel/DetailMargin/DetailContent"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0, 1, 1, 1)
+theme_override_font_sizes/font_size = 16
+text = "STATS"
+
+[node name="StatsContainer" type="GridContainer" parent="MainLayout/CrewDetailPanel/DetailMargin/DetailContent"]
+unique_name_in_owner = true
+layout_mode = 2
+columns = 2
+
+[node name="TraitsSeparator" type="HSeparator" parent="MainLayout/CrewDetailPanel/DetailMargin/DetailContent"]
+layout_mode = 2
+
+[node name="TraitsTitle" type="Label" parent="MainLayout/CrewDetailPanel/DetailMargin/DetailContent"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0, 1, 1, 1)
+theme_override_font_sizes/font_size = 16
+text = "TRAITS"
+
+[node name="TraitsContainer" type="VBoxContainer" parent="MainLayout/CrewDetailPanel/DetailMargin/DetailContent"]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="InjuriesSeparator" type="HSeparator" parent="MainLayout/CrewDetailPanel/DetailMargin/DetailContent"]
+layout_mode = 2
+
+[node name="InjuriesTitle" type="Label" parent="MainLayout/CrewDetailPanel/DetailMargin/DetailContent"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.5, 0, 1)
+theme_override_font_sizes/font_size = 16
+text = "INJURIES"
+
+[node name="InjuriesContainer" type="VBoxContainer" parent="MainLayout/CrewDetailPanel/DetailMargin/DetailContent"]
+unique_name_in_owner = true
+layout_mode = 2

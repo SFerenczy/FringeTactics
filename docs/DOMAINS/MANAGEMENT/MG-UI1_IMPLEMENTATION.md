@@ -1,6 +1,6 @@
 # MG-UI1 – Crew Roster & Detail Screen (G2.5)
 
-**Status:** ⬜ Pending  
+**Status:** ✅ Complete  
 **Iteration:** 2025-12 – Crew Loop 01  
 **Depends on:** MG1 ✅ (PlayerState & Crew)
 
@@ -190,14 +190,14 @@ None required – this extends existing CampaignScreen.
 
 ## Acceptance Criteria
 
-- [ ] From the campaign screen, I can see all crew members listed
-- [ ] Each crew entry shows name, key stats, and status icon
-- [ ] Clicking a crew member shows their detail panel
-- [ ] Detail panel shows all 6 core stats
-- [ ] Detail panel shows all traits with names
-- [ ] Detail panel shows all injuries with effect summaries
-- [ ] Detail panel shows level and XP
-- [ ] No new sim logic: the screen only reads existing Management state
+- [x] From the campaign screen, I can see all crew members listed
+- [x] Each crew entry shows name, key stats, and status icon
+- [x] Clicking a crew member shows their detail panel
+- [x] Detail panel shows all 6 core stats
+- [x] Detail panel shows all traits with names
+- [x] Detail panel shows all injuries with effect summaries
+- [x] Detail panel shows level and XP
+- [x] No new sim logic: the screen only reads existing Management state
 
 ---
 

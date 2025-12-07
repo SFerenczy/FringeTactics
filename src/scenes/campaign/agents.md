@@ -23,8 +23,12 @@ Hub screen between missions showing campaign status.
 
 ### G2.5 Additions
 
-- **MG-UI1**: Show crew roster with key stats and injury indication
-- **MG-UI1**: Show crew detail (full stats, traits, injuries) for selected crew member
+- **MG-UI1** ✅: Crew roster with clickable entries showing name, role, key stats (Aim/Grit/Tech), status icon
+- **MG-UI1** ✅: Crew detail panel showing:
+  - Name, role, level/XP
+  - All 6 core stats with base/effective values and trait modifiers
+  - Traits list with color-coding by category and tooltips
+  - Injuries list with effect descriptions
 - **MG-UI2**: Allow firing/dismissing a crew member via Management APIs
 - **MG-UI3**: Show equipment slots and allow equip/unequip from inventory
 - Provide entry points to station/shop screens where applicable
