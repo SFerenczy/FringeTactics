@@ -82,6 +82,14 @@ public class CampaignState
     /// </summary>
     public static CampaignState CreateNew(int sectorSeed = 12345)
     {
+        return CreateNew(sectorSeed, GalaxyConfig.Default);
+    }
+
+    /// <summary>
+    /// Create a new campaign with custom galaxy configuration.
+    /// </summary>
+    public static CampaignState CreateNew(int sectorSeed, GalaxyConfig galaxyConfig)
+    {
         var starting = Config.Starting;
         var campaign = new CampaignState
         {
@@ -94,8 +102,13 @@ public class CampaignState
             Rng = new RngService(sectorSeed)
         };
 
-        campaign.World = WorldState.CreateTestSector();
-        campaign.CurrentNodeId = 0; // Start at Haven Station
+        // Generate world using GalaxyGenerator
+        var generator = new GalaxyGenerator(galaxyConfig, campaign.Rng.Campaign);
+        campaign.World = generator.Generate();
+
+        // Find starting system (first hub)
+        var startSystem = FindStartingSystem(campaign.World);
+        campaign.CurrentNodeId = startSystem?.Id ?? 0;
 
         // Create starter ship (MG2)
         campaign.Ship = Ship.CreateStarter();
@@ -116,6 +129,15 @@ public class CampaignState
         campaign.RefreshJobsAtCurrentNode();
 
         return campaign;
+    }
+
+    /// <summary>
+    /// Find the best starting system (preferably a hub).
+    /// </summary>
+    private static StarSystem FindStartingSystem(WorldState world)
+    {
+        return world.GetAllSystems().FirstOrDefault(s => s.HasTag(WorldTags.Hub))
+            ?? world.GetAllSystems().FirstOrDefault();
     }
 
     /// <summary>

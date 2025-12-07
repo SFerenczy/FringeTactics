@@ -71,6 +71,14 @@ public class RngStream
     }
 
     /// <summary>
+    /// Roll a float in range [min, max).
+    /// </summary>
+    public float NextFloat(float min, float max)
+    {
+        return min + NextFloat() * (max - min);
+    }
+
+    /// <summary>
     /// Roll an int in range [0, max) (exclusive max).
     /// </summary>
     public int NextInt(int max)

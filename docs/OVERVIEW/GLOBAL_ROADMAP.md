@@ -233,8 +233,8 @@ Now a typical 30–60 minute session starts looking like your intended experienc
 | **EN0 – Concept** | ✅ Complete | Encounter design finalization | see `EN0_IMPLEMENTATION.md`
 | **EN1 – Runtime Core** | ✅ Complete | State machine, conditions, outcomes | see `EN1_IMPLEMENTATION.md` |
 | **EN2 – Skill Checks** | ✅ Complete | Crew-based checks and modifiers (see `EN2_IMPLEMENTATION.md`) |
-| **GN2 – Galaxy Generation** | ⬜ Pending | Sector graph generation |
-| **GN3 – Encounter Instantiation** | ⬜ Pending | Template selection and parameterization |
+| **GN2 – Galaxy Generation** | ⬜ Pending | Sector graph generation (see `GN2_IMPLEMENTATION.md`) |
+| **GN3 – Encounter Instantiation** | ⬜ Pending | Template selection and parameterization (see `GN3_IMPLEMENTATION.md`) |
 | **MG4 – Encounter Integration** | ⬜ Pending | Apply encounter outcomes to player state |
 
 ### Recommended Implementation Order

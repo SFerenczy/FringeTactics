@@ -231,7 +231,8 @@ public class GN1GenerationContextTests
 
         AssertInt(context.CrewCount).IsEqual(4);
         AssertThat(context.CrewPower).IsGreater(0);
-        AssertInt(context.CurrentNodeId).IsEqual(0);
+        // CurrentNodeId is the starting hub (may not be 0 with generated worlds)
+        AssertInt(context.CurrentNodeId).IsEqual(campaign.CurrentNodeId);
         AssertInt(context.Money).IsEqual(200);
         AssertThat(context.Rng).IsNotNull();
     }

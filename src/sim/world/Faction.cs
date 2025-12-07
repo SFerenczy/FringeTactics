@@ -63,6 +63,19 @@ public class Faction
         };
         return faction;
     }
+
+    /// <summary>
+    /// Create a deep copy of this faction.
+    /// </summary>
+    public Faction Clone()
+    {
+        return new Faction(Id, Name, Type)
+        {
+            Color = Color,
+            HostilityDefault = HostilityDefault,
+            Metrics = Metrics?.Clone() ?? new FactionMetrics()
+        };
+    }
 }
 
 /// <summary>
@@ -99,6 +112,21 @@ public class FactionMetrics
             Influence = data.Influence,
             Desperation = data.Desperation,
             Corruption = data.Corruption
+        };
+    }
+
+    /// <summary>
+    /// Create a deep copy of these metrics.
+    /// </summary>
+    public FactionMetrics Clone()
+    {
+        return new FactionMetrics
+        {
+            MilitaryStrength = MilitaryStrength,
+            EconomicPower = EconomicPower,
+            Influence = Influence,
+            Desperation = Desperation,
+            Corruption = Corruption
         };
     }
 }

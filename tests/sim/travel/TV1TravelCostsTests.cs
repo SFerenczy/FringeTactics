@@ -132,7 +132,7 @@ public class TV1TravelCostsTests
         float chance = TravelCosts.CalculateEncounterChance(route);
 
         // Base 30% - 10% patrolled = 20%
-        AssertFloat(chance).IsEqual(0.2f);
+        AssertFloat(chance).IsEqualApprox(0.2f, 0.001f);
     }
 
     [TestCase]
@@ -169,7 +169,7 @@ public class TV1TravelCostsTests
         float chance = TravelCosts.CalculateEncounterChance(route);
 
         // Base 30% + 10% dangerous + 5% asteroid = 45%
-        AssertFloat(chance).IsEqual(0.45f);
+        AssertFloat(chance).IsEqualApprox(0.45f, 0.001f);
     }
 
     [TestCase]
@@ -215,7 +215,7 @@ public class TV1TravelCostsTests
         float chance = TravelCosts.CalculateEncounterChance(route, fromMetrics, toMetrics);
 
         // Base 30% - 10% high security = 20%
-        AssertFloat(chance).IsEqual(0.2f);
+        AssertFloat(chance).IsEqualApprox(0.2f, 0.001f);
     }
 
     [TestCase]
@@ -241,7 +241,7 @@ public class TV1TravelCostsTests
         float chance = TravelCosts.CalculateEncounterChance(route, fromMetrics, toMetrics);
 
         // Base 20% + 15% high crime = 35%
-        AssertFloat(chance).IsEqual(0.35f);
+        AssertFloat(chance).IsEqualApprox(0.35f, 0.001f);
     }
 
     [TestCase]

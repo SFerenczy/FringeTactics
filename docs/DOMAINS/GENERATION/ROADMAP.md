@@ -71,14 +71,16 @@ Generate mission offers for a single hub.
 
 ---
 
-## GN2 – Galaxy Generation (G2)
+## GN2 – Galaxy Generation (G2) ✅
 
 **Goal:**  
-Generate the initial sector at campaign start.
+Generate the initial sector at campaign start, replacing hardcoded `CreateTestSector()` with procedural generation.
 
-**Depends on:** GN1 ✅, WD2 ✅
+**Depends on:** GN1 ✅, WD2 ✅, WD3 ✅
 
-**Status:** ⬜ Pending
+**Status:** ✅ Complete
+
+**Detailed Implementation:** See `GN2_IMPLEMENTATION.md` for full breakdown.
 
 **Key capabilities:**
 
@@ -263,156 +265,78 @@ public static class NameGenerator
 **Goal:**  
 Generate encounter instances for Travel and exploration.
 
-**Depends on:** GN2 ✅, EN1 ✅, TV2 🔄
+**Depends on:** GN2 ✅, EN1 ✅, EN2 ✅, TV2 ✅
 
 **Status:** ⬜ Pending
 
+**Detailed Implementation:** See `GN3_IMPLEMENTATION.md` for full breakdown.
+
 **Key capabilities:**
 
+- `EncounterTemplateRegistry` class:
+  - Centralized storage for encounter templates
+  - Tag-based filtering and eligibility checking
+  - `GetEligible(TravelContext)` for context-aware retrieval
 - `EncounterGenerator` class:
-  - Input: `TravelContext` (route, system tags, player state).
-  - Output: `EncounterInstance` for Encounter domain to run.
-- Template selection:
-  - Based on route hazards, system tags, player cargo.
-  - Weighted random selection from eligible templates.
-- Parameterization:
-  - Fill in NPC names, cargo types, faction references.
-  - Resolve text placeholders.
-- Template registry:
-  - Load templates from data files.
-  - Tag-based filtering.
+  - Input: `TravelContext`, `CampaignState`
+  - Output: `EncounterInstance` for Encounter domain to run
+  - Two-phase selection: eligibility filter + weighted random
+- Template selection weights:
+  - Pirate encounters weighted by criminal activity
+  - Patrol encounters weighted by security level
+  - Combat encounters weighted by route hazard
+  - Suggested encounter type gets priority boost
+- Parameter resolution:
+  - NPC names, ship names, cargo types via `NameGenerator`
+  - Faction names from world state
+  - Context flags (has_cargo, is_hostile_territory)
+- Travel integration:
+  - Replace stub in `TravelExecutor.TryTriggerEncounter()`
+  - Pause travel for encounter, resume after completion
 
-### Phase 3.1: EncounterTemplateRegistry
+### Phases Overview
 
-**New file:** `src/sim/generation/EncounterTemplateRegistry.cs`
+| Phase | Focus | Deliverables |
+|-------|-------|--------------|
+| 1 | Template Registry | `EncounterTemplateRegistry`, `EncounterTags` |
+| 2 | Name Generation | NPC, cargo, ship name generation |
+| 3 | Encounter Generator | Selection, weighting, parameter resolution |
+| 4 | Production Templates | 8-12 gameplay encounter templates |
+| 5 | Travel Integration | Wire generator into `TravelExecutor` |
+| 6 | Testing | ~55 tests across 4 test files |
 
-```csharp
-public class EncounterTemplateRegistry
-{
-    private Dictionary<string, EncounterTemplate> templates = new();
-    
-    public void Register(EncounterTemplate template);
-    public EncounterTemplate Get(string id);
-    public IEnumerable<EncounterTemplate> GetByTag(string tag);
-    public IEnumerable<EncounterTemplate> GetEligible(TravelContext context);
-    
-    public static EncounterTemplateRegistry CreateDefault();
-}
-```
-
-### Phase 3.2: EncounterGenerator
-
-**New file:** `src/sim/generation/EncounterGenerator.cs`
-
-```csharp
-public class EncounterGenerator
-{
-    private readonly EncounterTemplateRegistry registry;
-    private readonly RngStream rng;
-    
-    public EncounterGenerator(EncounterTemplateRegistry registry, RngStream rng)
-    {
-        this.registry = registry;
-        this.rng = rng;
-    }
-    
-    public EncounterInstance Generate(TravelContext context)
-    {
-        // 1. Get eligible templates
-        var eligible = registry.GetEligible(context).ToList();
-        if (eligible.Count == 0) return null;
-        
-        // 2. Weight by context
-        var weights = CalculateWeights(eligible, context);
-        
-        // 3. Select template
-        var template = WeightedSelect(eligible, weights);
-        
-        // 4. Instantiate with parameters
-        return Instantiate(template, context);
-    }
-    
-    private EncounterInstance Instantiate(EncounterTemplate template, TravelContext context)
-    {
-        var instance = new EncounterInstance(template);
-        
-        // Resolve parameters
-        instance.Parameters["faction"] = context.CurrentSystem.OwningFactionId;
-        instance.Parameters["npc_name"] = NameGenerator.GenerateNpcName(rng);
-        instance.Parameters["cargo_type"] = SelectCargoType(context, rng);
-        
-        return instance;
-    }
-}
-```
-
-### Phase 3.3: Template Selection Weights
-
-Weight templates based on context:
-
-```csharp
-private Dictionary<EncounterTemplate, float> CalculateWeights(
-    List<EncounterTemplate> templates, 
-    TravelContext context)
-{
-    var weights = new Dictionary<EncounterTemplate, float>();
-    
-    foreach (var template in templates)
-    {
-        float weight = 1.0f;
-        
-        // Pirate encounters more likely in high criminal activity
-        if (template.Tags.Contains("pirate"))
-            weight *= 1 + (context.CriminalActivity * 0.2f);
-        
-        // Patrol encounters more likely in high security
-        if (template.Tags.Contains("patrol"))
-            weight *= 1 + (context.SecurityLevel * 0.2f);
-        
-        // Cargo-related encounters if player has valuable cargo
-        if (template.Tags.Contains("cargo") && context.CargoValue > 100)
-            weight *= 1.5f;
-        
-        weights[template] = weight;
-    }
-    
-    return weights;
-}
-```
-
-### Phase 3.4: Initial Templates
-
-Create 8-12 encounter templates:
+### Initial Templates
 
 | Template | Tags | Trigger Context |
 |----------|------|-----------------|
-| `pirate_ambush` | pirate, combat | High criminal activity |
-| `patrol_inspection` | patrol, social | High security |
-| `distress_signal` | exploration, choice | Any route |
-| `trader_opportunity` | trade, social | Trade routes |
-| `smuggler_contact` | criminal, social | Low security, has cargo |
-| `derelict_discovery` | exploration, loot | Near derelicts |
+| `pirate_ambush` | pirate, combat, choice | High criminal activity |
+| `patrol_inspection` | patrol, social, skill_check | High security |
+| `distress_signal` | distress, choice, skill_check | Any route |
+| `trader_opportunity` | trader, social | Trade routes |
+| `smuggler_contact` | smuggler, social | Low security |
+| `derelict_discovery` | exploration, choice | Near derelicts |
 | `faction_agent` | faction, social | Faction territory |
-| `mysterious_signal` | exploration, mystery | Frontier systems |
+| `mysterious_signal` | anomaly, exploration | Frontier systems |
 | `crew_conflict` | crew, social | Long travel |
 | `mechanical_failure` | ship, resource | Any route |
-
-**Deliverables:**
-- `EncounterTemplateRegistry` class.
-- `EncounterGenerator` class.
-- Template selection with weights.
-- Parameter instantiation.
-- 8-12 initial templates.
-- Unit tests for selection logic.
-- Integration tests with Travel.
+| `refugee_plea` | social, choice | Unstable regions |
+| `bounty_hunter` | combat, choice | Player has bounty |
 
 **Files to create:**
 | File | Purpose |
 |------|---------|
 | `src/sim/generation/EncounterTemplateRegistry.cs` | Template storage |
-| `src/sim/generation/EncounterGenerator.cs` | Instantiation logic |
-| `data/encounters/*.json` | Template definitions |
-| `tests/sim/generation/GN3*.cs` | Test files |
+| `src/sim/generation/EncounterGenerator.cs` | Selection and instantiation |
+| `src/sim/generation/ProductionEncounters.cs` | Gameplay templates |
+| `src/sim/encounter/EncounterTags.cs` | Tag constants |
+| `tests/sim/generation/GN3*.cs` | Test files (~55 tests) |
+
+**Files to modify:**
+| File | Changes |
+|------|---------|
+| `src/sim/generation/NameGenerator.cs` | Add NPC, cargo, ship names |
+| `src/sim/travel/TravelExecutor.cs` | Use generator instead of stub |
+| `src/sim/campaign/CampaignState.cs` | Add registry and active encounter |
 
 ---
 

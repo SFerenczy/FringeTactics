@@ -1,10 +1,10 @@
 # Generation Domain (`src/sim/generation/`)
 
-This directory contains the contract/mission generation system.
+This directory contains the contract/mission generation and galaxy generation systems.
 
 ## Purpose
 
-Generate mission offers (contracts) based on player state, world context, and templates. Pure simulation logic with no Godot dependencies.
+Generate mission offers (contracts) and procedural galaxies based on player state, world context, and templates. Pure simulation logic with no Godot dependencies.
 
 ## Files
 
@@ -16,6 +16,9 @@ Generate mission offers (contracts) based on player state, world context, and te
 | `GenerationConfig.cs` | Data-driven configuration for weights and rewards (enables balancing without recompile) |
 | `Objective.cs` | Mission objective class with factory methods for primary/secondary objectives |
 | `ContractGenerator.cs` | Main generator: type selection, difficulty scaling, reward calculation, objective generation |
+| `GalaxyConfig.cs` | Configuration for procedural galaxy generation (system count, spatial constraints, faction/type weights) |
+| `GalaxyGenerator.cs` | Procedural galaxy generator: position generation, route creation, faction assignment, station generation |
+| `NameGenerator.cs` | Name generation utilities for systems, stations, and sectors |
 
 ## Dependencies
 

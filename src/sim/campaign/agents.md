@@ -15,6 +15,8 @@ Campaign/meta-game state: crew management, resources, mission tracking, jobs.
   - FactionRep: reputation with each faction (0-100)
   - Mission costs and rewards (including time cost)
   - Campaign stats: TotalMoneyEarned, TotalCrewDeaths
+  - `CreateNew(seed)` - creates campaign with procedurally generated galaxy (GN2)
+  - `CreateNew(seed, GalaxyConfig)` - creates campaign with custom galaxy config (GN2)
   - `ApplyMissionOutput(MissionOutput)` for XP, injuries, deaths, job rewards, ammo, loot (MG3)
   - `SpendAmmo()`, `AddAmmo()` - ammo resource management (MG3)
   - `CalculateMissionAmmoNeeded()` - estimate ammo for mission (MG3)
