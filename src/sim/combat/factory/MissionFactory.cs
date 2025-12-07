@@ -51,14 +51,17 @@ public static class MissionFactory
             string weaponId = crewMember.GetEffectiveWeaponId(campaign.Inventory);
             var crewWeapon = WeaponData.FromId(weaponId);
             
+            var inventory = campaign.Inventory;
+            var maxHp = crewMember.GetFullMaxHp(inventory);
             legacyInput.Crew.Add(new CrewDeployment
             {
                 CampaignCrewId = crewMember.Id,
                 Name = crewMember.Name,
-                MaxHp = crewMember.GetMaxHp(),
-                CurrentHp = crewMember.GetMaxHp(),
-                Accuracy = StatFormulas.CalculateAccuracy(crewMember.GetEffectiveStat(CrewStatType.Aim)),
-                MoveSpeed = StatFormulas.CalculateMoveSpeed(crewMember.GetEffectiveStat(CrewStatType.Reflexes)),
+                MaxHp = maxHp,
+                CurrentHp = maxHp,
+                Armor = crewMember.GetArmorValue(inventory),
+                Accuracy = StatFormulas.CalculateAccuracy(crewMember.GetFullEffectiveStat(CrewStatType.Aim, inventory)),
+                MoveSpeed = StatFormulas.CalculateMoveSpeed(crewMember.GetFullEffectiveStat(CrewStatType.Reflexes, inventory)),
                 WeaponId = weaponId,
                 AmmoInMagazine = crewWeapon.MagazineSize,
                 ReserveAmmo = StatFormulas.CalculateReserveAmmo(crewWeapon.MagazineSize, campaign.Ammo),

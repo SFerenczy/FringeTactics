@@ -88,10 +88,10 @@ public static class MissionInputBuilder
             SpawnPosition = spawnPosition
         };
         
-        // Apply stats from crew (using effective stats with trait modifiers)
-        ApplyCrewStats(deployment, crew);
+        // Apply stats from crew (using full effective stats: base + traits + equipment)
+        ApplyCrewStats(deployment, crew, campaign.Inventory);
         
-        // Apply equipment
+        // Apply equipment (weapon, ammo)
         ApplyCrewEquipment(deployment, crew, campaign);
         
         return deployment;
@@ -99,16 +99,20 @@ public static class MissionInputBuilder
     
     /// <summary>
     /// Apply crew stats to deployment using derived stat formulas.
+    /// Uses full effective stats (base + traits + equipment).
     /// </summary>
-    private static void ApplyCrewStats(CrewDeployment deployment, CrewMember crew)
+    private static void ApplyCrewStats(CrewDeployment deployment, CrewMember crew, Inventory inventory)
     {
-        // HP from Grit (using CrewMember's formula)
-        deployment.MaxHp = crew.GetMaxHp();
+        // HP from Grit including equipment bonuses
+        deployment.MaxHp = crew.GetFullMaxHp(inventory);
         deployment.CurrentHp = deployment.MaxHp;
         
-        // Accuracy and move speed from StatFormulas
-        deployment.Accuracy = StatFormulas.CalculateAccuracy(crew.GetEffectiveStat(CrewStatType.Aim));
-        deployment.MoveSpeed = StatFormulas.CalculateMoveSpeed(crew.GetEffectiveStat(CrewStatType.Reflexes));
+        // Armor from equipment
+        deployment.Armor = crew.GetArmorValue(inventory);
+        
+        // Accuracy and move speed from StatFormulas using full effective stats
+        deployment.Accuracy = StatFormulas.CalculateAccuracy(crew.GetFullEffectiveStat(CrewStatType.Aim, inventory));
+        deployment.MoveSpeed = StatFormulas.CalculateMoveSpeed(crew.GetFullEffectiveStat(CrewStatType.Reflexes, inventory));
     }
     
     /// <summary>

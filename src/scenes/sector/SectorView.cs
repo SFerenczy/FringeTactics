@@ -647,10 +647,23 @@ public partial class SectorView : Control
         pendingTravelResult = result;
         pendingTravelPlan = plan;
 
-        // Calculate encounter position (random 0.2-0.8 if encounter, 1.0 if none)
-        float encounterProgress = 1f;
-        if (result.Status == TravelResultStatus.PausedForEncounter)
+        // Build path of waypoints from plan
+        var pathPositions = new List<Vector2>();
+        foreach (var systemId in plan.GetPath())
         {
+            var system = campaign.World.GetSystem(systemId);
+            if (system != null)
+            {
+                pathPositions.Add(system.Position);
+            }
+        }
+
+        // Calculate encounter segment and progress
+        int encounterSegment = -1;
+        float encounterProgress = 1f;
+        if (result.Status == TravelResultStatus.PausedForEncounter && result.PausedState != null)
+        {
+            encounterSegment = result.PausedState.CurrentSegmentIndex;
             encounterProgress = 0.2f + (float)GD.Randf() * 0.6f;
         }
 
@@ -658,8 +671,8 @@ public partial class SectorView : Control
         travelButton.Disabled = true;
         travelButton.Text = "Traveling...";
 
-        // Start animation
-        travelAnimator.StartAnimation(fromSystem.Position, toSystem.Position, encounterProgress);
+        // Start animation with full path
+        travelAnimator.StartAnimation(pathPositions, encounterSegment, encounterProgress);
     }
 
     private void OnTravelAnimationCompleted(float encounterProgress)

@@ -22,6 +22,26 @@ public static class InjuryTypes
     public const string Bleeding = "bleeding";
 }
 
+/// <summary>
+/// Equipment stat keys that map to crew stat modifiers.
+/// </summary>
+public static class EquipmentStats
+{
+    // Direct stat bonuses
+    public const string Grit = "grit";
+    public const string Reflexes = "reflexes";
+    public const string Aim = "aim";
+    public const string Tech = "tech";
+    public const string Savvy = "savvy";
+    public const string Resolve = "resolve";
+    
+    // Derived stat bonuses
+    public const string Armor = "armor";
+    public const string Damage = "damage";
+    public const string MaxHp = "max_hp";
+    public const string Accuracy = "accuracy";
+}
+
 public class CrewMember
 {
     // Configuration (loaded from data/campaign.json)
@@ -216,6 +236,119 @@ public class CrewMember
     public int GetEffectiveStat(CrewStatType stat)
     {
         return GetBaseStat(stat) + GetTraitModifier(stat);
+    }
+
+    // === Equipment Modifier Methods (MG-SYS1) ===
+
+    private static readonly EquipSlot[] AllEquipSlots = { EquipSlot.Weapon, EquipSlot.Armor, EquipSlot.Gadget };
+
+    /// <summary>
+    /// Iterate over all equipped item definitions.
+    /// </summary>
+    private IEnumerable<ItemDef> GetEquippedItemDefs(Inventory inventory)
+    {
+        if (inventory == null) yield break;
+        
+        foreach (var slot in AllEquipSlots)
+        {
+            var itemId = GetEquipped(slot);
+            if (string.IsNullOrEmpty(itemId)) continue;
+            
+            var item = inventory.FindById(itemId);
+            var def = item?.GetDef();
+            if (def != null) yield return def;
+        }
+    }
+
+    /// <summary>
+    /// Calculate total modifier for a stat from all equipped items.
+    /// </summary>
+    /// <param name="statKey">The stat key to look up (e.g., "aim", "armor").</param>
+    /// <param name="inventory">The inventory to look up item definitions.</param>
+    public int GetEquipmentModifier(string statKey, Inventory inventory)
+    {
+        int total = 0;
+        foreach (var def in GetEquippedItemDefs(inventory))
+        {
+            if (def.Stats != null && def.Stats.TryGetValue(statKey, out var value))
+            {
+                total += value;
+            }
+        }
+        return total;
+    }
+
+    /// <summary>
+    /// Get equipment modifier for a crew stat type.
+    /// </summary>
+    public int GetEquipmentStatModifier(CrewStatType stat, Inventory inventory)
+    {
+        string key = stat switch
+        {
+            CrewStatType.Grit => EquipmentStats.Grit,
+            CrewStatType.Reflexes => EquipmentStats.Reflexes,
+            CrewStatType.Aim => EquipmentStats.Aim,
+            CrewStatType.Tech => EquipmentStats.Tech,
+            CrewStatType.Savvy => EquipmentStats.Savvy,
+            CrewStatType.Resolve => EquipmentStats.Resolve,
+            _ => null
+        };
+        
+        return key != null ? GetEquipmentModifier(key, inventory) : 0;
+    }
+
+    /// <summary>
+    /// Get fully effective stat value (base + traits + equipment).
+    /// </summary>
+    /// <param name="stat">The stat type.</param>
+    /// <param name="inventory">The inventory for equipment lookup.</param>
+    public int GetFullEffectiveStat(CrewStatType stat, Inventory inventory)
+    {
+        return GetBaseStat(stat) 
+             + GetTraitModifier(stat) 
+             + GetEquipmentStatModifier(stat, inventory);
+    }
+
+    /// <summary>
+    /// Get effective armor value from equipment.
+    /// </summary>
+    public int GetArmorValue(Inventory inventory)
+    {
+        return GetEquipmentModifier(EquipmentStats.Armor, inventory);
+    }
+
+    /// <summary>
+    /// Get effective max HP (base + grit + equipment).
+    /// </summary>
+    public int GetFullMaxHp(Inventory inventory)
+    {
+        int gritBonus = GetFullEffectiveStat(CrewStatType.Grit, inventory) * StatConfig.HpPerGrit;
+        int equipBonus = GetEquipmentModifier(EquipmentStats.MaxHp, inventory);
+        return StatConfig.BaseHp + gritBonus + equipBonus;
+    }
+
+    /// <summary>
+    /// Get a summary of all stat modifiers from equipment.
+    /// </summary>
+    /// <param name="inventory">The inventory for equipment lookup.</param>
+    /// <returns>Dictionary of stat key to total modifier.</returns>
+    public Dictionary<string, int> GetEquipmentStatSummary(Inventory inventory)
+    {
+        var summary = new Dictionary<string, int>();
+        
+        foreach (var def in GetEquippedItemDefs(inventory))
+        {
+            if (def.Stats == null) continue;
+            
+            foreach (var kvp in def.Stats)
+            {
+                if (!summary.ContainsKey(kvp.Key))
+                    summary[kvp.Key] = 0;
+                summary[kvp.Key] += kvp.Value;
+            }
+        }
+        
+        return summary;
     }
 
     // === Derived Stats ===

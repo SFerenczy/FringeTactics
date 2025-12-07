@@ -95,6 +95,11 @@ public class CrewDeployment
     public int CurrentHp { get; set; } = 100;
     public float MoveSpeed { get; set; } = 2.0f;
     public float Accuracy { get; set; } = 0.7f;
+    
+    /// <summary>
+    /// Armor value from equipment (damage reduction).
+    /// </summary>
+    public int Armor { get; set; } = 0;
 
     // === Equipment ===
     
