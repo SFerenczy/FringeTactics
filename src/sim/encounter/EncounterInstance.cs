@@ -3,6 +3,18 @@ using System.Collections.Generic;
 namespace FringeTactics;
 
 /// <summary>
+/// Well-known parameter keys for encounter instances.
+/// </summary>
+public static class EncounterParams
+{
+    /// <summary>
+    /// Crew ID of the last skill check participant.
+    /// Used by MG4 to target effects at the crew who performed the check.
+    /// </summary>
+    public const string LastCheckCrewId = "last_check_crew_id";
+}
+
+/// <summary>
 /// Runtime state of an active encounter.
 /// Tracks position within template, accumulated effects, and history.
 /// Serializable for save/load mid-encounter.

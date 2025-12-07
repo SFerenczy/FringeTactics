@@ -74,7 +74,7 @@ public class EncounterRunner
             optionIndex
         ));
 
-        var outcome = ResolveOutcome(option, context, instance.InstanceId);
+        var outcome = ResolveOutcome(option, context, instance);
 
         if (outcome == null)
         {
@@ -193,7 +193,7 @@ public class EncounterRunner
 
     // === Private Methods ===
 
-    private EncounterOutcome ResolveOutcome(EncounterOption option, EncounterContext context, string encounterId)
+    private EncounterOutcome ResolveOutcome(EncounterOption option, EncounterContext context, EncounterInstance instance)
     {
         if (option == null) return null;
 
@@ -206,8 +206,14 @@ public class EncounterRunner
             var rng = context?.Rng ?? new RngStream("encounter_fallback", Environment.TickCount);
             var result = SkillCheck.Resolve(option.SkillCheck, context, rng);
 
+            // Store the crew who performed the check for effect targeting (MG4)
+            if (result.Crew != null)
+            {
+                instance.SetParameter(EncounterParams.LastCheckCrewId, result.Crew.Id.ToString());
+            }
+
             eventBus?.Publish(new SkillCheckResolvedEvent(
-                encounterId,
+                instance.InstanceId,
                 result.Crew?.Name ?? "Unknown",
                 result.Stat.ToString(),
                 result.Difficulty,

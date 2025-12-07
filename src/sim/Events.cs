@@ -209,6 +209,17 @@ public readonly record struct FactionRepChangedEvent(
 // ============================================================================
 
 /// <summary>
+/// Published when a crew member gains XP.
+/// </summary>
+public readonly record struct CrewXpGainedEvent(
+    int CrewId,
+    string CrewName,
+    int Amount,
+    int NewTotal,
+    string Source
+);
+
+/// <summary>
 /// Published when a crew member levels up.
 /// </summary>
 public readonly record struct CrewLeveledUpEvent(
@@ -505,4 +516,27 @@ public readonly record struct SkillCheckResolvedEvent(
     int Margin,
     bool IsCriticalSuccess,
     bool IsCriticalFailure
+);
+
+// ============================================================================
+// ENCOUNTER INTEGRATION EVENTS (MG4)
+// ============================================================================
+
+/// <summary>
+/// Published when a campaign flag changes.
+/// </summary>
+public readonly record struct CampaignFlagChangedEvent(
+    string FlagId,
+    bool OldValue,
+    bool NewValue
+);
+
+/// <summary>
+/// Published when encounter outcome effects are applied to campaign state.
+/// </summary>
+public readonly record struct EncounterOutcomeAppliedEvent(
+    string EncounterId,
+    string TemplateId,
+    int EffectsApplied,
+    int EffectsTotal
 );

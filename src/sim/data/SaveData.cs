@@ -83,6 +83,12 @@ public class CampaignStateData
 
     // Inventory (MG2)
     public InventoryData Inventory { get; set; }
+
+    // Campaign flags (MG4)
+    public Dictionary<string, bool> Flags { get; set; }
+
+    // Active encounter (MG4)
+    public EncounterInstanceData ActiveEncounter { get; set; }
 }
 
 /// <summary>

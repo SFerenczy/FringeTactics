@@ -27,6 +27,7 @@ Handle non-combat events and lightweight interactive scenes: text-based choices,
 | `SkillCheckResult.cs` | Result of skill check with all details (EN2) |
 | `CrewSnapshot.cs` | Lightweight crew snapshot for condition evaluation |
 | `TestEncounters.cs` | Factory methods for test encounter templates |
+| `EncounterTags.cs` | Standard tag constants for template categorization (GN3) |
 
 ## Dependencies
 

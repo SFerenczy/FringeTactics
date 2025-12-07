@@ -267,7 +267,7 @@ Generate encounter instances for Travel and exploration.
 
 **Depends on:** GN2 ✅, EN1 ✅, EN2 ✅, TV2 ✅
 
-**Status:** ⬜ Pending
+**Status:** ✅ Complete
 
 **Detailed Implementation:** See `GN3_IMPLEMENTATION.md` for full breakdown.
 

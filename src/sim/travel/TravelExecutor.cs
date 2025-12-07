@@ -244,11 +244,22 @@ public class TravelExecutor
             return null; // No encounter
         }
 
-        // Encounter triggered!
-        string encounterId = $"enc_{state.CurrentSystemId}_{state.DaysElapsed}_{rng.Campaign.NextInt(10000)}";
+        // Create travel context for encounter generation
+        var context = TravelContext.Create(state, campaign);
         string encounterType = segment.SuggestedEncounterType ?? EncounterTypes.Random;
 
         SimLog.Log($"[Travel] Encounter triggered! Type: {encounterType}, Roll: {roll:F2} < {encounterChance:F2}");
+
+        // Generate encounter using GN3 system
+        EncounterInstance encounter = null;
+        if (campaign.EncounterGenerator != null)
+        {
+            encounter = campaign.EncounterGenerator.Generate(context, campaign);
+        }
+
+        // Fallback ID if generation fails
+        string encounterId = encounter?.InstanceId 
+            ?? $"enc_{state.CurrentSystemId}_{state.DaysElapsed}_{rng.Campaign.NextInt(10000)}";
 
         // Record encounter
         var record = new TravelEncounterRecord
@@ -256,40 +267,34 @@ public class TravelExecutor
             SegmentIndex = state.CurrentSegmentIndex,
             DayInSegment = state.CurrentDayInSegment,
             SystemId = state.CurrentSystemId,
-            EncounterType = encounterType,
+            EncounterType = encounter?.Template?.Id ?? encounterType,
             EncounterId = encounterId,
             Outcome = EncounterOutcomes.Pending
         };
         state.EncounterHistory.Add(record);
 
-        // TODO(EN1): Pass context to encounter system when implemented
-        var context = TravelContext.Create(state, campaign);
-        _ = context; // Suppress unused warning until EN1
-
         campaign.EventBus?.Publish(new TravelEncounterTriggeredEvent(
             state.CurrentSystemId,
-            encounterType,
+            encounter?.Template?.Id ?? encounterType,
             encounterId
         ));
 
-        // === STUB: Auto-resolve encounter ===
-        // When EN1 is implemented, this will pause and return control to caller.
-        // For now, auto-resolve as "completed" and continue.
+        // If we have a real encounter instance, pause for it
+        if (encounter != null)
+        {
+            campaign.ActiveEncounter = encounter;
+            state.IsPausedForEncounter = true;
+            state.PendingEncounterId = encounterId;
 
+            SimLog.Log($"[Travel] Pausing for encounter: {encounter.Template.Id} ({encounterId})");
+            return TravelResult.Paused(state, state.FuelConsumed, state.DaysElapsed);
+        }
+
+        // Fallback: auto-resolve if no encounter generated (shouldn't happen with production templates)
         record.Outcome = EncounterOutcomes.Completed;
         campaign.EventBus?.Publish(new TravelEncounterResolvedEvent(encounterId, EncounterOutcomes.Completed));
-        SimLog.Log($"[Travel] Encounter {encounterId} auto-resolved (stub)");
+        SimLog.Log($"[Travel] No encounter generated, auto-resolved");
 
-        // Continue travel (no pause)
         return null;
-
-        // === FUTURE: Real encounter handling ===
-        // Uncomment when EN1 is ready:
-        /*
-        state.IsPausedForEncounter = true;
-        state.PendingEncounterId = encounterId;
-
-        return TravelResult.Paused(state, state.FuelConsumed, state.DaysElapsed);
-        */
     }
 }

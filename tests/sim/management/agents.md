@@ -1,6 +1,6 @@
 # tests/sim/management/ - Management Domain Tests
 
-Unit tests for the Management domain (MG1, MG2).
+Unit tests for the Management domain (MG1, MG2, MG3, MG4).
 
 ## Files
 
@@ -75,6 +75,46 @@ Unit tests for the Management domain (MG1, MG2).
   - CampaignState.UnequipItem: works, emits event, fails for invalid
   - GetEquippedItem: returns item or null
   - Serialization: CrewMember and CampaignState round-trip preserves equipment
+
+### MG3 Tests
+
+- **MG3MissionInputTests.cs** - Mission input builder tests (31 tests)
+- **MG3MissionOutputTests.cs** - Mission output processing tests (17 tests)
+- **MG3IntegrationTests.cs** - Full mission flow integration tests (9 tests)
+
+### MG4 Tests
+
+- **MG4FlagTests.cs** - Campaign flags system tests (25 tests):
+  - SetFlag: sets value, updates existing, ignores null/empty, emits event, no event if unchanged
+  - GetFlag: returns false for unset, returns correct value, handles null/empty
+  - HasFlag: returns false for unset/false, returns true for set
+  - ClearFlag: removes flag, returns false for nonexistent, emits event
+  - Multiple flags: can set and retrieve multiple
+  - Serialization: GetState includes flags, FromState restores flags, null-safe, round-trip
+
+- **MG4EffectTests.cs** - Encounter effect application tests (47 tests):
+  - ApplyEncounterOutcome: null handling, empty effects, applies all, emits event, clears active
+  - Resource effects: add/remove credits, fuel, parts, meds; partial remove; events
+  - Crew injury: injures target, uses skill check crew, emits event, fails if no crew
+  - Crew XP: grants XP, handles level up, zero is no-op
+  - Crew trait: adds/removes trait, fails for missing trait ID
+  - Ship damage: damages hull, emits event, zero is no-op
+  - Faction rep: increases/decreases, emits event, fails for missing faction ID
+  - Set flag: sets flag, sets to false, fails for missing flag ID
+  - Time delay: advances time, zero is no-op
+  - Cargo: add/remove items, fails for missing item ID, fails if not enough
+  - Flow effects: GotoNode, EndEncounter, TriggerTactical return true (no-op in campaign)
+  - Multiple effects: all applied, partial success
+
+- **MG4IntegrationTests.cs** - Travel integration and full flow tests (25 tests):
+  - ConsumeTravelFuel: spends fuel, fails if insufficient, zero succeeds, exact succeeds, emits event
+  - CanAffordTravel (int): true if enough, false if insufficient, true for exact, true for zero
+  - CanAffordTravel (TravelPlan): true for valid affordable, false for unaffordable, false for invalid/null
+  - GetTravelBlockReason: null for affordable, reasons for null/invalid/insufficient
+  - Full encounter flow: effects applied and cleared, skill check crew targeting
+  - Travel then encounter: resources tracked correctly
+  - Multiple encounters: flags preserved across encounters
+  - Serialization: flags preserved, active encounter serialized, null handling, effects work after load
 
 ## Test Patterns
 

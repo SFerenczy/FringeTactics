@@ -10,6 +10,9 @@ Unit tests for the Generation domain (GN1+).
 | `GN1ContractGeneratorTests.cs` | Tests for `ContractGenerator`, contract type selection, difficulty scaling, rewards, objectives |
 | `GN1DeterminismTests.cs` | Tests verifying deterministic generation (same seed = same contracts) |
 | `GN1SerializationTests.cs` | Tests for `Job`/`Objective` serialization, legacy migration |
+| `GN3RegistryTests.cs` | Tests for `EncounterTemplateRegistry` registration, retrieval, tag filtering, eligibility |
+| `GN3NameGeneratorTests.cs` | Tests for NPC, cargo, and ship name generation methods |
+| `GN3GeneratorTests.cs` | Tests for `EncounterGenerator` selection, weighting, parameter resolution, determinism |
 
 ## Running Tests
 

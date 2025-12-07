@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace FringeTactics;
 
@@ -54,9 +55,42 @@ public class CampaignState
     // Faction reputation (factionId -> rep, 0-100, 50 = neutral)
     public Dictionary<string, int> FactionRep { get; set; } = new();
 
+    // Campaign flags for encounter state tracking (MG4)
+    public Dictionary<string, bool> Flags { get; set; } = new();
+
     // Mission tracking
     public int MissionsCompleted { get; set; } = 0;
     public int MissionsFailed { get; set; } = 0;
+
+    // Encounter system (GN3)
+    /// <summary>
+    /// Registry of encounter templates for generation.
+    /// Initialized with production templates by default.
+    /// Not serialized - recreated on load.
+    /// </summary>
+    public EncounterTemplateRegistry EncounterRegistry { get; set; }
+
+    /// <summary>
+    /// Cached encounter generator instance.
+    /// Not serialized - recreated on load.
+    /// </summary>
+    public EncounterGenerator EncounterGenerator { get; private set; }
+
+    /// <summary>
+    /// Currently active encounter instance, if any.
+    /// Null when no encounter is in progress.
+    /// </summary>
+    public EncounterInstance ActiveEncounter { get; set; }
+
+    /// <summary>
+    /// Initialize encounter system with registry and generator.
+    /// Called by CreateNew and FromState.
+    /// </summary>
+    private void InitializeEncounterSystem()
+    {
+        EncounterRegistry ??= EncounterTemplateRegistry.CreateDefault();
+        EncounterGenerator = new EncounterGenerator(EncounterRegistry);
+    }
 
     // Campaign statistics (for end screen)
     public int TotalMoneyEarned { get; set; } = 0;
@@ -67,6 +101,21 @@ public class CampaignState
 
     public CampaignState()
     {
+    }
+
+    /// <summary>
+    /// Create a minimal campaign for unit testing.
+    /// Only initializes RNG and encounter system, no world generation.
+    /// </summary>
+    public static CampaignState CreateForTesting(int seed)
+    {
+        var campaign = new CampaignState
+        {
+            Rng = new RngService(seed),
+            Time = new CampaignTime()
+        };
+        campaign.InitializeEncounterSystem();
+        return campaign;
     }
 
     /// <summary>
@@ -127,6 +176,9 @@ public class CampaignState
 
         // Generate initial jobs at starting location
         campaign.RefreshJobsAtCurrentNode();
+
+        // Initialize encounter system (GN3)
+        campaign.InitializeEncounterSystem();
 
         return campaign;
     }
@@ -258,12 +310,131 @@ public class CampaignState
         ));
     }
 
+    // ========================================================================
+    // CAMPAIGN FLAGS (MG4)
+    // ========================================================================
+
+    /// <summary>
+    /// Set a campaign flag. Used for encounter state tracking and story arcs.
+    /// </summary>
+    /// <param name="flagId">Unique identifier for the flag.</param>
+    /// <param name="value">Value to set (default true).</param>
+    public void SetFlag(string flagId, bool value = true)
+    {
+        if (string.IsNullOrEmpty(flagId)) return;
+
+        bool oldValue = Flags.GetValueOrDefault(flagId, false);
+        Flags[flagId] = value;
+
+        if (oldValue != value)
+        {
+            SimLog.Log($"[Campaign] Flag '{flagId}' set to {value}");
+            EventBus?.Publish(new CampaignFlagChangedEvent(flagId, oldValue, value));
+        }
+    }
+
+    /// <summary>
+    /// Get a campaign flag value.
+    /// </summary>
+    /// <param name="flagId">Unique identifier for the flag.</param>
+    /// <returns>The flag value, or false if not set.</returns>
+    public bool GetFlag(string flagId)
+    {
+        if (string.IsNullOrEmpty(flagId)) return false;
+        return Flags.GetValueOrDefault(flagId, false);
+    }
+
+    /// <summary>
+    /// Check if a flag is set (true).
+    /// </summary>
+    /// <param name="flagId">Unique identifier for the flag.</param>
+    /// <returns>True if the flag exists and is true.</returns>
+    public bool HasFlag(string flagId)
+    {
+        if (string.IsNullOrEmpty(flagId)) return false;
+        return Flags.TryGetValue(flagId, out var value) && value;
+    }
+
+    /// <summary>
+    /// Clear a campaign flag (remove it entirely).
+    /// </summary>
+    /// <param name="flagId">Unique identifier for the flag.</param>
+    /// <returns>True if the flag was removed.</returns>
+    public bool ClearFlag(string flagId)
+    {
+        if (string.IsNullOrEmpty(flagId)) return false;
+
+        if (Flags.Remove(flagId))
+        {
+            SimLog.Log($"[Campaign] Flag '{flagId}' cleared");
+            EventBus?.Publish(new CampaignFlagChangedEvent(flagId, true, false));
+            return true;
+        }
+        return false;
+    }
+
     /// <summary>
     /// Get the current system.
     /// </summary>
     public StarSystem GetCurrentSystem()
     {
         return World?.GetSystem(CurrentNodeId);
+    }
+
+    // ========================================================================
+    // TRAVEL INTEGRATION (MG4)
+    // ========================================================================
+
+    /// <summary>
+    /// Consume fuel for a travel segment.
+    /// </summary>
+    /// <param name="amount">Fuel to consume.</param>
+    /// <returns>True if fuel was consumed, false if insufficient.</returns>
+    public bool ConsumeTravelFuel(int amount)
+    {
+        if (amount <= 0) return true;
+
+        if (Fuel < amount)
+        {
+            SimLog.Log($"[Campaign] Insufficient fuel for travel: {Fuel}/{amount}");
+            return false;
+        }
+
+        return SpendFuel(amount, "travel");
+    }
+
+    /// <summary>
+    /// Check if player can afford a travel plan.
+    /// </summary>
+    /// <param name="fuelCost">Fuel cost to check.</param>
+    /// <returns>True if player has enough fuel.</returns>
+    public bool CanAffordTravel(int fuelCost)
+    {
+        return Fuel >= fuelCost;
+    }
+
+    /// <summary>
+    /// Check if player can afford a travel plan.
+    /// </summary>
+    /// <param name="plan">The travel plan to check.</param>
+    /// <returns>True if the plan is valid and player has enough fuel.</returns>
+    public bool CanAffordTravel(TravelPlan plan)
+    {
+        if (plan == null || !plan.IsValid) return false;
+        return Fuel >= plan.TotalFuelCost;
+    }
+
+    /// <summary>
+    /// Get the reason why a travel plan cannot be afforded.
+    /// </summary>
+    /// <param name="plan">The travel plan to check.</param>
+    /// <returns>A human-readable reason, or null if affordable.</returns>
+    public string GetTravelBlockReason(TravelPlan plan)
+    {
+        if (plan == null) return "No travel plan";
+        if (!plan.IsValid) return $"Invalid route: {plan.InvalidReason}";
+        if (Fuel < plan.TotalFuelCost) return $"Insufficient fuel: {Fuel}/{plan.TotalFuelCost}";
+        return null;
     }
 
     // ========================================================================
@@ -278,6 +449,7 @@ public class CampaignState
         ResourceTypes.Money => Money,
         ResourceTypes.Fuel => Fuel,
         ResourceTypes.Parts => Parts,
+        ResourceTypes.Meds => Meds,
         ResourceTypes.Ammo => Ammo,
         _ => 0
     };
@@ -292,6 +464,7 @@ public class CampaignState
             case ResourceTypes.Money: Money = value; break;
             case ResourceTypes.Fuel: Fuel = value; break;
             case ResourceTypes.Parts: Parts = value; break;
+            case ResourceTypes.Meds: Meds = value; break;
             case ResourceTypes.Ammo: Ammo = value; break;
         }
     }
@@ -960,6 +1133,7 @@ public class CampaignState
             {
                 int oldLevel = crew.Level;
                 bool leveledUp = crew.AddXp(crewOutcome.SuggestedXp);
+                EventBus?.Publish(new CrewXpGainedEvent(crew.Id, crew.Name, crewOutcome.SuggestedXp, crew.Xp, "mission"));
                 if (leveledUp)
                 {
                     SimLog.Log($"[Campaign] {crew.Name} leveled up to {crew.Level}!");
@@ -1119,34 +1293,380 @@ public class CampaignState
     /// </summary>
     private void ApplyJobReward(JobReward reward)
     {
-        int oldMoney = Money;
-        int oldParts = Parts;
-        int oldFuel = Fuel;
-        int oldAmmo = Ammo;
+        if (reward.Money > 0) AddCredits(reward.Money, "job_reward");
+        if (reward.Parts > 0) AddParts(reward.Parts, "job_reward");
+        if (reward.Fuel > 0) AddFuel(reward.Fuel, "job_reward");
+        if (reward.Ammo > 0) AddAmmo(reward.Ammo, "job_reward");
         
-        Money += reward.Money;
-        TotalMoneyEarned += reward.Money;
-        Parts += reward.Parts;
-        Fuel += reward.Fuel;
-        Ammo += reward.Ammo;
         SimLog.Log($"[Campaign] Reward: {reward}");
-        
-        if (reward.Money > 0)
+    }
+
+    // ========================================================================
+    // ENCOUNTER EFFECT APPLICATION (MG4)
+    // ========================================================================
+
+    /// <summary>
+    /// Apply all pending effects from a completed encounter.
+    /// </summary>
+    /// <param name="instance">The completed encounter instance with pending effects.</param>
+    /// <returns>Number of effects successfully applied.</returns>
+    public int ApplyEncounterOutcome(EncounterInstance instance)
+    {
+        if (instance == null || instance.PendingEffects == null)
         {
-            EventBus?.Publish(new ResourceChangedEvent(ResourceTypes.Money, oldMoney, Money, reward.Money, "job_reward"));
+            SimLog.Log("[Campaign] ApplyEncounterOutcome: No instance or effects");
+            return 0;
         }
-        if (reward.Parts > 0)
+
+        int applied = 0;
+
+        foreach (var effect in instance.PendingEffects)
         {
-            EventBus?.Publish(new ResourceChangedEvent(ResourceTypes.Parts, oldParts, Parts, reward.Parts, "job_reward"));
+            if (ApplyEncounterEffect(effect, instance))
+            {
+                applied++;
+            }
         }
-        if (reward.Fuel > 0)
+
+        SimLog.Log($"[Campaign] Applied {applied}/{instance.PendingEffects.Count} encounter effects");
+
+        EventBus?.Publish(new EncounterOutcomeAppliedEvent(
+            EncounterId: instance.InstanceId,
+            TemplateId: instance.Template?.Id,
+            EffectsApplied: applied,
+            EffectsTotal: instance.PendingEffects.Count
+        ));
+
+        // Clear active encounter reference if this was the active one
+        if (ActiveEncounter == instance)
         {
-            EventBus?.Publish(new ResourceChangedEvent(ResourceTypes.Fuel, oldFuel, Fuel, reward.Fuel, "job_reward"));
+            ActiveEncounter = null;
         }
-        if (reward.Ammo > 0)
+
+        return applied;
+    }
+
+    /// <summary>
+    /// Apply a single encounter effect to campaign state.
+    /// </summary>
+    /// <param name="effect">The effect to apply.</param>
+    /// <param name="instance">The encounter instance (for context like crew selection).</param>
+    /// <returns>True if effect was applied successfully.</returns>
+    private bool ApplyEncounterEffect(EncounterEffect effect, EncounterInstance instance)
+    {
+        try
         {
-            EventBus?.Publish(new ResourceChangedEvent(ResourceTypes.Ammo, oldAmmo, Ammo, reward.Ammo, "job_reward"));
+            switch (effect.Type)
+            {
+                case EffectType.AddResource:
+                    return ApplyResourceEffect(effect);
+
+                case EffectType.CrewInjury:
+                    return ApplyCrewInjuryEffect(effect, instance);
+
+                case EffectType.CrewXp:
+                    return ApplyCrewXpEffect(effect, instance);
+
+                case EffectType.CrewTrait:
+                    return ApplyCrewTraitEffect(effect, instance);
+
+                case EffectType.ShipDamage:
+                    return ApplyShipDamageEffect(effect);
+
+                case EffectType.FactionRep:
+                    return ApplyFactionRepEffect(effect);
+
+                case EffectType.SetFlag:
+                    return ApplySetFlagEffect(effect);
+
+                case EffectType.TimeDelay:
+                    return ApplyTimeDelayEffect(effect);
+
+                case EffectType.AddCargo:
+                    return ApplyAddCargoEffect(effect);
+
+                case EffectType.RemoveCargo:
+                    return ApplyRemoveCargoEffect(effect);
+
+                case EffectType.GotoNode:
+                case EffectType.EndEncounter:
+                    // Flow effects are handled by EncounterRunner, not campaign
+                    return true;
+
+                case EffectType.TriggerTactical:
+                    // EN3 - tactical trigger handled separately by GameState
+                    SimLog.Log($"[Campaign] TriggerTactical effect deferred (EN3)");
+                    return true;
+
+                default:
+                    SimLog.Log($"[Campaign] Unknown effect type: {effect.Type}");
+                    return false;
+            }
         }
+        catch (Exception ex)
+        {
+            SimLog.Log($"[Campaign] Error applying effect {effect.Type}: {ex.Message}");
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// Get the crew member to target for an encounter effect.
+    /// Uses the crew who performed the last skill check, or random alive crew.
+    /// </summary>
+    private CrewMember GetTargetCrewForEffect(EncounterInstance instance)
+    {
+        // Check if a specific crew was involved in the last skill check
+        if (instance?.ResolvedParameters != null &&
+            instance.ResolvedParameters.TryGetValue(EncounterParams.LastCheckCrewId, out var crewIdStr) &&
+            int.TryParse(crewIdStr, out var crewId))
+        {
+            var crew = GetCrewById(crewId);
+            if (crew != null && !crew.IsDead)
+            {
+                return crew;
+            }
+        }
+
+        // Fall back to random alive crew
+        var aliveCrew = GetAliveCrew();
+        if (aliveCrew.Count == 0) return null;
+
+        int index = Rng?.Campaign?.NextInt(aliveCrew.Count) ?? 0;
+        return aliveCrew[index];
+    }
+
+    /// <summary>
+    /// Apply a resource add/remove effect.
+    /// </summary>
+    private bool ApplyResourceEffect(EncounterEffect effect)
+    {
+        string resourceType = effect.TargetId;
+        int amount = effect.Amount;
+
+        if (string.IsNullOrEmpty(resourceType))
+        {
+            SimLog.Log("[Campaign] Resource effect missing TargetId");
+            return false;
+        }
+
+        if (amount > 0)
+        {
+            AddResource(resourceType, amount, "encounter");
+            return true;
+        }
+        else if (amount < 0)
+        {
+            int absAmount = Math.Abs(amount);
+            int available = GetResource(resourceType);
+            if (available >= absAmount)
+            {
+                SpendResource(resourceType, absAmount, "encounter");
+                return true;
+            }
+            else
+            {
+                // Not enough resource - apply what we can (drain to 0)
+                if (available > 0)
+                {
+                    SpendResource(resourceType, available, "encounter_partial");
+                }
+                SimLog.Log($"[Campaign] Insufficient {resourceType} for encounter effect ({available}/{absAmount})");
+                return true; // Partial success is still success
+            }
+        }
+
+        return true; // amount == 0 is a no-op
+    }
+
+    /// <summary>
+    /// Apply a crew injury effect.
+    /// </summary>
+    private bool ApplyCrewInjuryEffect(EncounterEffect effect, EncounterInstance instance)
+    {
+        var crew = GetTargetCrewForEffect(instance);
+        if (crew == null)
+        {
+            SimLog.Log("[Campaign] No crew available for injury effect");
+            return false;
+        }
+
+        string injuryType = effect.StringParam ?? InjuryTypes.Wounded;
+        crew.AddInjury(injuryType);
+
+        SimLog.Log($"[Campaign] {crew.Name} injured ({injuryType}) from encounter");
+        EventBus?.Publish(new CrewInjuredEvent(crew.Id, crew.Name, injuryType));
+
+        return true;
+    }
+
+    /// <summary>
+    /// Apply a crew XP effect.
+    /// </summary>
+    private bool ApplyCrewXpEffect(EncounterEffect effect, EncounterInstance instance)
+    {
+        var crew = GetTargetCrewForEffect(instance);
+        if (crew == null)
+        {
+            SimLog.Log("[Campaign] No crew available for XP effect");
+            return false;
+        }
+
+        int xpAmount = effect.Amount;
+        if (xpAmount <= 0) return true;
+
+        int oldLevel = crew.Level;
+        bool leveledUp = crew.AddXp(xpAmount);
+
+        SimLog.Log($"[Campaign] {crew.Name} gained {xpAmount} XP from encounter");
+        EventBus?.Publish(new CrewXpGainedEvent(crew.Id, crew.Name, xpAmount, crew.Xp, "encounter"));
+
+        if (leveledUp)
+        {
+            SimLog.Log($"[Campaign] {crew.Name} leveled up to {crew.Level}!");
+            EventBus?.Publish(new CrewLeveledUpEvent(crew.Id, crew.Name, oldLevel, crew.Level));
+        }
+
+        return true;
+    }
+
+    /// <summary>
+    /// Apply a crew trait add/remove effect.
+    /// </summary>
+    private bool ApplyCrewTraitEffect(EncounterEffect effect, EncounterInstance instance)
+    {
+        var crew = GetTargetCrewForEffect(instance);
+        if (crew == null)
+        {
+            SimLog.Log("[Campaign] No crew available for trait effect");
+            return false;
+        }
+
+        string traitId = effect.TargetId;
+        bool addTrait = effect.BoolParam;
+
+        if (string.IsNullOrEmpty(traitId))
+        {
+            SimLog.Log("[Campaign] Trait effect missing TargetId");
+            return false;
+        }
+
+        if (addTrait)
+        {
+            return AssignTrait(crew.Id, traitId);
+        }
+        else
+        {
+            return RemoveTrait(crew.Id, traitId);
+        }
+    }
+
+    /// <summary>
+    /// Apply a ship damage effect.
+    /// </summary>
+    private bool ApplyShipDamageEffect(EncounterEffect effect)
+    {
+        int damage = effect.Amount;
+        if (damage <= 0) return true;
+
+        DamageShip(damage, "encounter");
+        return true;
+    }
+
+    /// <summary>
+    /// Apply a faction reputation effect.
+    /// </summary>
+    private bool ApplyFactionRepEffect(EncounterEffect effect)
+    {
+        string factionId = effect.TargetId;
+        int delta = effect.Amount;
+
+        if (string.IsNullOrEmpty(factionId))
+        {
+            SimLog.Log("[Campaign] FactionRep effect missing TargetId");
+            return false;
+        }
+
+        ModifyFactionRep(factionId, delta);
+        return true;
+    }
+
+    /// <summary>
+    /// Apply a set flag effect.
+    /// </summary>
+    private bool ApplySetFlagEffect(EncounterEffect effect)
+    {
+        string flagId = effect.TargetId;
+        bool value = effect.BoolParam;
+
+        if (string.IsNullOrEmpty(flagId))
+        {
+            SimLog.Log("[Campaign] SetFlag effect missing TargetId");
+            return false;
+        }
+
+        SetFlag(flagId, value);
+        return true;
+    }
+
+    /// <summary>
+    /// Apply a time delay effect.
+    /// </summary>
+    private bool ApplyTimeDelayEffect(EncounterEffect effect)
+    {
+        int days = effect.Amount;
+        if (days <= 0) return true;
+
+        Time.AdvanceDays(days);
+        SimLog.Log($"[Campaign] Time advanced {days} day(s) from encounter");
+        return true;
+    }
+
+    /// <summary>
+    /// Apply an add cargo effect.
+    /// </summary>
+    private bool ApplyAddCargoEffect(EncounterEffect effect)
+    {
+        string itemDefId = effect.TargetId;
+        int quantity = effect.Amount > 0 ? effect.Amount : 1;
+
+        if (string.IsNullOrEmpty(itemDefId))
+        {
+            SimLog.Log("[Campaign] AddCargo effect missing TargetId");
+            return false;
+        }
+
+        var item = AddItem(itemDefId, quantity);
+        if (item == null)
+        {
+            SimLog.Log($"[Campaign] Could not add cargo {itemDefId} (no space?)");
+            return false;
+        }
+
+        return true;
+    }
+
+    /// <summary>
+    /// Apply a remove cargo effect.
+    /// </summary>
+    private bool ApplyRemoveCargoEffect(EncounterEffect effect)
+    {
+        string itemDefId = effect.TargetId;
+        int quantity = effect.Amount > 0 ? effect.Amount : 1;
+
+        if (string.IsNullOrEmpty(itemDefId))
+        {
+            SimLog.Log("[Campaign] RemoveCargo effect missing TargetId");
+            return false;
+        }
+
+        if (!HasItem(itemDefId, quantity))
+        {
+            SimLog.Log($"[Campaign] Cannot remove {quantity}x {itemDefId} (not enough)");
+            return false;
+        }
+
+        return RemoveItemByDef(itemDefId, quantity);
     }
 
     /// <summary>
@@ -1222,7 +1742,8 @@ public class CampaignState
             },
             World = World?.GetState(),
             Ship = Ship?.GetState(),
-            Inventory = Inventory?.GetState()
+            Inventory = Inventory?.GetState(),
+            Flags = new Dictionary<string, bool>(Flags)
         };
 
         // Serialize crew
@@ -1239,6 +1760,9 @@ public class CampaignState
 
         // Serialize current job
         data.CurrentJob = CurrentJob?.GetState();
+
+        // Serialize active encounter (MG4)
+        data.ActiveEncounter = ActiveEncounter?.GetState();
 
         return data;
     }
@@ -1322,6 +1846,9 @@ public class CampaignState
         // Restore faction rep
         campaign.FactionRep = new Dictionary<string, int>(data.FactionRep ?? new Dictionary<string, int>());
 
+        // Restore flags (MG4)
+        campaign.Flags = new Dictionary<string, bool>(data.Flags ?? new Dictionary<string, bool>());
+
         // Restore stats
         if (data.Stats != null)
         {
@@ -1329,6 +1856,19 @@ public class CampaignState
             campaign.MissionsFailed = data.Stats.MissionsFailed;
             campaign.TotalMoneyEarned = data.Stats.TotalMoneyEarned;
             campaign.TotalCrewDeaths = data.Stats.TotalCrewDeaths;
+        }
+
+        // Initialize encounter system (not serialized, recreated on load)
+        campaign.InitializeEncounterSystem();
+
+        // Restore active encounter (MG4)
+        if (data.ActiveEncounter != null && campaign.EncounterRegistry != null)
+        {
+            var template = campaign.EncounterRegistry.Get(data.ActiveEncounter.TemplateId);
+            if (template != null)
+            {
+                campaign.ActiveEncounter = EncounterInstance.FromState(data.ActiveEncounter, template);
+            }
         }
 
         return campaign;
