@@ -27,9 +27,13 @@ public partial class CampaignScreen : Control
     private VBoxContainer traitsContainer;
     private VBoxContainer injuriesContainer;
     private Button closeDetailButton;
+    private Button fireButton;
+    private ConfirmationDialog confirmFireDialog;
 
     // State
     private int? selectedCrewId;
+
+    private CampaignState Campaign => GameState.Instance?.Campaign;
 
     public override void _Ready()
     {
@@ -56,6 +60,8 @@ public partial class CampaignScreen : Control
         traitsContainer = GetNode<VBoxContainer>("%TraitsContainer");
         injuriesContainer = GetNode<VBoxContainer>("%InjuriesContainer");
         closeDetailButton = GetNode<Button>("%CloseDetailButton");
+        fireButton = GetNode<Button>("%FireButton");
+        confirmFireDialog = GetNode<ConfirmationDialog>("%ConfirmFireDialog");
     }
 
     private void ConnectSignals()
@@ -63,6 +69,8 @@ public partial class CampaignScreen : Control
         backToSectorButton.Pressed += OnBackToSectorPressed;
         abandonButton.Pressed += OnMainMenuPressed;
         closeDetailButton.Pressed += OnCloseDetailPressed;
+        fireButton.Pressed += OnFireButtonPressed;
+        confirmFireDialog.Confirmed += OnFireConfirmed;
     }
 
     public override void _Process(double delta)
@@ -72,20 +80,18 @@ public partial class CampaignScreen : Control
 
     private void UpdateResourceDisplay()
     {
-        var campaign = GameState.Instance?.Campaign;
-        if (campaign == null) return;
+        if (Campaign == null) return;
 
-        resourcesLabel.Text = $"Money: ${campaign.Money}\n" +
-                              $"Fuel: {campaign.Fuel}\n" +
-                              $"Ammo: {campaign.Ammo}\n" +
-                              $"Parts: {campaign.Parts}\n" +
-                              $"Meds: {campaign.Meds}";
+        resourcesLabel.Text = $"Money: ${Campaign.Money}\n" +
+                              $"Fuel: {Campaign.Fuel}\n" +
+                              $"Ammo: {Campaign.Ammo}\n" +
+                              $"Parts: {Campaign.Parts}\n" +
+                              $"Meds: {Campaign.Meds}";
     }
 
     private void UpdateDisplay()
     {
-        var campaign = GameState.Instance?.Campaign;
-        if (campaign == null)
+        if (Campaign == null)
         {
             resourcesLabel.Text = "No active campaign!";
             return;
@@ -98,10 +104,10 @@ public partial class CampaignScreen : Control
         missionCostLabel.Text = $"Mission cost: {missionConfig.FuelCost} fuel";
 
         // Stats
-        statsLabel.Text = $"Missions: {campaign.MissionsCompleted} won, {campaign.MissionsFailed} lost";
+        statsLabel.Text = $"Missions: {Campaign.MissionsCompleted} won, {Campaign.MissionsFailed} lost";
 
         // Update crew roster
-        UpdateCrewRoster(campaign);
+        UpdateCrewRoster(Campaign);
     }
 
     private void UpdateCrewRoster(CampaignState campaign)
@@ -144,7 +150,6 @@ public partial class CampaignScreen : Control
         if (crew.IsDead)
         {
             crewButton.AddThemeColorOverride("font_color", Colors.Gray);
-            crewButton.Disabled = true;
         }
 
         var crewId = crew.Id;
@@ -173,7 +178,7 @@ public partial class CampaignScreen : Control
     private CrewMember GetSelectedCrew()
     {
         if (selectedCrewId == null) return null;
-        return GameState.Instance?.Campaign?.Crew.Find(c => c.Id == selectedCrewId.Value);
+        return Campaign?.Crew.Find(c => c.Id == selectedCrewId.Value);
     }
 
     private void UpdateDetailPanel()
@@ -204,6 +209,33 @@ public partial class CampaignScreen : Control
 
         // Injuries
         UpdateInjuriesDisplay(crew);
+
+        // Fire button state
+        UpdateFireButtonState(crew);
+    }
+
+    private void UpdateFireButtonState(CrewMember crew)
+    {
+        if (Campaign == null) return;
+
+        if (crew.IsDead)
+        {
+            fireButton.Text = "Bury";
+            fireButton.TooltipText = "Remove dead crew member from roster";
+            fireButton.Disabled = false;
+        }
+        else if (Campaign.GetAliveCrew().Count <= 1)
+        {
+            fireButton.Text = "Dismiss";
+            fireButton.TooltipText = "Cannot dismiss last crew member";
+            fireButton.Disabled = true;
+        }
+        else
+        {
+            fireButton.Text = "Dismiss";
+            fireButton.TooltipText = "Remove crew member from roster";
+            fireButton.Disabled = false;
+        }
     }
 
     private void UpdateStatsDisplay(CrewMember crew)
@@ -329,8 +361,7 @@ public partial class CampaignScreen : Control
 
     private void OnHealPressed(int crewId)
     {
-        var campaign = GameState.Instance?.Campaign;
-        if (campaign != null && campaign.HealCrewMember(crewId))
+        if (Campaign != null && Campaign.HealCrewMember(crewId))
         {
             UpdateDisplay();
             if (selectedCrewId == crewId)
@@ -350,5 +381,49 @@ public partial class CampaignScreen : Control
     {
         GD.Print("[CampaignScreen] Returning to main menu...");
         GameState.Instance.GoToMainMenu();
+    }
+
+    private void OnFireButtonPressed()
+    {
+        var crew = GetSelectedCrew();
+        if (crew == null || Campaign == null) return;
+
+        // Handle dead crew - bury immediately without confirmation
+        if (crew.IsDead)
+        {
+            Campaign.BuryDeadCrew(crew.Id);
+            selectedCrewId = null;
+            UpdateDetailPanel();
+            UpdateCrewRoster(Campaign);
+            return;
+        }
+
+        // Check if can fire
+        if (Campaign.GetAliveCrew().Count <= 1)
+        {
+            GD.Print("[CampaignScreen] Cannot dismiss last crew member");
+            return;
+        }
+
+        // Show confirmation dialog
+        confirmFireDialog.DialogText = $"Dismiss {crew.Name}?\n\n" +
+            $"Role: {crew.Role}\n" +
+            $"Level: {crew.Level}\n\n" +
+            "This action cannot be undone.";
+        confirmFireDialog.PopupCentered();
+    }
+
+    private void OnFireConfirmed()
+    {
+        var crew = GetSelectedCrew();
+        if (crew == null || Campaign == null) return;
+
+        if (Campaign.FireCrew(crew.Id))
+        {
+            GD.Print($"[CampaignScreen] Dismissed {crew.Name}");
+            selectedCrewId = null;
+            UpdateDetailPanel();
+            UpdateCrewRoster(Campaign);
+        }
     }
 }
