@@ -448,3 +448,80 @@ Nodes:
 ### EN4
 - [ ] Encounter selection uses simulation metrics
 - [ ] Encounter outcomes affect simulation
+
+---
+
+## Backlog (G2.5 – Playtest & Polish)
+
+### EN-SYS1 – Encounter injuries → Management injuries (G2.5)
+
+**Goal:** Make existing injury effects actually hit the roster.
+
+**Status:** ⬜ Pending
+
+- Wire `EncounterEffect` types for injuries to Management:
+  - Use existing APIs to add an Injury object to the selected crew member.
+- Ensure these injuries:
+  - Show up in MG-UI1 crew detail.
+  - Affect any relevant stats if that's already modelled in Management.
+
+---
+
+### EN-CONTENT1 – Injury-focused encounter pack (G2.5)
+
+**Goal:** Encounters that clearly wound crew and make you care.
+
+**Status:** ⬜ Pending
+
+- Add 3–5 new travel encounters where the main outcome is:
+  - Specific crew injuries.
+  - Time delays.
+  - Resource loss tied to those injuries.
+- At least one encounter should present a meaningful choice:
+  - Avoid injury but lose time/resources.
+  - Risk injury for a better payoff.
+
+---
+
+### EN-CONTENT2 – Recruitment encounters (G2.5)
+
+**Goal:** Get new crew via narrative events.
+
+**Status:** ⬜ Pending
+
+- Add 2–3 encounters that can result in new crew members:
+  - Drifter looking for a ship.
+  - Rescued specialist.
+- Outcomes:
+  - On success, add a crew member with:
+    - Reasonable stats.
+    - A small, themed trait set.
+
+---
+
+### EN-UI1 – Basic encounter screen feedback (G2.5)
+
+**Goal:** Make results legible.
+
+**Status:** ⬜ Pending
+
+- When an option is chosen:
+  - Show which crew member and stat were used for a skill check.
+  - Show the outcome and direct consequences:
+    - Resource deltas.
+    - Injuries (with crew name).
+    - New crew added (if any).
+
+---
+
+### Future Backlog Items
+
+| Item | Priority | Notes |
+|------|----------|-------|
+| More encounter templates | High | Currently ~10, need 15-20 for variety |
+| Faction-specific encounters | Medium | Different flavor per faction |
+| Crew event encounters | Medium | Internal ship events, morale, relationships |
+| Trade opportunity encounters | Low | Merchant contacts, rare goods |
+| Encounter chains | Low | Multi-part encounters with flags |
+| Wounds persist to tactical | Medium | Injured crew start with less HP |
+| Encounter-granted traits | Low | "Scarred", "Veteran", etc. |

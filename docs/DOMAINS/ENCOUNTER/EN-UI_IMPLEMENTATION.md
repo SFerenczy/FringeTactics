@@ -1,6 +1,6 @@
 # EN-UI – Encounter Screen: Implementation Plan
 
-**Status**: ✅ Complete  
+**Status**: ✅ Complete (sim layer complete, UI pending)  
 **Depends on**: EN1 ✅, EN2 ✅, MG4 ✅, TV-UI (recommended)  
 **Phase**: G2
 

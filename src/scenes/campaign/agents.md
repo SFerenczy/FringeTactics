@@ -9,6 +9,8 @@ Hub screen between missions showing campaign status.
 
 ## Responsibilities
 
+### Core (G1)
+
 - Show all resources (money, fuel, ammo, parts, meds)
 - Display mission cost requirements
 - List crew roster with:
@@ -18,6 +20,14 @@ Hub screen between missions showing campaign status.
 - Start Mission button (disabled if can't afford or no crew)
 - Show reason if mission blocked
 - Abandon Campaign button (return to menu)
+
+### G2.5 Additions
+
+- **MG-UI1**: Show crew roster with key stats and injury indication
+- **MG-UI1**: Show crew detail (full stats, traits, injuries) for selected crew member
+- **MG-UI2**: Allow firing/dismissing a crew member via Management APIs
+- **MG-UI3**: Show equipment slots and allow equip/unequip from inventory
+- Provide entry points to station/shop screens where applicable
 
 ## Dependencies
 

@@ -229,3 +229,45 @@ World becomes the shared storage that Simulation reads and writes.
 | WD2 | G2 | Sector graph |
 | WD3 | G2 | Metrics and tags |
 | WD4 | G3 | Simulation integration |
+
+---
+
+## Backlog (G2.5 – Playtest & Polish)
+
+### WD-TERR1 – Static faction territory display (G2.5)
+
+**Goal:** Make faction ownership visible without simulation.
+
+**Status:** ⬜ Pending
+
+- Each system has an owning faction from existing world state.
+- Sector view:
+  - Color-code systems/nodes by faction.
+  - Tooltip: faction name + a few key metrics (security, piracy, wealth) from G2.
+
+---
+
+### WD-FAC1 – Station facilities surfaced (G2.5)
+
+**Goal:** Connect world data to campaign/station UI.
+
+**Status:** ⬜ Pending
+
+- Ensure stations expose their facilities:
+  - Shop, bar, recruitment, repair, etc.
+- Provide simple queries like:
+  - `HasRecruitment(stationId)`
+  - `GetShopInventoryId(stationId)`
+- Used by:
+  - Campaign/station UI to show available actions.
+  - Generation to bias encounters (e.g. bars, shady contacts).
+
+---
+
+### Future Backlog Items
+
+| Item | Priority | Notes |
+|------|----------|-------|
+| Faction reputation display | Medium | Show player standing with each faction |
+| System info panel | Medium | Detailed view of system metrics/tags |
+| Route hazard indicators | Low | Visual feedback on dangerous routes |

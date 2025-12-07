@@ -373,3 +373,49 @@ Generation uses live simulation metrics to bias content.
 | GN2 | G2 | Galaxy generation |
 | GN3 | G2 | Encounter instantiation |
 | GN4 | G3 | Simulation integration |
+
+---
+
+## Backlog (G2.5 – Playtest & Polish)
+
+### GN-MISS1 – Minimal mission-level generation (G2.5)
+
+**Goal:** Stop using a single test map; get basic variety.
+
+**Status:** ⬜ Pending
+
+- Given a contract:
+  - Choose 1 of N hand-authored mission templates based on:
+    - Contract type (e.g. raid, defense, escort).
+    - Difficulty tier.
+- Parameterize only:
+  - Enemy faction.
+  - Enemy count modifier.
+- Output a Tactical mission spec compatible with existing Tactical I/O.
+
+---
+
+### GN-SHOP1 – Station-specific shop inventories (G2.5)
+
+**Goal:** Stations feel different in what they sell.
+
+**Status:** ⬜ Pending
+
+- For each station archetype (e.g. mining, trade, pirate):
+  - Define small item pools and rarity weights.
+- On campaign start and/or station refresh:
+  - Roll 3–8 items per station from appropriate pools.
+- Expose inventory to Management / UI for MG-SHOP1.
+
+---
+
+### Future Backlog Items
+
+| Item | Priority | Notes |
+|------|----------|-------|
+| Crew candidate generation | Medium | Generate hireable crew at stations |
+| Item/equipment generation | Medium | Procedural weapon/armor variants |
+| More name pools | Medium | System names, NPC names, ship names |
+| Faction-specific naming | Low | Corp vs pirate naming conventions |
+| Contract → mission map | High | Contract type affects tactical layout |
+| System metrics → shop prices | Medium | Scarcity affects availability/cost |

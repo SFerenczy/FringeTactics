@@ -281,6 +281,60 @@ The gap is **visibility**: the UI doesn't expose most of this to the player. Pha
 
 ---
 
+## 5b. G2.5 – Playtest & Polish (Iterative)
+
+This is not a milestone with fixed deliverables. It's a **living backlog** populated by playtesting.
+
+### Status
+
+- **State:** In Progress
+- **Current theme:** Crew agency + stations/shops feel real
+- **Mode:** Short, experience-driven iterations (see `docs/ITERATIONS/`)
+
+### Purpose
+
+Before simulation (G3), the game needs to be *playable* enough to feel. G2.5 fills gaps discovered through play:
+
+- **UI surfaces** for existing systems (crew details, equipment, shops)
+- **Content** (more encounters, traits, items, enemy types)
+- **Missing systems** (mission-level gen, equipment, faction territory)
+- **Integration depth** (wounds from encounters, crew recruitment events)
+
+### Working Mode
+
+G2.5 is driven by iterations, not a fixed checklist:
+
+- Each iteration defines an **experience goal** (e.g. "I can understand and manage my crew").
+- That goal is broken into **2–4 slices** that cut across domains (Management, Encounter, World, UI).
+- Each slice is tracked as a backlog item in the relevant `DOMAINS/*/ROADMAP.md`, and (if non-trivial) gets its own `*_IMPLEMENTATION.md`.
+- After implementing the slices, the game is playtested and the findings feed back into:
+  - Iteration docs (`docs/ITERATIONS/…`)
+  - Domain backlogs (promote recurring needs to new slices)
+
+### Domain Backlogs
+
+See individual domain ROADMAPs for domain-specific backlogs:
+
+| Domain | Backlog Location |
+|--------|------------------|
+| Management | `DOMAINS/MANAGEMENT/ROADMAP.md` → Backlog section |
+| Encounter | `DOMAINS/ENCOUNTER/ROADMAP.md` → Backlog section |
+| Generation | `DOMAINS/GENERATION/ROADMAP.md` → Backlog section |
+| World | `DOMAINS/WORLD/ROADMAP.md` → Backlog section |
+| Tactical | `DOMAINS/TACTICAL/ROADMAP.md` → Backlog section |
+
+### Exit Criteria for G2.5
+
+Move to G3 when:
+- [ ] Core loop feels playable for 30+ minute sessions
+- [ ] Player can meaningfully interact with crew (view stats, fire, equip)
+- [ ] At least 15-20 encounter templates exist
+- [ ] Shops are enterable with distinct inventories
+- [ ] Equipment system functional (equip/unequip affects stats)
+- [ ] You're itching to see the world *react* to player actions
+
+---
+
 ## 6. G3 – Simulation-Driven Sector
 
 This is where you make the world truly systemic rather than “set-dressing with some rules”.

@@ -251,3 +251,89 @@ These methods already exist in `CampaignState` and will be called by effect hand
 - [x] Active encounter state serializes/deserializes correctly
 - [x] Unit tests pass (97 tests across 3 files)
 - [x] Integration tests with Encounter domain pass
+
+---
+
+## Backlog (G2.5 – Playtest & Polish)
+
+### MG-UI1 – Crew roster & detail screen (G2.5)
+
+**Goal:** Make the roster understandable at a glance.
+
+**Status:** ⬜ Pending
+
+- Campaign screen: show crew list with name, role, 2–3 key stats, status icon.
+- Selecting a crew member shows:
+  - Full stats (core attributes, level/XP).
+  - Traits (names + short tags).
+  - Injuries (name + simple effect summary).
+- Read-only: no equipment management yet, no new sim logic.
+
+**Implementation:** See `MG-UI1_IMPLEMENTATION.md`
+
+---
+
+### MG-UI2 – Fire / dismiss crew (G2.5)
+
+**Goal:** Let the player prune the roster.
+
+**Status:** ⬜ Pending
+
+- From crew detail, add "Fire" / "Dismiss" button.
+- Confirm dialog: summary of what will be lost (skills / role).
+- Call existing management operation to remove crew from campaign state.
+- Handle corner cases: cannot fire last operational crew member, etc.
+
+---
+
+### MG-SYS1 – Minimal equipment slots (G2.5)
+
+**Goal:** Have equipment exist and matter, even if simple.
+
+**Status:** ⬜ Pending
+
+- Each crew member has a small number of slots (e.g. main weapon, armor).
+- Equipment is purely stat modifiers at this stage (no new tactical rules):
+  - e.g. +Aim, +HP, +Tech.
+- Management can query effective stats (base + equipment).
+
+---
+
+### MG-UI3 – Equip/unequip from a simple list (G2.5)
+
+**Goal:** A basic, usable equipment UX.
+
+**Status:** ⬜ Pending
+
+- From crew detail, show current equipment slots.
+- Allow equipping/unequipping from global inventory list:
+  - No drag-and-drop, no filters initially; keep it minimal.
+- Persist changes to campaign state.
+
+---
+
+### MG-SHOP1 – Station shop integration (G2.5)
+
+**Goal:** Connect station shops to real inventory.
+
+**Status:** ⬜ Pending
+
+- Buying an item at a station:
+  - Deducts credits.
+  - Adds item to campaign inventory.
+- Selling an item:
+  - Adds credits.
+  - Removes item.
+- No dynamic pricing or simulation influence yet; use static config.
+
+---
+
+### Future Backlog Items
+
+| Item | Priority | Notes |
+|------|----------|-------|
+| Crew recruitment UI | Medium | Hire from station, see candidates |
+| Ship status panel | Medium | Hull, modules, cargo capacity |
+| Crew leveling UI | Medium | Spend XP, choose upgrades |
+| More crew traits | Medium | Currently limited set |
+| Starting crew variety | Low | Different starting loadouts |
