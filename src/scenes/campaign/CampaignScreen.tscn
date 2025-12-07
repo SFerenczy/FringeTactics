@@ -206,6 +206,93 @@ text = "INJURIES"
 unique_name_in_owner = true
 layout_mode = 2
 
+[node name="EquipmentSeparator" type="HSeparator" parent="MainLayout/CrewDetailPanel/DetailMargin/DetailContent"]
+layout_mode = 2
+
+[node name="EquipmentTitle" type="Label" parent="MainLayout/CrewDetailPanel/DetailMargin/DetailContent"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0, 1, 1, 1)
+theme_override_font_sizes/font_size = 16
+text = "EQUIPMENT"
+
+[node name="EquipmentSection" type="VBoxContainer" parent="MainLayout/CrewDetailPanel/DetailMargin/DetailContent"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 5
+
+[node name="WeaponSlot" type="HBoxContainer" parent="MainLayout/CrewDetailPanel/DetailMargin/DetailContent/EquipmentSection"]
+layout_mode = 2
+
+[node name="SlotLabel" type="Label" parent="MainLayout/CrewDetailPanel/DetailMargin/DetailContent/EquipmentSection/WeaponSlot"]
+custom_minimum_size = Vector2(70, 0)
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
+text = "Weapon:"
+
+[node name="WeaponItemLabel" type="Label" parent="MainLayout/CrewDetailPanel/DetailMargin/DetailContent/EquipmentSection/WeaponSlot"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 12
+text = "[Empty]"
+
+[node name="WeaponChangeButton" type="Button" parent="MainLayout/CrewDetailPanel/DetailMargin/DetailContent/EquipmentSection/WeaponSlot"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(60, 0)
+layout_mode = 2
+text = "Change"
+
+[node name="ArmorSlot" type="HBoxContainer" parent="MainLayout/CrewDetailPanel/DetailMargin/DetailContent/EquipmentSection"]
+layout_mode = 2
+
+[node name="SlotLabel" type="Label" parent="MainLayout/CrewDetailPanel/DetailMargin/DetailContent/EquipmentSection/ArmorSlot"]
+custom_minimum_size = Vector2(70, 0)
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
+text = "Armor:"
+
+[node name="ArmorItemLabel" type="Label" parent="MainLayout/CrewDetailPanel/DetailMargin/DetailContent/EquipmentSection/ArmorSlot"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 12
+text = "[Empty]"
+
+[node name="ArmorChangeButton" type="Button" parent="MainLayout/CrewDetailPanel/DetailMargin/DetailContent/EquipmentSection/ArmorSlot"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(60, 0)
+layout_mode = 2
+text = "Change"
+
+[node name="GadgetSlot" type="HBoxContainer" parent="MainLayout/CrewDetailPanel/DetailMargin/DetailContent/EquipmentSection"]
+layout_mode = 2
+
+[node name="SlotLabel" type="Label" parent="MainLayout/CrewDetailPanel/DetailMargin/DetailContent/EquipmentSection/GadgetSlot"]
+custom_minimum_size = Vector2(70, 0)
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
+text = "Gadget:"
+
+[node name="GadgetItemLabel" type="Label" parent="MainLayout/CrewDetailPanel/DetailMargin/DetailContent/EquipmentSection/GadgetSlot"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 12
+text = "[Empty]"
+
+[node name="GadgetChangeButton" type="Button" parent="MainLayout/CrewDetailPanel/DetailMargin/DetailContent/EquipmentSection/GadgetSlot"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(60, 0)
+layout_mode = 2
+text = "Change"
+
+[node name="StatBonusLabel" type="Label" parent="MainLayout/CrewDetailPanel/DetailMargin/DetailContent/EquipmentSection"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.6, 0.8, 0.6, 1)
+theme_override_font_sizes/font_size = 11
+text = "No equipment bonuses"
+
 [node name="ActionsSeparator" type="HSeparator" parent="MainLayout/CrewDetailPanel/DetailMargin/DetailContent"]
 layout_mode = 2
 
@@ -221,3 +308,67 @@ title = "Confirm Dismissal"
 size = Vector2i(350, 150)
 ok_button_text = "Dismiss"
 cancel_button_text = "Cancel"
+
+[node name="EquipmentPopup" type="PopupPanel" parent="."]
+unique_name_in_owner = true
+size = Vector2i(350, 400)
+
+[node name="PopupMargin" type="MarginContainer" parent="EquipmentPopup"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 15
+theme_override_constants/margin_top = 15
+theme_override_constants/margin_right = 15
+theme_override_constants/margin_bottom = 15
+
+[node name="PopupContent" type="VBoxContainer" parent="EquipmentPopup/PopupMargin"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="EquipmentPopupTitle" type="Label" parent="EquipmentPopup/PopupMargin/PopupContent"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 18
+text = "Select Equipment"
+horizontal_alignment = 1
+
+[node name="EquipmentItemList" type="ItemList" parent="EquipmentPopup/PopupMargin/PopupContent"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 200)
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="StatPreviewLabel" type="Label" parent="EquipmentPopup/PopupMargin/PopupContent"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.6, 0.8, 0.6, 1)
+theme_override_font_sizes/font_size = 12
+text = "Select an item to see stats"
+horizontal_alignment = 1
+
+[node name="ButtonRow" type="HBoxContainer" parent="EquipmentPopup/PopupMargin/PopupContent"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="EquipButton" type="Button" parent="EquipmentPopup/PopupMargin/PopupContent/ButtonRow"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+disabled = true
+text = "Equip"
+
+[node name="UnequipButton" type="Button" parent="EquipmentPopup/PopupMargin/PopupContent/ButtonRow"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+disabled = true
+text = "Unequip"
+
+[node name="EquipCancelButton" type="Button" parent="EquipmentPopup/PopupMargin/PopupContent/ButtonRow"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Cancel"

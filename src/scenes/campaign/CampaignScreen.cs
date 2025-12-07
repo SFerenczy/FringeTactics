@@ -30,8 +30,22 @@ public partial class CampaignScreen : Control
     private Button fireButton;
     private ConfirmationDialog confirmFireDialog;
 
+    // Equipment UI references
+    private Label weaponItemLabel;
+    private Label armorItemLabel;
+    private Label gadgetItemLabel;
+    private Label statBonusLabel;
+    private PopupPanel equipmentPopup;
+    private Label equipmentPopupTitle;
+    private ItemList equipmentItemList;
+    private Label statPreviewLabel;
+    private Button equipButton;
+    private Button unequipButton;
+
     // State
     private int? selectedCrewId;
+    private EquipSlot selectedEquipSlot;
+    private string selectedItemId;
 
     private CampaignState Campaign => GameState.Instance?.Campaign;
 
@@ -62,6 +76,20 @@ public partial class CampaignScreen : Control
         closeDetailButton = GetNode<Button>("%CloseDetailButton");
         fireButton = GetNode<Button>("%FireButton");
         confirmFireDialog = GetNode<ConfirmationDialog>("%ConfirmFireDialog");
+
+        // Equipment section
+        weaponItemLabel = GetNode<Label>("%WeaponItemLabel");
+        armorItemLabel = GetNode<Label>("%ArmorItemLabel");
+        gadgetItemLabel = GetNode<Label>("%GadgetItemLabel");
+        statBonusLabel = GetNode<Label>("%StatBonusLabel");
+
+        // Equipment popup
+        equipmentPopup = GetNode<PopupPanel>("%EquipmentPopup");
+        equipmentPopupTitle = GetNode<Label>("%EquipmentPopupTitle");
+        equipmentItemList = GetNode<ItemList>("%EquipmentItemList");
+        statPreviewLabel = GetNode<Label>("%StatPreviewLabel");
+        equipButton = GetNode<Button>("%EquipButton");
+        unequipButton = GetNode<Button>("%UnequipButton");
     }
 
     private void ConnectSignals()
@@ -71,6 +99,15 @@ public partial class CampaignScreen : Control
         closeDetailButton.Pressed += OnCloseDetailPressed;
         fireButton.Pressed += OnFireButtonPressed;
         confirmFireDialog.Confirmed += OnFireConfirmed;
+
+        // Equipment signals
+        GetNode<Button>("%WeaponChangeButton").Pressed += () => OpenEquipmentPopup(EquipSlot.Weapon);
+        GetNode<Button>("%ArmorChangeButton").Pressed += () => OpenEquipmentPopup(EquipSlot.Armor);
+        GetNode<Button>("%GadgetChangeButton").Pressed += () => OpenEquipmentPopup(EquipSlot.Gadget);
+        equipmentItemList.ItemSelected += OnEquipmentItemSelected;
+        equipButton.Pressed += OnEquipPressed;
+        unequipButton.Pressed += OnUnequipPressed;
+        GetNode<Button>("%EquipCancelButton").Pressed += () => equipmentPopup.Hide();
     }
 
     public override void _Process(double delta)
@@ -209,6 +246,9 @@ public partial class CampaignScreen : Control
 
         // Injuries
         UpdateInjuriesDisplay(crew);
+
+        // Equipment (MG-UI3)
+        UpdateEquipmentDisplay();
 
         // Fire button state
         UpdateFireButtonState(crew);
@@ -424,6 +464,157 @@ public partial class CampaignScreen : Control
             selectedCrewId = null;
             UpdateDetailPanel();
             UpdateCrewRoster(Campaign);
+        }
+    }
+
+    // === Equipment UI Methods ===
+
+    private void UpdateEquipmentDisplay()
+    {
+        var crew = GetSelectedCrew();
+        if (crew == null || Campaign == null) return;
+
+        var inventory = Campaign.Inventory;
+
+        // Update slot labels
+        weaponItemLabel.Text = GetEquippedItemName(crew, EquipSlot.Weapon, inventory);
+        armorItemLabel.Text = GetEquippedItemName(crew, EquipSlot.Armor, inventory);
+        gadgetItemLabel.Text = GetEquippedItemName(crew, EquipSlot.Gadget, inventory);
+
+        // Update stat bonus summary
+        var bonuses = crew.GetEquipmentStatSummary(inventory);
+        statBonusLabel.Text = bonuses.Count > 0 
+            ? FormatStatBonuses(bonuses) 
+            : "No equipment bonuses";
+    }
+
+    private string GetEquippedItemName(CrewMember crew, EquipSlot slot, Inventory inventory)
+    {
+        var itemId = crew.GetEquipped(slot);
+        if (string.IsNullOrEmpty(itemId)) return "[Empty]";
+
+        var item = inventory?.FindById(itemId);
+        return item?.GetName() ?? "[Missing]";
+    }
+
+    private static string FormatStatName(string key)
+    {
+        return key switch
+        {
+            EquipmentStats.Armor => "Armor",
+            EquipmentStats.Aim => "Aim",
+            EquipmentStats.Grit => "Grit",
+            EquipmentStats.Reflexes => "Reflexes",
+            EquipmentStats.Tech => "Tech",
+            EquipmentStats.Savvy => "Savvy",
+            EquipmentStats.Resolve => "Resolve",
+            EquipmentStats.MaxHp => "HP",
+            _ => key
+        };
+    }
+
+    private static string FormatStatBonuses(Dictionary<string, int> stats)
+    {
+        if (stats == null || stats.Count == 0)
+            return "No stat bonuses";
+
+        var parts = new List<string>();
+        foreach (var kvp in stats)
+        {
+            string sign = kvp.Value >= 0 ? "+" : "";
+            parts.Add($"{sign}{kvp.Value} {FormatStatName(kvp.Key)}");
+        }
+        return string.Join(", ", parts);
+    }
+
+    private void OpenEquipmentPopup(EquipSlot slot)
+    {
+        var crew = GetSelectedCrew();
+        if (crew == null || Campaign == null) return;
+
+        selectedEquipSlot = slot;
+        selectedItemId = null;
+
+        var inventory = Campaign.Inventory;
+
+        // Set popup title
+        equipmentPopupTitle.Text = $"Select {slot}";
+
+        // Populate item list with available items for this slot
+        equipmentItemList.Clear();
+
+        var equipment = inventory.GetByCategory(ItemCategory.Equipment);
+        foreach (var item in equipment)
+        {
+            var def = item.GetDef();
+            if (def == null || def.EquipSlot != slot) continue;
+
+            // Skip items equipped by other crew
+            if (IsEquippedByOther(item.Id, crew.Id)) continue;
+
+            equipmentItemList.AddItem(def.Name);
+            equipmentItemList.SetItemMetadata(equipmentItemList.ItemCount - 1, item.Id);
+        }
+
+        // Update button states
+        var currentEquipped = crew.GetEquipped(slot);
+        unequipButton.Disabled = string.IsNullOrEmpty(currentEquipped);
+        equipButton.Disabled = true;
+
+        // Clear preview
+        statPreviewLabel.Text = "Select an item to see stats";
+
+        equipmentPopup.PopupCentered();
+    }
+
+    private bool IsEquippedByOther(string itemId, int currentCrewId)
+    {
+        if (Campaign == null) return false;
+        foreach (var crew in Campaign.Crew)
+        {
+            if (crew.Id == currentCrewId) continue;
+            if (crew.GetAllEquippedIds().Contains(itemId)) return true;
+        }
+        return false;
+    }
+
+    private void OnEquipmentItemSelected(long index)
+    {
+        selectedItemId = equipmentItemList.GetItemMetadata((int)index).AsString();
+        equipButton.Disabled = string.IsNullOrEmpty(selectedItemId);
+
+        // Show stat preview
+        if (!string.IsNullOrEmpty(selectedItemId) && Campaign != null)
+        {
+            var item = Campaign.Inventory.FindById(selectedItemId);
+            var def = item?.GetDef();
+            statPreviewLabel.Text = FormatStatBonuses(def?.Stats);
+        }
+    }
+
+    private void OnEquipPressed()
+    {
+        var crew = GetSelectedCrew();
+        if (crew == null || string.IsNullOrEmpty(selectedItemId) || Campaign == null) return;
+
+        if (Campaign.EquipItem(crew.Id, selectedItemId))
+        {
+            equipmentPopup.Hide();
+            UpdateEquipmentDisplay();
+            UpdateStatsDisplay(crew);
+        }
+    }
+
+    private void OnUnequipPressed()
+    {
+        var crew = GetSelectedCrew();
+        if (crew == null || Campaign == null) return;
+
+        if (Campaign.UnequipItem(crew.Id, selectedEquipSlot))
+        {
+            equipmentPopup.Hide();
+            UpdateEquipmentDisplay();
+            UpdateStatsDisplay(crew);
         }
     }
 }

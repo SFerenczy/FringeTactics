@@ -1,6 +1,6 @@
 # MG-UI3 – Equip/Unequip from Simple List (G2.5)
 
-**Status:** Pending  
+**Status:** ✅ Complete  
 **Iteration:** 2025-12 – Crew Loop 01  
 **Depends on:** MG-UI1 ✅, MG-SYS1 (Minimal Equipment Slots)
 
