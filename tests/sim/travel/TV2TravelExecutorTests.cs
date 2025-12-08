@@ -277,7 +277,6 @@ public class TV2TravelExecutorTests
     public void Execute_EncountersAreRecorded()
     {
         // Use a different seed that may trigger encounters
-        // The stub auto-resolves them, so travel should complete
         var world = CreateTestWorld();
         var campaign = CampaignState.CreateNew(99999); // Different seed
         campaign.World = world;
@@ -291,9 +290,17 @@ public class TV2TravelExecutorTests
 
         var result = executor.Execute(plan, campaign);
 
-        // Travel should complete (stub auto-resolves encounters)
-        AssertThat(result.Status).IsEqual(TravelResultStatus.Completed);
-        // Encounters may or may not have triggered depending on RNG
+        // Travel may complete or pause for encounter depending on RNG
+        AssertBool(result.Status == TravelResultStatus.Completed || 
+                   result.Status == TravelResultStatus.PausedForEncounter).IsTrue();
+        
+        // Encounters list should exist (may be empty if no encounters triggered)
         AssertObject(result.Encounters).IsNotNull();
+        
+        // If paused, there should be at least one encounter recorded
+        if (result.Status == TravelResultStatus.PausedForEncounter)
+        {
+            AssertInt(result.Encounters.Count).IsGreaterEqual(1);
+        }
     }
 }

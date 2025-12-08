@@ -128,11 +128,15 @@ public class TravelExecutor
 
                 SimLog.Log($"[Travel] Segment {state.CurrentSegmentIndex + 1}/{state.Plan.Segments.Count}: {campaign.World?.GetSystem(segment.FromSystemId)?.Name} → {campaign.World?.GetSystem(segment.ToSystemId)?.Name}");
 
-                // Roll for encounter once per segment (at start)
-                var encounterResult = TryTriggerEncounter(state, campaign, segment);
-                if (encounterResult != null)
+                // Roll for encounter once per segment (at start), but only if we haven't already rolled
+                if (!state.EncounterRolledForSegment)
                 {
-                    return encounterResult;
+                    state.EncounterRolledForSegment = true;
+                    var encounterResult = TryTriggerEncounter(state, campaign, segment);
+                    if (encounterResult != null)
+                    {
+                        return encounterResult;
+                    }
                 }
             }
 
@@ -192,6 +196,7 @@ public class TravelExecutor
             // Move to next segment
             state.CurrentSegmentIndex++;
             state.CurrentDayInSegment = 0;
+            state.EncounterRolledForSegment = false;
         }
 
         // Travel complete

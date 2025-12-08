@@ -34,6 +34,12 @@ public class TravelState
     public string PendingEncounterId { get; set; }
 
     /// <summary>
+    /// Whether encounter roll has already been made for current segment.
+    /// Prevents re-rolling after resuming from an encounter.
+    /// </summary>
+    public bool EncounterRolledForSegment { get; set; } = false;
+
+    /// <summary>
     /// Fuel consumed so far.
     /// </summary>
     public int FuelConsumed { get; set; } = 0;

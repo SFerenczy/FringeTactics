@@ -28,6 +28,11 @@ public partial class GameState : Node
     // Encounter flow state (EN-UI)
     private TravelState pausedTravelState = null;
     private TravelPlan pausedTravelPlan = null;
+    
+    // Resumed travel state for animation (set after encounter resolution)
+    private TravelResult pendingResumedTravelResult = null;
+    private TravelPlan pendingResumedTravelPlan = null;
+    private int resumedTravelFromSegment = 0;
 
     // Scene paths
     private const string MainMenuScene = "res://src/scenes/menu/MainMenu.tscn";
@@ -152,6 +157,27 @@ public partial class GameState : Node
     }
 
     /// <summary>
+    /// Check if there's pending resumed travel to animate.
+    /// </summary>
+    public bool HasPendingResumedTravel => pendingResumedTravelResult != null && pendingResumedTravelPlan != null;
+
+    /// <summary>
+    /// Get and clear pending resumed travel (called by SectorView on ready).
+    /// </summary>
+    public (TravelResult result, TravelPlan plan, int fromSegment) TakePendingResumedTravel()
+    {
+        var result = pendingResumedTravelResult;
+        var plan = pendingResumedTravelPlan;
+        var fromSeg = resumedTravelFromSegment;
+        
+        pendingResumedTravelResult = null;
+        pendingResumedTravelPlan = null;
+        resumedTravelFromSegment = 0;
+        
+        return (result, plan, fromSeg);
+    }
+
+    /// <summary>
     /// Transition to encounter screen.
     /// </summary>
     public void GoToEncounter()
@@ -182,6 +208,7 @@ public partial class GameState : Node
         // Resume travel if we have paused state
         if (pausedTravelState != null && pausedTravelPlan != null)
         {
+            int fromSegment = pausedTravelState.CurrentSegmentIndex;
             var executor = new TravelExecutor(Campaign.Rng);
             var result = executor.Resume(pausedTravelState, Campaign, outcome);
             
@@ -189,15 +216,20 @@ public partial class GameState : Node
             pausedTravelState = null;
             pausedTravelPlan = null;
             
-            // Handle resumed travel result (may pause again for another encounter)
-            if (!HandleTravelResult(result, plan))
+            // Store for SectorView to animate
+            pendingResumedTravelResult = result;
+            pendingResumedTravelPlan = plan;
+            resumedTravelFromSegment = fromSegment;
+            
+            // If another encounter triggered, handle it (will go to encounter screen)
+            if (result.Status == TravelResultStatus.PausedForEncounter)
             {
-                GoToSectorView();
+                HandleTravelResult(result, plan);
+                return;
             }
-            else if (result.Status == TravelResultStatus.Completed)
-            {
-                GoToSectorView();
-            }
+            
+            // Otherwise go to sector view to animate remaining travel
+            GoToSectorView();
         }
         else
         {

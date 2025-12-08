@@ -1,7 +1,7 @@
-[gd_scene load_steps=3 format=3 uid="uid://d2xvk3m4h8zcd"]
+[gd_scene load_steps=3 format=3 uid="uid://d2xvk3m4h80cd"]
 
-[ext_resource type="Script" path="res://src/scenes/mission/MissionView.cs" id="1_mission"]
-[ext_resource type="Script" path="res://src/scenes/mission/TacticalCamera.cs" id="2_camera"]
+[ext_resource type="Script" uid="uid://dv7dp8v63mayc" path="res://src/scenes/mission/MissionView.cs" id="1_mission"]
+[ext_resource type="Script" uid="uid://cvt6u5l8a0h4p" path="res://src/scenes/mission/TacticalCamera.cs" id="2_camera"]
 
 [node name="MissionView" type="Node2D"]
 script = ExtResource("1_mission")

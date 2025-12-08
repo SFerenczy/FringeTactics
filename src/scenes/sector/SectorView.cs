@@ -1,4 +1,5 @@
 using Godot;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -43,26 +44,129 @@ public partial class SectorView : Control
 
     // Visual settings
     private const float NODE_RADIUS = 20f;
-    private readonly Color CurrentNodeColor = Colors.Cyan;
-    private readonly Color SelectedNodeColor = Colors.Yellow;
-    private readonly Color StationColor = Colors.Green;
-    private readonly Color OutpostColor = Colors.LightBlue;
-    private readonly Color DerelictColor = Colors.Gray;
-    private readonly Color AsteroidColor = Colors.Orange;
-    private readonly Color NebulaColor = Colors.Purple;
-    private readonly Color ContestedColor = Colors.Red;
+
+    // Planet rendering assets
+    private static Shader PlanetShader;
+    private static Texture2D BaseSphere;
+    private static List<Texture2D> NoiseTextures = new();
+    private static List<Texture2D> LightTextures = new();
     private readonly Color ConnectionColor = new Color(0.3f, 0.3f, 0.4f);
+
+    // Background system
+    private static Texture2D BackgroundTexture;
+    private TextureRect backgroundRect;
 
     public override void _Ready()
     {
         // Ensure SectorView fills the screen
         SetAnchorsPreset(LayoutPreset.FullRect);
         
+        LoadPlanetAssets();
+        LoadBackgroundAssets();
+        CreateBackground();
         CreateUI();
         CreateJobBoardPanel();
         CreateStationPanel();
         DrawSector();
         UpdateDisplay();
+        
+        // Check for resumed travel animation (after encounter)
+        CheckForResumedTravel();
+    }
+
+    private void LoadPlanetAssets()
+    {
+        if (PlanetShader != null) return;
+
+        PlanetShader = GD.Load<Shader>("res://assets/shaders/planet.gdshader");
+        BaseSphere = GD.Load<Texture2D>("res://assets/planets/sphere0.png");
+
+        for (int i = 0; i <= 27; i++)
+        {
+            var path = $"res://assets/planets/noises/noise{i:D2}.png";
+            if (FileAccess.FileExists(path)) NoiseTextures.Add(GD.Load<Texture2D>(path));
+        }
+
+        for (int i = 0; i <= 10; i++)
+        {
+            var path = $"res://assets/planets/lights/light{i}.png";
+            if (FileAccess.FileExists(path)) LightTextures.Add(GD.Load<Texture2D>(path));
+        }
+    }
+
+    private void LoadBackgroundAssets()
+    {
+        if (BackgroundTexture != null) return;
+
+        var path = "res://assets/star_system/star_system_background3.jpeg";
+        if (FileAccess.FileExists(path)) BackgroundTexture = GD.Load<Texture2D>(path);
+    }
+
+    private void CreateBackground()
+    {
+        backgroundRect = new TextureRect();
+        backgroundRect.SetAnchorsPreset(LayoutPreset.FullRect);
+        backgroundRect.ExpandMode = TextureRect.ExpandModeEnum.FitWidth;
+        backgroundRect.StretchMode = TextureRect.StretchModeEnum.KeepAspectCovered;
+        backgroundRect.MouseFilter = MouseFilterEnum.Ignore;
+        backgroundRect.ZIndex = -100; // Put it behind everything
+        
+        backgroundRect.Texture = BackgroundTexture;
+        
+        AddChild(backgroundRect);
+    }
+
+
+    private void CheckForResumedTravel()
+    {
+        if (!GameState.Instance.HasPendingResumedTravel) return;
+        
+        var (result, plan, fromSegment) = GameState.Instance.TakePendingResumedTravel();
+        if (result == null || plan == null) return;
+        
+        var campaign = GameState.Instance?.Campaign;
+        if (campaign?.World == null) return;
+        
+        // Build remaining path from the segment where encounter occurred
+        var pathPositions = new List<Vector2>();
+        var fullPath = plan.GetPath();
+        
+        for (int i = fromSegment; i < fullPath.Count; i++)
+        {
+            var system = campaign.World.GetSystem(fullPath[i]);
+            if (system != null)
+            {
+                pathPositions.Add(system.Position);
+            }
+        }
+        
+        if (pathPositions.Count < 2)
+        {
+            // Already at destination, just refresh
+            RefreshSector();
+            return;
+        }
+        
+        // Store for animation completion handler
+        pendingTravelResult = result;
+        pendingTravelPlan = plan;
+        travelFromSystemId = fullPath[fromSegment];
+        
+        // Calculate encounter info if another encounter triggered
+        int encounterSegment = -1;
+        float encounterProgress = 1f;
+        if (result.Status == TravelResultStatus.PausedForEncounter && result.PausedState != null)
+        {
+            encounterSegment = result.PausedState.CurrentSegmentIndex - fromSegment;
+            encounterProgress = 0.2f + (float)GD.Randf() * 0.6f;
+        }
+        
+        // Disable travel button during animation
+        travelButton.Disabled = true;
+        travelButton.Text = "Traveling...";
+        
+        // Start animation for remaining path
+        travelAnimator.StartAnimation(pathPositions, encounterSegment, encounterProgress);
     }
 
     public override void _Process(double delta)
@@ -309,58 +413,64 @@ public partial class SectorView : Control
     private void CreateSystemButton(StarSystem system, bool isCurrent)
     {
         var btn = new Button();
-        btn.CustomMinimumSize = new Vector2(NODE_RADIUS * 2, NODE_RADIUS * 2);
-        btn.Position = system.Position - new Vector2(NODE_RADIUS, NODE_RADIUS);
-        btn.Text = ""; // We'll draw custom visuals
+        float buttonSize = NODE_RADIUS * 2.5f;
+        btn.CustomMinimumSize = new Vector2(buttonSize, buttonSize);
+        btn.Position = system.Position - new Vector2(buttonSize / 2, buttonSize / 2);
+        btn.Flat = true;
+        
+        // Remove all default button styling
+        var emptyStyle = new StyleBoxEmpty();
+        btn.AddThemeStyleboxOverride("normal", emptyStyle);
+        btn.AddThemeStyleboxOverride("hover", emptyStyle);
+        btn.AddThemeStyleboxOverride("pressed", emptyStyle);
+        btn.AddThemeStyleboxOverride("focus", emptyStyle);
+        btn.AddThemeStyleboxOverride("disabled", emptyStyle);
 
-        // Style based on type
-        var color = GetSystemColor(system.Type);
-        if (isCurrent)
-        {
-            color = CurrentNodeColor;
-        }
+        // Create the planet visual
+        var planetVisual = new TextureRect();
+        planetVisual.SetAnchorsPreset(LayoutPreset.FullRect);
+        planetVisual.ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize;
+        planetVisual.MouseFilter = MouseFilterEnum.Ignore;
 
-        // Create a simple colored panel as button content
-        var panel = new Panel();
-        panel.SetAnchorsPreset(LayoutPreset.FullRect);
-        panel.MouseFilter = MouseFilterEnum.Ignore; // Don't block button clicks
+        var material = new ShaderMaterial();
+        material.Shader = PlanetShader;
 
-        var style = new StyleBoxFlat();
-        style.BgColor = color;
-        style.CornerRadiusTopLeft = (int)NODE_RADIUS;
-        style.CornerRadiusTopRight = (int)NODE_RADIUS;
-        style.CornerRadiusBottomLeft = (int)NODE_RADIUS;
-        style.CornerRadiusBottomRight = (int)NODE_RADIUS;
+        var sysRng = new Random(system.Id);
 
-        if (isCurrent)
-        {
-            style.BorderWidthTop = 3;
-            style.BorderWidthBottom = 3;
-            style.BorderWidthLeft = 3;
-            style.BorderWidthRight = 3;
-            style.BorderColor = Colors.White;
-        }
+        var noiseTex = NoiseTextures.Count > 0 ? NoiseTextures[sysRng.Next(NoiseTextures.Count)] : null;
+        var lightTex = LightTextures.Count > 0 ? LightTextures[sysRng.Next(LightTextures.Count)] : null;
 
-        panel.AddThemeStyleboxOverride("panel", style);
-        btn.AddChild(panel);
+        Color baseColor = GetSystemColor(system.Type);
+
+        material.SetShaderParameter("sphere_texture", BaseSphere);
+        material.SetShaderParameter("noise_texture", noiseTex);
+        material.SetShaderParameter("light_texture", lightTex);
+        material.SetShaderParameter("planet_color", baseColor);
+        material.SetShaderParameter("rotation_speed", 0.02f + (float)sysRng.NextDouble() * 0.04f);
+        material.SetShaderParameter("time_offset", (float)sysRng.NextDouble() * 10.0f);
+
+        planetVisual.Texture = BaseSphere;
+        planetVisual.Material = material;
+
+        btn.AddChild(planetVisual);
 
         // System name label
         var nameLabel = new Label();
         nameLabel.Text = system.Name;
-        nameLabel.Position = new Vector2(-30, NODE_RADIUS * 2 + 5);
+        nameLabel.Position = new Vector2(-20, buttonSize + 2);
         nameLabel.AddThemeFontSizeOverride("font_size", 10);
         nameLabel.HorizontalAlignment = HorizontalAlignment.Center;
-        nameLabel.CustomMinimumSize = new Vector2(100, 0);
+        nameLabel.CustomMinimumSize = new Vector2(buttonSize + 40, 0);
         nameLabel.MouseFilter = MouseFilterEnum.Ignore;
         btn.AddChild(nameLabel);
 
-        // Job indicator (check if any station in system has jobs - for now just show if current job targets this)
+        // Job indicator
         var campaign = GameState.Instance?.Campaign;
         if (campaign?.CurrentJob != null && campaign.CurrentJob.TargetNodeId == system.Id)
         {
             var jobIndicator = new Label();
             jobIndicator.Text = "!";
-            jobIndicator.Position = new Vector2(NODE_RADIUS * 2 - 5, -5);
+            jobIndicator.Position = new Vector2(buttonSize - 10, -5);
             jobIndicator.AddThemeFontSizeOverride("font_size", 16);
             jobIndicator.AddThemeColorOverride("font_color", Colors.Yellow);
             jobIndicator.MouseFilter = MouseFilterEnum.Ignore;
@@ -378,13 +488,13 @@ public partial class SectorView : Control
     {
         return type switch
         {
-            SystemType.Station => StationColor,
-            SystemType.Outpost => OutpostColor,
-            SystemType.Derelict => DerelictColor,
-            SystemType.Asteroid => AsteroidColor,
-            SystemType.Nebula => NebulaColor,
-            SystemType.Contested => ContestedColor,
-            _ => Colors.White
+            SystemType.Station => new Color(0.3f, 0.8f, 0.4f),      // Vibrant teal-green
+            SystemType.Outpost => new Color(0.4f, 0.6f, 0.9f),       // Bright cobalt blue
+            SystemType.Derelict => new Color(0.7f, 0.5f, 0.3f),      // Rusty orange-brown
+            SystemType.Asteroid => new Color(0.8f, 0.6f, 0.3f),       // Golden sand
+            SystemType.Nebula => new Color(0.6f, 0.4f, 0.8f),         // Deep purple
+            SystemType.Contested => new Color(0.9f, 0.4f, 0.3f),      // Coral red
+            _ => new Color(0.7f, 0.7f, 0.8f)                         // Soft blue-white
         };
     }
 
@@ -563,47 +673,68 @@ public partial class SectorView : Control
     private void UpdateNodeHighlights(CampaignState campaign)
     {
         if (campaign.World == null) return;
-        
+
+        float buttonSize = NODE_RADIUS * 2.5f;
+
         foreach (var kvp in nodeButtons)
         {
             var systemId = kvp.Key;
             var btn = kvp.Value;
-            var panel = btn.GetChild<Panel>(0);
-            if (panel == null) continue;
-
-            var style = panel.GetThemeStylebox("panel") as StyleBoxFlat;
-            if (style == null) continue;
 
             var system = campaign.World.GetSystem(systemId);
             if (system == null) continue;
 
-            // Reset border
-            style.BorderWidthTop = 0;
-            style.BorderWidthBottom = 0;
-            style.BorderWidthLeft = 0;
-            style.BorderWidthRight = 0;
+            bool isCurrent = systemId == campaign.CurrentNodeId;
+            bool isSelected = systemId == selectedNodeId;
 
-            if (systemId == campaign.CurrentNodeId)
+            // Remove ALL existing ring panels from this button
+            var panelsToRemove = new List<Panel>();
+            foreach (var child in btn.GetChildren())
             {
-                style.BgColor = CurrentNodeColor;
-                style.BorderWidthTop = 3;
-                style.BorderWidthBottom = 3;
-                style.BorderWidthLeft = 3;
-                style.BorderWidthRight = 3;
-                style.BorderColor = Colors.White;
+                if (child is Panel p)
+                {
+                    panelsToRemove.Add(p);
+                }
             }
-            else if (systemId == selectedNodeId)
+            
+            foreach (var panel in panelsToRemove)
             {
-                style.BgColor = SelectedNodeColor;
-                style.BorderWidthTop = 2;
-                style.BorderWidthBottom = 2;
-                style.BorderWidthLeft = 2;
-                style.BorderWidthRight = 2;
-                style.BorderColor = Colors.Yellow;
+                panel.QueueFree();
             }
-            else
+
+            // Only create ring for current or selected nodes
+            if (isCurrent || isSelected)
             {
-                style.BgColor = GetSystemColor(system.Type);
+                var ringStyle = new StyleBoxFlat();
+                ringStyle.BgColor = Colors.Transparent;
+                ringStyle.CornerRadiusTopLeft = (int)buttonSize;
+                ringStyle.CornerRadiusTopRight = (int)buttonSize;
+                ringStyle.CornerRadiusBottomLeft = (int)buttonSize;
+                ringStyle.CornerRadiusBottomRight = (int)buttonSize;
+
+                if (isCurrent)
+                {
+                    ringStyle.BorderColor = Colors.White;
+                    ringStyle.BorderWidthBottom = 3;
+                    ringStyle.BorderWidthTop = 3;
+                    ringStyle.BorderWidthLeft = 3;
+                    ringStyle.BorderWidthRight = 3;
+                }
+                else if (isSelected)
+                {
+                    ringStyle.BorderColor = Colors.Yellow;
+                    ringStyle.BorderWidthBottom = 2;
+                    ringStyle.BorderWidthTop = 2;
+                    ringStyle.BorderWidthLeft = 2;
+                    ringStyle.BorderWidthRight = 2;
+                }
+
+                var ringPanel = new Panel();
+                ringPanel.AddThemeStyleboxOverride("panel", ringStyle);
+                ringPanel.SetAnchorsPreset(LayoutPreset.FullRect);
+                ringPanel.MouseFilter = MouseFilterEnum.Ignore;
+                btn.AddChild(ringPanel);
+                btn.MoveChild(ringPanel, 1);
             }
         }
     }
