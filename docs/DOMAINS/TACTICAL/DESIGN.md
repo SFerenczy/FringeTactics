@@ -66,6 +66,24 @@ This is not just “combat mode”; it is the **on-foot simulation** that underp
 5. **Extensible, not brittle**  
    - Designed so future systems (deeper stealth, injuries, systemic station mechanics) can plug in without rewriting the basics.
 
+### 1.3 Tactical Identity – Four Axes
+
+Every tactical feature should meaningfully touch at least two of these axes:
+
+| Axis | Description | Examples |
+|------|-------------|----------|
+| **Information** | Who sees what, when | Fog of war, vision ranges, sensors, hacked intel, "knowing" enemy positions vs guessing |
+| **Position** | Where you stand and what you stand behind | Cover, flanking, chokepoints, doors, hazards, firing lanes |
+| **Time** | Pressure and tempo | Timers, waves, action economy, channelled actions, retreat windows |
+| **Value Extraction** | What you walk away with | Primary objectives vs optional loot, bonus objectives, risk-reward decisions |
+
+**Feature validation examples:**
+- **Overwatch:** Information + Position + Time (threat zones that shape movement over time)
+- **Suppression:** Position + Time (pinning enemies so others can move)
+- **Retreat / evac:** Time + Value Extraction (how long you risk staying for more rewards)
+
+This framework ensures consistent tactical depth even as mission "vibes" differ (tight hangar firefight vs sprawling ship heist).
+
 ---
 
 ## 2. Player Loop Inside a Mission

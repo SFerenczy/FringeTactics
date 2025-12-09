@@ -52,6 +52,7 @@ You fly a barely-legal ship, scrape by on shady jobs, and try to keep a fragile 
    - RTwP, FTL/Barotrauma-inspired: many ways to influence an encounter.
    - Emphasis on abilities, positioning, and environment interaction.
    - Readable, not twitch-based; success comes from planning and pausing.
+   - Tactical identity built on four axes: **Information**, **Position**, **Time**, **Value Extraction**.
 
 5. **Long-form procedural campaign**
    - Sector runs are meant to last many missions.
@@ -165,6 +166,8 @@ Each job:
 ## 6. Tactical Layer – RTwP On-Foot Combat
 
 **Goal:** RTwP system inspired by FTL/Barotrauma/Desperados, but scoped tightly for v0.1.
+
+**Development approach:** Mission-first, feature-driven. All tactical features are justified by how they make the flagship "Hangar Handover" mission better. See `docs/ITERATIONS/2025-12-hangar-handover.md` for the current vertical slice and `docs/DOMAINS/TACTICAL/ROADMAP.md` for implementation order.
 
 ### 6.1 Basic structure (v0.1)
 
