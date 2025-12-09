@@ -25,9 +25,8 @@ public partial class SectorView : Control
     private JobBoardPanel jobBoardPanel;
     private Label currentJobLabel;
 
-    // Station Services panel
-    private Button stationButton;
-    private StationServicesPanel stationPanel;
+    // Station Modal
+    private StationModal stationModal;
 
     // Travel Log (Phase 5)
     private Label travelLogLabel;
@@ -66,7 +65,7 @@ public partial class SectorView : Control
         CreateBackground();
         CreateUI();
         CreateJobBoardPanel();
-        CreateStationPanel();
+        CreateStationModal();
         DrawSector();
         UpdateDisplay();
         
@@ -307,15 +306,6 @@ public partial class SectorView : Control
         shipButton.Pressed += OnShipPressed;
         vbox.AddChild(shipButton);
 
-        AddSpacer(vbox, 10);
-
-        // Station Services button
-        stationButton = new Button();
-        stationButton.Text = "Station Services";
-        stationButton.CustomMinimumSize = new Vector2(200, 40);
-        stationButton.Pressed += OnStationPressed;
-        vbox.AddChild(stationButton);
-
         AddSpacer(vbox, 15);
 
         // Travel Log (Phase 5)
@@ -354,15 +344,10 @@ public partial class SectorView : Control
         AddChild(jobBoardPanel);
     }
 
-    private void CreateStationPanel()
+    private void CreateStationModal()
     {
-        stationPanel = new StationServicesPanel();
-        AddChild(stationPanel);
-    }
-
-    private void OnStationPressed()
-    {
-        stationPanel.Show();
+        stationModal = new StationModal();
+        AddChild(stationModal);
     }
 
     private void OnJobBoardPressed()
@@ -500,6 +485,20 @@ public partial class SectorView : Control
 
     private void OnNodeClicked(int nodeId)
     {
+        var campaign = GameState.Instance?.Campaign;
+        if (campaign == null) return;
+
+        // If clicking on current system, open station modal
+        if (nodeId == campaign.CurrentNodeId)
+        {
+            var station = campaign.World?.GetPrimaryStation(nodeId);
+            if (station != null)
+            {
+                stationModal.ShowForStation(station);
+                return;
+            }
+        }
+
         selectedNodeId = nodeId;
         UpdateDisplay();
     }
