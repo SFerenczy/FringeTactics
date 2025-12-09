@@ -19,6 +19,7 @@ public partial class ActorView : Node2D
     private Label ammoLabel;
     private ColorRect reloadIndicator;
     private ColorRect detectionIndicator;
+    private Label overwatchIcon;
 
     private float hitFlashTimer = 0f;
     private bool isFlashing = false;
@@ -38,6 +39,7 @@ public partial class ActorView : Node2D
         CreateAmmoLabel();
         CreateReloadIndicator();
         CreateDetectionIndicator();
+        CreateOverwatchIcon();
 
         if (actor != null)
         {
@@ -79,6 +81,17 @@ public partial class ActorView : Node2D
         detectionIndicator.Visible = false;
         AddChild(detectionIndicator);
     }
+    
+    private void CreateOverwatchIcon()
+    {
+        overwatchIcon = new Label();
+        overwatchIcon.Text = "⊙";
+        overwatchIcon.Position = new Vector2(TileSize - 10, -2);
+        overwatchIcon.AddThemeColorOverride("font_color", new Color(1f, 0.8f, 0.2f));
+        overwatchIcon.AddThemeFontSizeOverride("font_size", 12);
+        overwatchIcon.Visible = false;
+        AddChild(overwatchIcon);
+    }
 
     public void Setup(Actor actorData, Color color)
     {
@@ -88,6 +101,8 @@ public partial class ActorView : Node2D
             actor.DamageTaken -= OnDamageTaken;
             actor.Died -= OnDied;
             actor.ReloadCompleted -= OnReloadCompleted;
+            actor.OverwatchActivated -= OnOverwatchChanged;
+            actor.OverwatchDeactivated -= OnOverwatchChanged;
         }
 
         actor = actorData;
@@ -114,6 +129,19 @@ public partial class ActorView : Node2D
         actor.DamageTaken += OnDamageTaken;
         actor.Died += OnDied;
         actor.ReloadCompleted += OnReloadCompleted;
+        actor.OverwatchActivated += OnOverwatchChanged;
+        actor.OverwatchDeactivated += OnOverwatchChanged;
+    }
+    
+    private void OnOverwatchChanged(Actor a)
+    {
+        UpdateOverwatchDisplay();
+    }
+    
+    private void UpdateOverwatchDisplay()
+    {
+        if (actor == null || overwatchIcon == null) return;
+        overwatchIcon.Visible = actor.IsOnOverwatch && actor.State == ActorState.Alive;
     }
 
     private void OnReloadCompleted(Actor a)
@@ -150,6 +178,7 @@ public partial class ActorView : Node2D
         ammoLabel.Visible = false;
         reloadIndicator.Visible = false;
         detectionIndicator.Visible = false;
+        overwatchIcon.Visible = false;
     }
 
     private void UpdateAmmoDisplay()
@@ -322,6 +351,8 @@ public partial class ActorView : Node2D
             actor.DamageTaken -= OnDamageTaken;
             actor.Died -= OnDied;
             actor.ReloadCompleted -= OnReloadCompleted;
+            actor.OverwatchActivated -= OnOverwatchChanged;
+            actor.OverwatchDeactivated -= OnOverwatchChanged;
         }
     }
 }

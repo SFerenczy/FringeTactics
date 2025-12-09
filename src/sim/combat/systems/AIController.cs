@@ -50,7 +50,28 @@ public class AIController
         var detectionState = combatState.Perception.GetDetectionState(enemy.Id);
         if (detectionState == DetectionState.Idle)
         {
+            // Idle enemies may enter overwatch to guard their position
+            if (!enemy.IsOnOverwatch && ShouldEnterOverwatch(enemy))
+            {
+                var facingDirection = GetBestOverwatchDirection(enemy);
+                enemy.EnterOverwatch(combatState.TimeSystem.CurrentTick, facingDirection);
+                SimLog.Log($"[AI] Enemy#{enemy.Id} entering idle overwatch");
+            }
             return;
+        }
+        
+        // If already on overwatch, decide whether to stay or break
+        if (enemy.IsOnOverwatch)
+        {
+            if (ShouldBreakOverwatch(enemy))
+            {
+                enemy.ExitOverwatch();
+                SimLog.Log($"[AI] Enemy#{enemy.Id} breaking overwatch");
+            }
+            else
+            {
+                return; // Stay on overwatch
+            }
         }
         
         // If already attacking a valid target in range, consider switching to better target
@@ -86,6 +107,13 @@ public class AIController
         var target = FindBestTarget(enemy);
         if (target == null)
         {
+            // No visible targets - consider overwatch
+            if (ShouldEnterOverwatch(enemy))
+            {
+                var facingDirection = GetBestOverwatchDirection(enemy);
+                enemy.EnterOverwatch(combatState.TimeSystem.CurrentTick, facingDirection);
+                SimLog.Log($"[AI] Enemy#{enemy.Id} entering overwatch (no targets)");
+            }
             return;
         }
 
@@ -220,5 +248,53 @@ public class AIController
 
         // Can't move
         return enemy.GridPosition;
+    }
+    
+    // === Overwatch Decision Methods ===
+    
+    /// <summary>
+    /// Determine if enemy should enter overwatch.
+    /// </summary>
+    private bool ShouldEnterOverwatch(Actor enemy)
+    {
+        // Can't overwatch if can't fire
+        if (!enemy.CanFire()) return false;
+        
+        // Already on overwatch
+        if (enemy.IsOnOverwatch) return false;
+        
+        // 30% chance to overwatch when no targets visible
+        return combatState.Rng.NextFloat() < 0.3f;
+    }
+    
+    /// <summary>
+    /// Determine if enemy should break overwatch.
+    /// </summary>
+    private bool ShouldBreakOverwatch(Actor enemy)
+    {
+        // Break overwatch if target is very close (melee range)
+        foreach (var crew in combatState.Actors)
+        {
+            if (crew.Type != ActorType.Crew || crew.State != ActorState.Alive) continue;
+            
+            // Check if visible
+            if (!CombatResolver.HasLineOfSight(enemy.GridPosition, crew.GridPosition, combatState.MapState))
+                continue;
+            
+            var distance = CombatResolver.GetDistance(enemy.GridPosition, crew.GridPosition);
+            if (distance <= 2) return true;
+        }
+        return false;
+    }
+    
+    /// <summary>
+    /// Get the best direction to face for overwatch.
+    /// Returns null for 360° overwatch.
+    /// </summary>
+    private Vector2I? GetBestOverwatchDirection(Actor enemy)
+    {
+        // Find direction toward last known crew position or center of map
+        // For now, return null (360° overwatch)
+        return null;
     }
 }

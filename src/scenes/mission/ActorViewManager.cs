@@ -14,6 +14,7 @@ public partial class ActorViewManager : Node2D
     
     private PackedScene actorViewScene;
     private Dictionary<int, ActorView> actorViews = new();
+    private Dictionary<int, OverwatchIndicator> overwatchIndicators = new();
     private List<int> crewActorIds = new();
     private CombatState combatState;
 
@@ -49,21 +50,30 @@ public partial class ActorViewManager : Node2D
             var view = actorViewScene.Instantiate<ActorView>();
             AddChild(view);
             actorViews[actor.Id] = view;
+            
+            // Create overwatch indicator for this actor
+            var overwatchIndicator = new OverwatchIndicator();
+            overwatchIndicator.ZIndex = -1; // Render behind actors
+            AddChild(overwatchIndicator);
+            overwatchIndicators[actor.Id] = overwatchIndicator;
 
             if (actor.Type == ActorType.Crew)
             {
                 var color = CrewColors[crewIndex % CrewColors.Length];
                 view.Setup(actor, color);
+                overwatchIndicator.Setup(actor, isEnemy: false);
                 crewActorIds.Add(actor.Id);
                 crewIndex++;
             }
             else if (actor.Type == ActorType.Enemy)
             {
                 view.Setup(actor, EnemyColor);
+                overwatchIndicator.Setup(actor, isEnemy: true);
             }
             else
             {
                 view.Setup(actor, Colors.White);
+                overwatchIndicator.Setup(actor, isEnemy: false);
             }
         }
 
@@ -81,6 +91,13 @@ public partial class ActorViewManager : Node2D
         {
             view.QueueFree();
             actorViews.Remove(actor.Id);
+        }
+        
+        if (overwatchIndicators.TryGetValue(actor.Id, out var indicator))
+        {
+            indicator.Cleanup();
+            indicator.QueueFree();
+            overwatchIndicators.Remove(actor.Id);
         }
     }
 

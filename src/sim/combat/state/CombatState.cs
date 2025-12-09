@@ -54,6 +54,9 @@ public partial class CombatState
     // Perception system (enemy detection, alarm state)
     public PerceptionSystem Perception { get; private set; }
     
+    // Overwatch system (reaction fire)
+    public OverwatchSystem OverwatchSystem { get; private set; }
+    
     // Objective evaluator (replaces hardcoded CheckMissionEnd logic)
     public ObjectiveEvaluator ObjectiveEvaluator { get; private set; }
     
@@ -90,6 +93,7 @@ public partial class CombatState
         Visibility = new VisibilitySystem(MapState);
         Interactions = new InteractionSystem(this);
         Perception = new PerceptionSystem(this);
+        OverwatchSystem = new OverwatchSystem(this);
         ObjectiveEvaluator = new ObjectiveEvaluator(); // Empty by default, MissionFactory sets up objectives
         
         attackSystem = new AttackSystem(GetActorById);
@@ -325,10 +329,16 @@ public partial class CombatState
         actor.GridPosition = position;
         actor.SetTarget(position);
         actor.Map = MapState; // Set map reference for wall collision checking
+        actor.MovingToPosition += OnActorMovingToPosition;
         nextActorId += 1;
         Actors.Add(actor);
         ActorAdded?.Invoke(actor);
         return actor;
+    }
+    
+    private void OnActorMovingToPosition(Actor actor, Vector2I newPosition)
+    {
+        OverwatchSystem.CheckMovement(actor, newPosition);
     }
 
     public void RemoveActor(int actorId)
@@ -338,6 +348,7 @@ public partial class CombatState
             if (Actors[i].Id == actorId)
             {
                 var actor = Actors[i];
+                actor.MovingToPosition -= OnActorMovingToPosition;
                 Actors.RemoveAt(i);
                 ActorRemoved?.Invoke(actor);
                 return;
@@ -473,6 +484,35 @@ public partial class CombatState
 
         SimLog.Log($"[Combat] {actor.Type}#{actor.Id} manually reloading ({actor.CurrentMagazine}/{actor.EquippedWeapon.MagazineSize})");
         actor.StartReload();
+    }
+    
+    /// <summary>
+    /// Order an actor to enter overwatch.
+    /// </summary>
+    public void IssueOverwatchOrder(int actorId, Vector2I? facingDirection = null)
+    {
+        var actor = GetActorById(actorId);
+        if (actor == null || actor.State != ActorState.Alive)
+        {
+            return;
+        }
+        
+        if (!actor.CanFire())
+        {
+            SimLog.Log($"[Combat] {actor.Type}#{actor.Id} cannot enter overwatch (can't fire)");
+            return;
+        }
+        
+        actor.EnterOverwatch(TimeSystem.CurrentTick, facingDirection);
+    }
+    
+    /// <summary>
+    /// Cancel overwatch for an actor.
+    /// </summary>
+    public void CancelOverwatch(int actorId)
+    {
+        var actor = GetActorById(actorId);
+        actor?.ExitOverwatch();
     }
 
     /// <summary>

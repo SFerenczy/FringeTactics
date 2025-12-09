@@ -111,60 +111,24 @@ public class AttackSystem
     private void ExecuteAttack(Actor attacker, Actor target, MapState map, RngStream rng, CombatStats stats, bool isAutoDefend)
     {
         var result = CombatResolver.ResolveAttack(attacker, target, attacker.EquippedWeapon, map, rng);
-        attacker.StartCooldown();
-        attacker.ConsumeAmmo();
-
         var attackType = isAutoDefend ? "auto-defend" : "attack";
-        var coverTag = GetCoverTag(result.TargetCoverHeight);
-
-        // Record shot statistics (M7)
-        attacker.RecordShot(result.Hit, result.Hit ? result.Damage : 0);
         
-        if (result.Hit)
+        var targetDied = AttackExecutor.ApplyAttackResult(attacker, target, result, 
+            victim => ActorDied?.Invoke(victim, attacker));
+        
+        SimLog.Log(AttackExecutor.FormatAttackLog(attacker, target, result, attackType));
+        
+        if (targetDied)
         {
-            var isGodMode = (target.Type == ActorType.Crew && DevTools.CrewGodMode) ||
-                           (target.Type == ActorType.Enemy && DevTools.EnemyGodMode);
-
-            if (!isGodMode)
-            {
-                target.TakeDamage(result.Damage);
-            }
-
-            var godModeTag = isGodMode ? " [GOD MODE]" : "";
-            var armorTag = result.TargetArmor > 0 ? $" ({result.RawDamage} - {result.TargetArmor} armor)" : "";
-            SimLog.Log($"[Combat] {attacker.Type}#{attacker.Id} hit {target.Type}#{target.Id} ({attackType}) with {result.WeaponName} for {result.Damage} damage{armorTag} ({result.HitChance:P0} chance){coverTag}. HP: {target.Hp}/{target.MaxHp}{godModeTag}");
-
-            if (target.State == ActorState.Alive)
-            {
-                target.SetAutoDefendTarget(attacker.Id);
-            }
-            else
-            {
-                attacker.RecordKill(); // M7 statistics
-                SimLog.Log($"[Combat] {target.Type}#{target.Id} DIED!");
-                ActorDied?.Invoke(target, attacker);
-            }
+            SimLog.Log($"[Combat] {target.Type}#{target.Id} DIED!");
         }
         else
         {
-            SimLog.Log($"[Combat] {attacker.Type}#{attacker.Id} missed {target.Type}#{target.Id} ({attackType}) with {result.WeaponName} ({result.HitChance:P0} chance){coverTag}");
             target.SetAutoDefendTarget(attacker.Id);
         }
 
         AttackResolved?.Invoke(attacker, target, result);
         UpdateStats(stats, attacker, result);
-    }
-
-    private static string GetCoverTag(CoverHeight coverHeight)
-    {
-        return coverHeight switch
-        {
-            CoverHeight.Low => " [LOW COVER]",
-            CoverHeight.Half => " [HALF COVER]",
-            CoverHeight.High => " [HIGH COVER]",
-            CoverHeight.Full => " [FULL COVER]",
-            _ => ""
-        };
     }
 
     private static void UpdateStats(CombatStats stats, Actor attacker, AttackResult result)

@@ -40,6 +40,7 @@ public partial class MissionInputController : Node
     public event Action<int, int> AttackOrderIssued;
     public event Action<int, int> InteractionOrderIssued;
     public event Action<int> ReloadOrderIssued;
+    public event Action<int> OverwatchOrderIssued;
     public event Action<AbilityData> AbilityTargetingStarted;
     public event Action AbilityTargetingCancelled;
     public event Action<int, AbilityData, Vector2I> AbilityOrderIssued;
@@ -174,6 +175,16 @@ public partial class MissionInputController : Node
             foreach (var actorId in selection.SelectedActorIds)
             {
                 ReloadOrderIssued?.Invoke(actorId);
+            }
+            return;
+        }
+        
+        // O - overwatch
+        if (keyEvent.Keycode == Key.O)
+        {
+            foreach (var actorId in selection.SelectedActorIds)
+            {
+                OverwatchOrderIssued?.Invoke(actorId);
             }
             return;
         }

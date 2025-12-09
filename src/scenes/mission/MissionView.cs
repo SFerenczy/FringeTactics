@@ -78,6 +78,7 @@ public partial class MissionView : Node2D
         CombatState.MissionEnded += OnMissionEnded;
         CombatState.Perception.AlarmStateChanged += OnAlarmStateChanged;
         CombatState.Perception.EnemyDetectedCrew += OnEnemyDetectedCrew;
+        CombatState.OverwatchSystem.ReactionFired += OnReactionFired;
     }
 
     private void SetupSubComponents()
@@ -141,6 +142,7 @@ public partial class MissionView : Node2D
         inputController.AttackOrderIssued += OnAttackOrderIssued;
         inputController.InteractionOrderIssued += OnInteractionOrderIssued;
         inputController.ReloadOrderIssued += OnReloadOrderIssued;
+        inputController.OverwatchOrderIssued += OnOverwatchOrderIssued;
         inputController.AbilityTargetingStarted += OnAbilityTargetingStarted;
         inputController.AbilityTargetingCancelled += OnAbilityTargetingCancelled;
         inputController.AbilityOrderIssued += OnAbilityOrderIssued;
@@ -170,7 +172,7 @@ public partial class MissionView : Node2D
         timeStateWidget.ConnectToTimeSystem(CombatState.TimeSystem);
 
         // Instructions
-        instructionsLabel.Text = "Space: Pause/Resume | G: Grenade | Scroll: Zoom | WASD: Pan | F3: Debug\n1-3: Select/Recall group | Ctrl+1-3: Save group | Tab: Select all\nClick: Select | Shift+Click: Add/Remove | Drag: Box | DblClick: All\nRClick: Move/Attack | C: Center on unit";
+        instructionsLabel.Text = "Space: Pause/Resume | G: Grenade | O: Overwatch | Scroll: Zoom | WASD: Pan | F3: Debug\n1-3: Select/Recall group | Ctrl+1-3: Save group | Tab: Select all\nClick: Select | Shift+Click: Add/Remove | Drag: Box | DblClick: All\nRClick: Move/Attack | R: Reload | C: Center on unit";
 
         // Ability targeting label
         abilityTargetingLabel = new Label();
@@ -423,6 +425,41 @@ public partial class MissionView : Node2D
     {
         CombatState.IssueReloadOrder(actorId);
     }
+    
+    private void OnOverwatchOrderIssued(int actorId)
+    {
+        CombatState.IssueOverwatchOrder(actorId);
+    }
+    
+    private void OnReactionFired(Actor overwatcher, Actor target, AttackResult result)
+    {
+        // Show reaction fire visual feedback
+        var overwatcherView = actorViewManager.GetView(overwatcher.Id);
+        var targetView = actorViewManager.GetView(target.Id);
+        
+        if (overwatcherView != null && targetView != null)
+        {
+            ShowReactionFireEffect(overwatcherView.Position, targetView.Position, result.Hit);
+        }
+        
+        GD.Print($"[Overwatch] {overwatcher.Type}#{overwatcher.Id} fired at {target.Type}#{target.Id} - {(result.Hit ? "HIT" : "MISS")}");
+    }
+    
+    private void ShowReactionFireEffect(Vector2 from, Vector2 to, bool hit)
+    {
+        // Draw a line from overwatcher to target
+        var line = new Line2D();
+        line.AddPoint(from + new Vector2(TileSize / 2f, TileSize / 2f));
+        line.AddPoint(to + new Vector2(TileSize / 2f, TileSize / 2f));
+        line.Width = 3f;
+        line.DefaultColor = hit ? new Color(1f, 0.3f, 0.3f, 0.8f) : new Color(1f, 1f, 0.3f, 0.6f);
+        line.ZIndex = 50;
+        AddChild(line);
+        
+        // Remove after short delay
+        var timer = GetTree().CreateTimer(0.2f);
+        timer.Timeout += () => line.QueueFree();
+    }
 
     private void OnAbilityTargetingStarted(AbilityData ability)
     {
@@ -498,6 +535,7 @@ public partial class MissionView : Node2D
             CombatState.Perception.AlarmStateChanged -= OnAlarmStateChanged;
             CombatState.Perception.EnemyDetectedCrew -= OnEnemyDetectedCrew;
             CombatState.AbilitySystem.AbilityDetonated -= OnAbilityDetonated;
+            CombatState.OverwatchSystem.ReactionFired -= OnReactionFired;
         }
 
         // Unsubscribe from input controller events
@@ -509,6 +547,7 @@ public partial class MissionView : Node2D
             inputController.AttackOrderIssued -= OnAttackOrderIssued;
             inputController.InteractionOrderIssued -= OnInteractionOrderIssued;
             inputController.ReloadOrderIssued -= OnReloadOrderIssued;
+            inputController.OverwatchOrderIssued -= OnOverwatchOrderIssued;
             inputController.AbilityTargetingStarted -= OnAbilityTargetingStarted;
             inputController.AbilityTargetingCancelled -= OnAbilityTargetingCancelled;
             inputController.AbilityOrderIssued -= OnAbilityOrderIssued;

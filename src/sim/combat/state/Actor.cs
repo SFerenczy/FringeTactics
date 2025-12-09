@@ -35,6 +35,9 @@ public partial class Actor
     
     // Effect system
     public ActorEffects Effects { get; private set; }
+    
+    // Overwatch state
+    public OverwatchState Overwatch { get; } = new();
 
     // Weapon and attack
     public WeaponData EquippedWeapon { get; set; } = WeaponData.DefaultRifle;
@@ -81,9 +84,13 @@ public partial class Actor
     // C# Events
     public event Action<Actor> ModifiersChanged;
     public event Action<Actor, Vector2I> PositionChanged;
+    public event Action<Actor, Vector2I> MovingToPosition;
     public event Action<Actor> ArrivedAtTarget;
     public event Action<Actor, int> DamageTaken; // actor, damage amount
     public event Action<Actor> Died;
+    public event Action<Actor> OverwatchActivated;
+    public event Action<Actor> OverwatchDeactivated;
+    public event Action<Actor, Actor> OverwatchTriggered;
 
     public Actor(int actorId, ActorType actorType)
     {
@@ -99,6 +106,7 @@ public partial class Actor
         Abilities = new List<string>();
         Modifiers.ModifiersChanged += () => ModifiersChanged?.Invoke(this);
         Effects = new ActorEffects(this);
+        Overwatch.StateChanged += OnOverwatchStateChanged;
         EquippedWeapon = WeaponData.DefaultRifle;
         CurrentMagazine = EquippedWeapon.MagazineSize;
         ReserveAmmo = EquippedWeapon.MagazineSize * 3;
@@ -111,6 +119,9 @@ public partial class Actor
         {
             CancelChannel();
         }
+        
+        // Cancel overwatch when given movement order
+        ExitOverwatch();
         
         TargetPosition = target;
         if (TargetPosition != GridPosition)
@@ -215,16 +226,7 @@ public partial class Actor
 
         if (MoveProgress >= 1.0f)
         {
-            // Arrived at next tile
-            MoveProgress = 0.0f;
-            GridPosition += MoveDirection;
-            PositionChanged?.Invoke(this, GridPosition);
-
-            if (GridPosition == TargetPosition)
-            {
-                IsMoving = false;
-                ArrivedAtTarget?.Invoke(this);
-            }
+            CommitTileMovement();
         }
     }
 
@@ -234,6 +236,8 @@ public partial class Actor
         // Clear movement when attacking
         if (targetId.HasValue)
         {
+            // Cancel overwatch when given attack order
+            ExitOverwatch();
             IsMoving = false;
             TargetPosition = GridPosition;
         }
@@ -479,14 +483,34 @@ public partial class Actor
 
         if (MoveProgress >= 1.0f)
         {
-            MoveProgress = 0.0f;
-            GridPosition += MoveDirection;
-            PositionChanged?.Invoke(this, GridPosition);
+            CommitTileMovement();
+        }
+    }
+    
+    /// <summary>
+    /// Commit arrival at the next tile. Fires overwatch check, updates position, and handles arrival.
+    /// </summary>
+    private void CommitTileMovement()
+    {
+        MoveProgress = 0.0f;
+        var newPosition = GridPosition + MoveDirection;
+        
+        // Fire event before position change (for overwatch checks)
+        MovingToPosition?.Invoke(this, newPosition);
+        
+        // Check if still alive after potential overwatch reaction
+        if (State != ActorState.Alive)
+        {
+            IsMoving = false;
+            return;
+        }
+        
+        GridPosition = newPosition;
+        PositionChanged?.Invoke(this, GridPosition);
 
-            if (GridPosition == TargetPosition)
-            {
-                CompleteMovement();
-            }
+        if (GridPosition == TargetPosition)
+        {
+            CompleteMovement();
         }
     }
 
@@ -576,5 +600,58 @@ public partial class Actor
         CurrentChannel = null;
         ChannelCompleted?.Invoke(this, channel);
         SimLog.Log($"[Actor] {Type}#{Id} completed {channel.ActionType}");
+    }
+    
+    // === Overwatch Methods ===
+    
+    private void OnOverwatchStateChanged(OverwatchState state)
+    {
+        if (state.IsActive)
+        {
+            OverwatchActivated?.Invoke(this);
+        }
+        else
+        {
+            OverwatchDeactivated?.Invoke(this);
+        }
+    }
+    
+    /// <summary>
+    /// Enter overwatch state. Cancels other actions.
+    /// </summary>
+    public void EnterOverwatch(int currentTick, Vector2I? facingDirection = null)
+    {
+        if (State != ActorState.Alive || !CanFire()) return;
+        
+        // Cancel other actions
+        ClearOrders();
+        CancelChannel();
+        CancelReload();
+        
+        var range = EquippedWeapon.Range;
+        Overwatch.Activate(currentTick, facingDirection, 90f, range, 1);
+        SimLog.Log($"[Actor] {Type}#{Id} entered overwatch");
+    }
+    
+    /// <summary>
+    /// Exit overwatch state.
+    /// </summary>
+    public void ExitOverwatch()
+    {
+        Overwatch.Deactivate();
+    }
+    
+    /// <summary>
+    /// Check if actor is currently on overwatch.
+    /// </summary>
+    public bool IsOnOverwatch => Overwatch.IsActive;
+    
+    /// <summary>
+    /// Notify that this actor triggered overwatch on a target.
+    /// Called by OverwatchSystem after reaction fire.
+    /// </summary>
+    public void NotifyOverwatchTriggered(Actor target)
+    {
+        OverwatchTriggered?.Invoke(this, target);
     }
 }
