@@ -96,6 +96,14 @@ public static class CombatResolver
     /// </summary>
     public static AttackResult ResolveAttack(Actor attacker, Actor target, WeaponData weapon, MapState map, RngStream rng)
     {
+        return ResolveAttack(attacker, target, weapon, map, rng, 1.0f);
+    }
+    
+    /// <summary>
+    /// Resolve an attack with an optional accuracy modifier.
+    /// </summary>
+    public static AttackResult ResolveAttack(Actor attacker, Actor target, WeaponData weapon, MapState map, RngStream rng, float accuracyModifier)
+    {
         var result = new AttackResult
         {
             AttackerId = attacker.Id,
@@ -116,7 +124,7 @@ public static class CombatResolver
         result.TargetCoverHeight = coverHeight;
         
         // Calculate hit chance based on distance, accuracy, and cover
-        var hitChance = CalculateHitChance(attacker, target, weapon, map);
+        var hitChance = CalculateHitChance(attacker, target, weapon, map) * accuracyModifier;
         result.HitChance = hitChance;
         
         var roll = rng.NextFloat();

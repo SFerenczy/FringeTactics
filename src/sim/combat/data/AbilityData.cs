@@ -54,4 +54,7 @@ public class AbilityData
         EffectId = "stunned",
         EffectDuration = 40 // 2 seconds stun
     };
+    
+    // Note: Suppressive fire is handled directly by SuppressionSystem, not through AbilitySystem.
+    // Balance constants are in SuppressionSystem.cs.
 }

@@ -57,6 +57,9 @@ public partial class CombatState
     // Overwatch system (reaction fire)
     public OverwatchSystem OverwatchSystem { get; private set; }
     
+    // Suppression system (suppressive fire)
+    public SuppressionSystem Suppression { get; private set; }
+    
     // Objective evaluator (replaces hardcoded CheckMissionEnd logic)
     public ObjectiveEvaluator ObjectiveEvaluator { get; private set; }
     
@@ -94,6 +97,7 @@ public partial class CombatState
         Interactions = new InteractionSystem(this);
         Perception = new PerceptionSystem(this);
         OverwatchSystem = new OverwatchSystem(this);
+        Suppression = new SuppressionSystem(this);
         ObjectiveEvaluator = new ObjectiveEvaluator(); // Empty by default, MissionFactory sets up objectives
         
         attackSystem = new AttackSystem(GetActorById);
@@ -513,6 +517,50 @@ public partial class CombatState
     {
         var actor = GetActorById(actorId);
         actor?.ExitOverwatch();
+    }
+    
+    /// <summary>
+    /// Order an actor to use suppressive fire on a target.
+    /// </summary>
+    public SuppressionResult IssueSuppressiveFireOrder(int actorId, int targetId)
+    {
+        var actor = GetActorById(actorId);
+        var target = GetActorById(targetId);
+        
+        if (actor == null || target == null)
+        {
+            return new SuppressionResult { Success = false };
+        }
+        
+        if (!Suppression.CanSuppressiveFire(actor))
+        {
+            SimLog.Log($"[Combat] {actor.Type}#{actor.Id} cannot use suppressive fire");
+            return new SuppressionResult { Success = false };
+        }
+        
+        return Suppression.ExecuteSuppressiveFire(actor, target);
+    }
+    
+    /// <summary>
+    /// Order an actor to use area suppression on a tile.
+    /// </summary>
+    public bool IssueAreaSuppressionOrder(int actorId, Godot.Vector2I targetTile, int radius = 2)
+    {
+        var actor = GetActorById(actorId);
+        
+        if (actor == null)
+        {
+            return false;
+        }
+        
+        if (!Suppression.CanAreaSuppression(actor))
+        {
+            SimLog.Log($"[Combat] {actor.Type}#{actor.Id} cannot use area suppression");
+            return false;
+        }
+        
+        Suppression.ExecuteAreaSuppression(actor, targetTile, radius);
+        return true;
     }
 
     /// <summary>

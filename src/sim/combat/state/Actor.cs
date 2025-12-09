@@ -618,10 +618,17 @@ public partial class Actor
     
     /// <summary>
     /// Enter overwatch state. Cancels other actions.
+    /// Cannot enter overwatch while suppressed.
     /// </summary>
     public void EnterOverwatch(int currentTick, Vector2I? facingDirection = null)
     {
         if (State != ActorState.Alive || !CanFire()) return;
+        
+        if (IsSuppressed())
+        {
+            SimLog.Log($"[Actor] {Type}#{Id} cannot enter overwatch - suppressed!");
+            return;
+        }
         
         // Cancel other actions
         ClearOrders();

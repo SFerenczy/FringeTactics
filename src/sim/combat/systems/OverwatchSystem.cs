@@ -84,9 +84,7 @@ public class OverwatchSystem
     {
         SimLog.Log($"[Overwatch] {overwatcher.Type}#{overwatcher.Id} triggers on {target.Type}#{target.Id}!");
         
-        var result = CombatResolver.ResolveAttack(
-            overwatcher, target, overwatcher.EquippedWeapon, 
-            combatState.MapState, combatState.Rng);
+        var result = ResolveOverwatchAttack(overwatcher, target);
         
         var targetDied = AttackExecutor.ApplyAttackResult(overwatcher, target, result,
             victim => combatState.NotifyActorDied(victim));
@@ -157,5 +155,17 @@ public class OverwatchSystem
             }
         }
         return result;
+    }
+    
+    /// <summary>
+    /// Resolve an overwatch attack, applying overwatch accuracy modifiers (e.g., from suppression).
+    /// </summary>
+    private AttackResult ResolveOverwatchAttack(Actor overwatcher, Actor target)
+    {
+        var overwatchAccuracyMod = overwatcher.Modifiers.Calculate(StatType.OverwatchAccuracy, 1.0f);
+        
+        return CombatResolver.ResolveAttack(
+            overwatcher, target, overwatcher.EquippedWeapon,
+            combatState.MapState, combatState.Rng, overwatchAccuracyMod);
     }
 }

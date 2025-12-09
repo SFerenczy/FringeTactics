@@ -12,7 +12,8 @@ public enum StatType
     Accuracy,
     Damage,
     VisionRadius,
-    FireRate
+    FireRate,
+    OverwatchAccuracy
 }
 
 /// <summary>
