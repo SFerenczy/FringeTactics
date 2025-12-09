@@ -28,6 +28,8 @@ Static configuration types and data definitions used across the sim layer.
 - **ValidationResult.cs** - Validation result accumulator for errors and warnings
 - **DataLoader.cs** - JSON loading utility. Uses Godot FileAccess for res:// paths.
 - **MissionConfig.cs** - Mission setup: grid size, map template, entry zone, crew spawns, enemy spawns.
+- **WeaponIds.cs** - Constant weapon definition IDs (rifle, pistol, smg, shotgun, sniper).
+- **ArmorIds.cs** - Constant armor definition IDs (armored_clothing, light_armor, medium_armor, heavy_armor).
 - **Localization.cs** - Localization system for text lookup:
   - `Localization.Load(locale)` - Load JSON file from `data/localization/{locale}.json`
   - `Localization.Get(key)` - Get localized string, returns key if not found

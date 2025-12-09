@@ -81,6 +81,16 @@ public static class CombatResolver
     }
 
     /// <summary>
+    /// Calculate final damage after armor reduction.
+    /// Formula: max(1, rawDamage - armor)
+    /// </summary>
+    public static int CalculateDamage(int rawDamage, int armor)
+    {
+        if (rawDamage <= 0) return 0;
+        return System.Math.Max(1, rawDamage - armor);
+    }
+
+    /// <summary>
     /// Resolve an attack. Returns the result with damage dealt.
     /// Uses distance-based hit chance calculation.
     /// </summary>
@@ -114,11 +124,15 @@ public static class CombatResolver
 
         if (result.Hit)
         {
-            result.Damage = weapon.Damage;
+            result.RawDamage = weapon.Damage;
+            result.TargetArmor = target.Armor;
+            result.Damage = CalculateDamage(weapon.Damage, target.Armor);
         }
         else
         {
             result.Damage = 0;
+            result.RawDamage = 0;
+            result.TargetArmor = target.Armor;
         }
 
         return result;

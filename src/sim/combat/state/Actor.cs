@@ -25,6 +25,7 @@ public partial class Actor
     public Vector2 VisualPosition { get; set; } = Vector2.Zero; // smooth position for rendering
     public int Hp { get; set; } = 100;
     public int MaxHp { get; set; } = 100;
+    public int Armor { get; set; } = 0;
     public ActorState State { get; set; } = ActorState.Alive;
     public Dictionary<string, int> Stats { get; set; } = new() { { "aim", 0 }, { "toughness", 0 }, { "reflexes", 0 } };
     public List<string> Abilities { get; set; } = new();

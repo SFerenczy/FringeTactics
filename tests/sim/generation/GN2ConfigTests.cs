@@ -41,7 +41,7 @@ public class GN2ConfigTests
     {
         var config = GalaxyConfig.Default;
 
-        AssertInt(config.FactionIds.Count).IsGreater(0);
+        AssertInt(config.GetFactionIds().Count).IsGreater(0);
     }
 
     [TestCase]

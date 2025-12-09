@@ -81,7 +81,7 @@ public class GN2FactionTests
         var hubs = world.GetSystemsByTag(WorldTags.Hub).ToList();
 
         // Should have one hub per faction
-        AssertInt(hubs.Count).IsEqual(config.FactionIds.Count);
+        AssertInt(hubs.Count).IsEqual(config.GetFactionIds().Count);
 
         // All hubs should also have Core tag
         foreach (var hub in hubs)
@@ -163,7 +163,7 @@ public class GN2FactionTests
         var world = generator.Generate();
 
         // For each faction, verify territory is contiguous via BFS
-        foreach (var factionId in config.FactionIds)
+        foreach (var factionId in config.GetFactionIds())
         {
             var factionSystems = world.GetSystemsByFaction(factionId).ToList();
             if (factionSystems.Count == 0) continue;
@@ -379,7 +379,7 @@ public class GN2FactionTests
         AssertInt(total).IsEqual(config.SystemCount);
 
         // Each faction in config should appear
-        foreach (var factionId in config.FactionIds)
+        foreach (var factionId in config.GetFactionIds())
         {
             AssertBool(counts.ContainsKey(factionId)).IsTrue();
         }
@@ -415,7 +415,7 @@ public class GN2FactionTests
         AssertInt(hubs.Count).IsGreater(0);
 
         // Should have faction territories
-        foreach (var factionId in config.FactionIds)
+        foreach (var factionId in config.GetFactionIds())
         {
             var count = world.GetSystemsByFaction(factionId).Count();
             AssertInt(count).IsGreaterEqual(1);

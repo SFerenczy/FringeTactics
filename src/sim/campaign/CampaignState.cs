@@ -834,13 +834,50 @@ public class CampaignState
     /// <summary>
     /// Internal: creates crew and adds to roster.
     /// Uses campaign RNG to roll a starting trait.
+    /// Equips starting gear (pistol + armored clothing).
     /// </summary>
     private CrewMember CreateAndAddCrew(string name, CrewRole role)
     {
         var crew = CrewMember.CreateWithRole(nextCrewId, name, role, Rng?.Campaign);
         nextCrewId++;
         Crew.Add(crew);
+        
+        EquipStartingGear(crew);
+        
         return crew;
+    }
+
+    /// <summary>
+    /// Equip a crew member with starting gear (pistol + armored clothing).
+    /// Creates items in inventory and equips them.
+    /// </summary>
+    private void EquipStartingGear(CrewMember crew)
+    {
+        var capacity = Ship?.GetCargoCapacity() ?? int.MaxValue;
+        
+        // Create and equip pistol
+        var pistol = Inventory.AddItem(WeaponIds.Pistol, 1, capacity);
+        if (pistol != null)
+        {
+            crew.SetEquipped(EquipSlot.Weapon, pistol.Id);
+            SimLog.Log($"[Campaign] Equipped {crew.Name} with {pistol.DefId} (id: {pistol.Id})");
+        }
+        else
+        {
+            SimLog.Log($"[Campaign] WARNING: Failed to create pistol for {crew.Name}");
+        }
+        
+        // Create and equip armored clothing
+        var armor = Inventory.AddItem(ArmorIds.ArmoredClothing, 1, capacity);
+        if (armor != null)
+        {
+            crew.SetEquipped(EquipSlot.Armor, armor.Id);
+            SimLog.Log($"[Campaign] Equipped {crew.Name} with {armor.DefId} (id: {armor.Id})");
+        }
+        else
+        {
+            SimLog.Log($"[Campaign] WARNING: Failed to create armor for {crew.Name}");
+        }
     }
 
     /// <summary>

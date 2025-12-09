@@ -95,6 +95,22 @@
             ]
         },
         {
+            "id": "armored_clothing",
+            "name": "Armored Clothing",
+            "description": "Reinforced civilian wear. Minimal protection.",
+            "category": "Equipment",
+            "equipSlot": "Armor",
+            "volume": 0,
+            "baseValue": 30,
+            "stats": {
+                "armor": 5
+            },
+            "tags": [
+                "armor",
+                "clothing"
+            ]
+        },
+        {
             "id": "light_armor",
             "name": "Light Armor",
             "description": "Basic protection without mobility penalty.",

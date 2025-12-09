@@ -182,6 +182,7 @@ public static class MissionFactory
             actor.CrewId = crew.CampaignCrewId;
             actor.MaxHp = crew.MaxHp;
             actor.Hp = crew.CurrentHp;
+            actor.Armor = crew.Armor;
             actor.Stats["aim"] = (int)((crew.Accuracy - 0.7f) * 100);
             
             // Apply move speed modifier if different from default (base is 4.0 in Actor)
@@ -221,6 +222,7 @@ public static class MissionFactory
             actor.Name = enemyDef.Name;
             actor.Hp = enemyDef.Hp;
             actor.MaxHp = enemyDef.Hp;
+            actor.Armor = enemyDef.Armor;
             actor.EquippedWeapon = weaponData;
 
             SimLog.Log($"[MissionFactory] Spawned {enemyDef.Name} (Actor#{actor.Id}) at {spawn.Position}");

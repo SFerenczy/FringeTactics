@@ -3,13 +3,15 @@
         "id": "grunt",
         "name": "Grunt",
         "hp": 80,
-        "weaponId": "rifle",
+        "armor": 0,
+        "weaponId": "pistol",
         "behavior": "Aggressive"
     },
     "gunner": {
         "id": "gunner",
         "name": "Gunner",
         "hp": 100,
+        "armor": 5,
         "weaponId": "smg",
         "behavior": "Aggressive"
     },
@@ -17,6 +19,7 @@
         "id": "sniper",
         "name": "Sniper",
         "hp": 60,
+        "armor": 0,
         "weaponId": "rifle",
         "behavior": "Defensive"
     },
@@ -24,6 +27,7 @@
         "id": "heavy",
         "name": "Heavy",
         "hp": 150,
+        "armor": 18,
         "weaponId": "shotgun",
         "behavior": "Aggressive"
     }

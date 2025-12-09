@@ -25,7 +25,7 @@ public class GN2DistributionTests
         var counts = generator.GetFactionSystemCounts(world);
 
         // Each faction should have at least one system (their capital)
-        foreach (var factionId in config.FactionIds)
+        foreach (var factionId in config.GetFactionIds())
         {
             AssertBool(counts.ContainsKey(factionId)).IsTrue();
             AssertInt(counts[factionId]).IsGreaterEqual(1);

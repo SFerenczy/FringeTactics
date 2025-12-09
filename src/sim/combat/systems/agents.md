@@ -7,7 +7,7 @@ Tick-based systems that process and mutate combat state each simulation tick.
 - **TimeSystem.cs** - Tick-based time: pause/resume, time scale, accumulator pattern
 - **AttackSystem.cs** - Processes attacks each tick: manual attacks, auto-defend. Emits AttackResolved, ActorDied events.
 - **MovementSystem.cs** - Stateless movement utilities: collision resolution, pathfinding around obstacles
-- **CombatResolver.cs** - Stateless attack resolution: range, LOS, hit chance, damage
+- **CombatResolver.cs** - Stateless attack resolution: range, LOS, hit chance, damage with armor reduction (see docs/DOMAINS/TACTICAL/ARMOR_DAMAGE.md)
 - **AIController.cs** - Enemy AI: pick closest visible player, move toward range, attack if able. Respects detection state.
 - **AbilitySystem.cs** - Ability execution: cooldowns, delayed effects, AoE damage, status effects
 - **VisibilitySystem.cs** - Fog of war: tracks per-tile visibility, LOS from crew positions

@@ -131,7 +131,8 @@ public class AttackSystem
             }
 
             var godModeTag = isGodMode ? " [GOD MODE]" : "";
-            SimLog.Log($"[Combat] {attacker.Type}#{attacker.Id} hit {target.Type}#{target.Id} ({attackType}) for {result.Damage} damage ({result.HitChance:P0} chance){coverTag}. HP: {target.Hp}/{target.MaxHp}{godModeTag}");
+            var armorTag = result.TargetArmor > 0 ? $" ({result.RawDamage} - {result.TargetArmor} armor)" : "";
+            SimLog.Log($"[Combat] {attacker.Type}#{attacker.Id} hit {target.Type}#{target.Id} ({attackType}) with {result.WeaponName} for {result.Damage} damage{armorTag} ({result.HitChance:P0} chance){coverTag}. HP: {target.Hp}/{target.MaxHp}{godModeTag}");
 
             if (target.State == ActorState.Alive)
             {
@@ -146,7 +147,7 @@ public class AttackSystem
         }
         else
         {
-            SimLog.Log($"[Combat] {attacker.Type}#{attacker.Id} missed {target.Type}#{target.Id} ({attackType}) ({result.HitChance:P0} chance){coverTag}");
+            SimLog.Log($"[Combat] {attacker.Type}#{attacker.Id} missed {target.Type}#{target.Id} ({attackType}) with {result.WeaponName} ({result.HitChance:P0} chance){coverTag}");
             target.SetAutoDefendTarget(attacker.Id);
         }
 

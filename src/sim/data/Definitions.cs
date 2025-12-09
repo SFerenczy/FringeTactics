@@ -150,6 +150,7 @@ public class EnemyDef
     public string Id { get; set; }
     public string Name { get; set; }
     public int Hp { get; set; }
+    public int Armor { get; set; } = 0;
     public string WeaponId { get; set; }
     public EnemyBehavior Behavior { get; set; }
 

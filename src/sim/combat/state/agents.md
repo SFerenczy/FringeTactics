@@ -5,7 +5,7 @@ Core state objects that represent the tactical combat simulation at any point in
 ## Files
 
 - **CombatState.cs** - Root combat state: actors, map, time system, MissionPhase (Setup/Active/Complete), objectives. Orchestrates systems per tick.
-- **Actor.cs** - Individual combatant: position, HP, state (Alive/Down/Dead), movement, attack orders, stat modifiers
+- **Actor.cs** - Individual combatant: position, HP, Armor (damage reduction), state (Alive/Down/Dead), movement, attack orders, stat modifiers
 - **MapState.cs** - Grid map state: TileType (Floor/Wall/Void), cover flags, entry zones, interactables
 - **VisibilityState.cs** - Enum for tile visibility: Unknown, Revealed, Visible
 - **EnemyPerception.cs** - Per-enemy detection state: Idle/Alerted, last known positions of detected crew

@@ -248,6 +248,7 @@ public class MG2EquipmentTests
         var crew = campaign.Crew[0];
         var item = campaign.AddItem("rifle", 1);
         campaign.EquipItem(crew.Id, item.Id);
+        unequippedEvents.Clear();
 
         campaign.UnequipItem(crew.Id, EquipSlot.Weapon);
 
@@ -268,8 +269,10 @@ public class MG2EquipmentTests
     public void UnequipItem_FailsForEmptySlot()
     {
         var crew = campaign.Crew[0];
+        // Clear starting equipment first
+        campaign.UnequipItem(crew.Id, EquipSlot.Gadget);
 
-        var result = campaign.UnequipItem(crew.Id, EquipSlot.Weapon);
+        var result = campaign.UnequipItem(crew.Id, EquipSlot.Gadget);
 
         AssertThat(result).IsFalse();
     }
@@ -297,7 +300,8 @@ public class MG2EquipmentTests
     {
         var crew = campaign.Crew[0];
 
-        var equipped = campaign.GetEquippedItem(crew.Id, EquipSlot.Weapon);
+        // Gadget slot is empty (crew starts with weapon and armor only)
+        var equipped = campaign.GetEquippedItem(crew.Id, EquipSlot.Gadget);
 
         AssertThat(equipped).IsNull();
     }

@@ -199,6 +199,7 @@ public class MG3MissionInputTests
         // Set preferred weapon on all crew to ensure we test it
         foreach (var crew in campaign.GetAliveCrew())
         {
+            crew.EquippedWeaponId = null; // Clear starting equipment
             crew.PreferredWeaponId = "smg";
         }
 

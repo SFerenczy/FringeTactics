@@ -276,13 +276,14 @@ public class MG2ResourceTests
     [TestCase]
     public void RemoveItem_Works()
     {
+        var initialCount = campaign.Inventory.Items.Count;
         var item = campaign.AddItem("rifle", 1);
         itemAddedEvents.Clear();
 
         var result = campaign.RemoveItem(item.Id);
 
         AssertThat(result).IsTrue();
-        AssertThat(campaign.Inventory.Items.Count).IsEqual(0);
+        AssertThat(campaign.Inventory.Items.Count).IsEqual(initialCount);
     }
 
     [TestCase]
@@ -415,13 +416,14 @@ public class MG2ResourceTests
         var existingModule = campaign.Ship.Modules.Find(m => m.SlotType == ShipSlotType.Cargo);
         campaign.Ship.RemoveModule(existingModule.Id);
         
+        var initialCount = campaign.Inventory.Items.Count;
         var item = campaign.AddItem("large_cargo", 1);
         itemAddedEvents.Clear();
 
         var result = campaign.InstallModule(item.Id);
 
         AssertThat(result).IsTrue();
-        AssertThat(campaign.Inventory.Items.Count).IsEqual(0);
+        AssertThat(campaign.Inventory.Items.Count).IsEqual(initialCount);
         AssertThat(campaign.Ship.CountModules(ShipSlotType.Cargo)).IsEqual(1);
     }
 
@@ -429,12 +431,13 @@ public class MG2ResourceTests
     public void InstallModule_FailsIfSlotsFull()
     {
         // Starter ship has 1 cargo slot, already filled
+        var initialCount = campaign.Inventory.Items.Count;
         var item = campaign.AddItem("large_cargo", 1);
 
         var result = campaign.InstallModule(item.Id);
 
         AssertThat(result).IsFalse();
-        AssertThat(campaign.Inventory.Items.Count).IsEqual(1);
+        AssertThat(campaign.Inventory.Items.Count).IsEqual(initialCount + 1);
     }
 
     [TestCase]
@@ -495,13 +498,14 @@ public class MG2ResourceTests
     [TestCase]
     public void CampaignState_RoundTrip_PreservesInventory()
     {
+        var initialCount = campaign.Inventory.Items.Count;
         campaign.AddItem("medkit", 5);
         campaign.AddItem("rifle", 2);
 
         var data = campaign.GetState();
         var restored = CampaignState.FromState(data);
 
-        AssertThat(restored.Inventory.Items.Count).IsEqual(2);
+        AssertThat(restored.Inventory.Items.Count).IsEqual(initialCount + 2);
         AssertThat(restored.Inventory.CountByDefId("medkit")).IsEqual(5);
         AssertThat(restored.Inventory.CountByDefId("rifle")).IsEqual(2);
     }
