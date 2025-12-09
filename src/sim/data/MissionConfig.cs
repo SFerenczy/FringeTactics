@@ -10,11 +10,18 @@ public class EnemySpawn
 {
     public string EnemyId { get; set; }
     public Vector2I Position { get; set; }
+    public string Tag { get; set; }
 
     public EnemySpawn(string enemyId, Vector2I position)
     {
         EnemyId = enemyId;
         Position = position;
+    }
+    
+    public EnemySpawn WithTag(string tag)
+    {
+        Tag = tag;
+        return this;
     }
 }
 
@@ -75,6 +82,20 @@ public class MissionConfig
 
     // Crew weapon (default for sandbox)
     public string CrewWeaponId { get; set; } = WeaponIds.Rifle;
+    
+    // Phase configuration (HH3)
+    public bool HasNegotiationPhase { get; set; } = false;
+    public int EscalationDelayTicks { get; set; } = 600; // 30 seconds default (20 ticks/sec)
+    public int ResolutionDelayTicks { get; set; } = 1200; // 60 seconds after last wave
+    
+    // Spawn points (HH3)
+    public List<SpawnPoint> SpawnPoints { get; set; } = new();
+    
+    // Waves (HH3)
+    public List<WaveDefinition> Waves { get; set; } = new();
+    
+    // Deployment zone (HH3)
+    public List<Vector2I> DeploymentZone { get; set; } = new();
 
     /// <summary>
     /// Default test mission configuration with walls and entry zone.
@@ -598,5 +619,158 @@ public class MissionConfig
                 new EnemySpawn(EnemyIds.Heavy, new Vector2I(12, 8))
             }
         };
+    }
+    
+    /// <summary>
+    /// HH3 test mission: Hangar Handover with waves and phases.
+    /// </summary>
+    public static MissionConfig CreateHangarHandoverMission()
+    {
+        return new MissionConfig
+        {
+            Id = "hangar_handover",
+            Name = "Hangar Handover",
+            MapTemplate = new string[]
+            {
+                "########################",
+                "#EE....................#",
+                "#EE....................#",
+                "#....####....####......#",
+                "#....#..#....#..#......#",
+                "#....#..D....D..#......#",
+                "#....####....####......#",
+                "#......................#",
+                "#.........XX...........#",
+                "#.........XX...........#",
+                "#......................#",
+                "#....####....####......#",
+                "#....#..D....D..#......#",
+                "#....#..#....#..#......#",
+                "#....####....####......#",
+                "#......................#",
+                "#......................#",
+                "#......................#",
+                "#......................#",
+                "#......................#",
+                "#.........BB...........#",
+                "#.........BB...........#",
+                "#......................#",
+                "########################"
+            },
+            
+            // Deployment zone (top-left area)
+            DeploymentZone = GenerateDeploymentZone(1, 1, 4, 4),
+            
+            // Spawn points
+            SpawnPoints = new List<SpawnPoint>
+            {
+                new SpawnPoint
+                {
+                    Id = "spawn_east",
+                    Position = new Vector2I(20, 12),
+                    AdditionalPositions = new List<Vector2I>
+                    {
+                        new Vector2I(20, 13),
+                        new Vector2I(20, 14)
+                    },
+                    BlockedByLOS = true
+                },
+                new SpawnPoint
+                {
+                    Id = "spawn_south",
+                    Position = new Vector2I(3, 17),
+                    AdditionalPositions = new List<Vector2I>
+                    {
+                        new Vector2I(4, 17),
+                        new Vector2I(5, 17)
+                    },
+                    BlockedByLOS = true
+                }
+            },
+            
+            // Initial enemies (boss and guards)
+            EnemySpawns = new List<EnemySpawn>
+            {
+                new EnemySpawn(EnemyIds.Heavy, new Vector2I(10, 20)).WithTag("boss"),
+                new EnemySpawn(EnemyIds.Grunt, new Vector2I(9, 20)),
+                new EnemySpawn(EnemyIds.Grunt, new Vector2I(11, 20)),
+                new EnemySpawn(EnemyIds.Grunt, new Vector2I(10, 19))
+            },
+            
+            // Waves
+            Waves = new List<WaveDefinition>
+            {
+                new WaveDefinition
+                {
+                    Id = "wave_1",
+                    Name = "Flankers",
+                    SpawnPointId = "spawn_east",
+                    Trigger = new WaveTrigger
+                    {
+                        Type = WaveTriggerType.Time,
+                        DelayTicks = 400, // 20 seconds into Pressure
+                        RequiredPhase = TacticalPhase.Pressure
+                    },
+                    Enemies = new List<EnemySpawn>
+                    {
+                        new EnemySpawn(EnemyIds.Grunt, Vector2I.Zero),
+                        new EnemySpawn(EnemyIds.Grunt, Vector2I.Zero)
+                    }
+                },
+                new WaveDefinition
+                {
+                    Id = "wave_2",
+                    Name = "Reinforcements",
+                    SpawnPointId = "spawn_south",
+                    Trigger = new WaveTrigger
+                    {
+                        Type = WaveTriggerType.ActorHpBelow,
+                        HpThreshold = 0.5f,
+                        TargetActorTag = "boss",
+                        RequiredPhase = TacticalPhase.Pressure
+                    },
+                    Enemies = new List<EnemySpawn>
+                    {
+                        new EnemySpawn(EnemyIds.Grunt, Vector2I.Zero),
+                        new EnemySpawn(EnemyIds.Grunt, Vector2I.Zero),
+                        new EnemySpawn(EnemyIds.Heavy, Vector2I.Zero)
+                    }
+                },
+                new WaveDefinition
+                {
+                    Id = "wave_3",
+                    Name = "Final Push",
+                    SpawnPointId = "spawn_east",
+                    Trigger = new WaveTrigger
+                    {
+                        Type = WaveTriggerType.WaveComplete,
+                        PreviousWaveId = "wave_2",
+                        RequiredPhase = TacticalPhase.Pressure
+                    },
+                    Enemies = new List<EnemySpawn>
+                    {
+                        new EnemySpawn(EnemyIds.Grunt, Vector2I.Zero),
+                        new EnemySpawn(EnemyIds.Grunt, Vector2I.Zero)
+                    }
+                }
+            },
+            
+            // Phase timing
+            HasNegotiationPhase = false,
+            EscalationDelayTicks = 200 // 10 seconds after contact
+        };
+    }
+    
+    private static List<Vector2I> GenerateDeploymentZone(int x, int y, int width, int height)
+    {
+        var zone = new List<Vector2I>();
+        for (int dx = 0; dx < width; dx++)
+        {
+            for (int dy = 0; dy < height; dy++)
+            {
+                zone.Add(new Vector2I(x + dx, y + dy));
+            }
+        }
+        return zone;
     }
 }

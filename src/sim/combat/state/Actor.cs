@@ -20,6 +20,7 @@ public partial class Actor
     public int Id { get; set; }
     public ActorType Type { get; set; }
     public string Name { get; set; }
+    public string Tag { get; set; } // For wave trigger targeting (e.g., "boss")
     public int CrewId { get; set; } = -1;
     public Vector2I GridPosition { get; set; } = Vector2I.Zero;
     public Vector2 VisualPosition { get; set; } = Vector2.Zero; // smooth position for rendering

@@ -127,6 +127,21 @@ public static class MissionFactory
             input.Interactables.Add(spawn);
         }
         
+        // HH3: Phase and wave configuration
+        input.HasNegotiationPhase = config.HasNegotiationPhase;
+        input.EscalationDelayTicks = config.EscalationDelayTicks;
+        input.DeploymentZone = config.DeploymentZone;
+        
+        foreach (var spawnPoint in config.SpawnPoints)
+        {
+            input.SpawnPoints.Add(spawnPoint);
+        }
+        
+        foreach (var wave in config.Waves)
+        {
+            input.Waves.Add(wave);
+        }
+        
         return input;
     }
 
@@ -220,12 +235,13 @@ public static class MissionFactory
 
             var actor = combat.AddActor(ActorType.Enemy, spawn.Position);
             actor.Name = enemyDef.Name;
+            actor.Tag = spawn.Tag;
             actor.Hp = enemyDef.Hp;
             actor.MaxHp = enemyDef.Hp;
             actor.Armor = enemyDef.Armor;
             actor.EquippedWeapon = weaponData;
 
-            SimLog.Log($"[MissionFactory] Spawned {enemyDef.Name} (Actor#{actor.Id}) at {spawn.Position}");
+            SimLog.Log($"[MissionFactory] Spawned {enemyDef.Name} (Actor#{actor.Id}) at {spawn.Position}{(spawn.Tag != null ? $" [Tag: {spawn.Tag}]" : "")}");
         }
 
         // Initialize perception system after all actors are spawned
@@ -233,8 +249,45 @@ public static class MissionFactory
 
         // Calculate initial visibility
         combat.Visibility.UpdateVisibility(combat.Actors);
+        
+        // Set up HH3 wave system
+        SetupWaveSystem(combat, input);
 
         return result;
+    }
+    
+    /// <summary>
+    /// Set up the wave system from MissionInput (HH3).
+    /// </summary>
+    private static void SetupWaveSystem(CombatState combat, MissionInput input)
+    {
+        // Add spawn points
+        foreach (var spawnPoint in input.SpawnPoints)
+        {
+            combat.Waves.AddSpawnPoint(spawnPoint);
+            SimLog.Log($"[MissionFactory] Added spawn point '{spawnPoint.Id}' at {spawnPoint.Position}");
+        }
+        
+        // Add waves
+        foreach (var wave in input.Waves)
+        {
+            combat.Waves.AddWave(wave);
+            SimLog.Log($"[MissionFactory] Added wave '{wave.Id}' ({wave.Enemies.Count} enemies)");
+        }
+        
+        // Store phase config in MissionConfig
+        if (combat.MissionConfig != null)
+        {
+            combat.MissionConfig.HasNegotiationPhase = input.HasNegotiationPhase;
+            combat.MissionConfig.EscalationDelayTicks = input.EscalationDelayTicks;
+            combat.MissionConfig.DeploymentZone = input.DeploymentZone;
+        }
+        
+        // Set up deployment zone
+        if (input.DeploymentZone.Count > 0)
+        {
+            combat.Deployment.SetDeploymentZone(input.DeploymentZone);
+        }
     }
 
     /// <summary>

@@ -44,6 +44,12 @@ public partial class MissionView : Node2D
     private TacticalCamera tacticalCamera;
 
     private TimeStateWidget timeStateWidget;
+    private PhaseWidget phaseWidget;
+    
+    // Wave announcement
+    private Label waveAnnouncementLabel;
+    private float waveAnnouncementTimer = 0f;
+    private const float WaveAnnouncementDuration = 3.0f;
 
     // Cover indicator position tracking
     private Dictionary<int, Vector2I> lastKnownPositions = new();
@@ -79,6 +85,8 @@ public partial class MissionView : Node2D
         CombatState.Perception.AlarmStateChanged += OnAlarmStateChanged;
         CombatState.Perception.EnemyDetectedCrew += OnEnemyDetectedCrew;
         CombatState.OverwatchSystem.ReactionFired += OnReactionFired;
+        CombatState.Waves.WaveTriggered += OnWaveTriggered;
+        CombatState.Phases.PhaseChanged += OnPhaseChanged;
     }
 
     private void SetupSubComponents()
@@ -208,6 +216,28 @@ public partial class MissionView : Node2D
         retreatUIController.Name = "RetreatUIController";
         AddChild(retreatUIController);
         retreatUIController.Initialize(CombatState, uiLayer, gridDisplay, TileSize);
+        
+        // Phase widget (HH3)
+        phaseWidget = new PhaseWidget();
+        phaseWidget.Position = new Vector2(10, 75);
+        uiLayer.AddChild(phaseWidget);
+        phaseWidget.ConnectToPhaseSystem(CombatState.Phases);
+        
+        // Wave announcement label (HH3)
+        CreateWaveAnnouncementLabel();
+    }
+    
+    private void CreateWaveAnnouncementLabel()
+    {
+        waveAnnouncementLabel = new Label();
+        waveAnnouncementLabel.HorizontalAlignment = HorizontalAlignment.Center;
+        waveAnnouncementLabel.AddThemeFontSizeOverride("font_size", 28);
+        waveAnnouncementLabel.AddThemeColorOverride("font_color", new Color(1.0f, 0.4f, 0.2f));
+        waveAnnouncementLabel.Visible = false;
+        waveAnnouncementLabel.SetAnchorsPreset(Control.LayoutPreset.CenterTop);
+        waveAnnouncementLabel.Position = new Vector2(-150, 120);
+        waveAnnouncementLabel.Size = new Vector2(300, 50);
+        uiLayer.AddChild(waveAnnouncementLabel);
     }
 
     private void CreateAlarmNotificationLabel()
@@ -258,6 +288,7 @@ public partial class MissionView : Node2D
 
         UpdateCoverIndicatorsIfMoving();
         UpdateAlarmNotification((float)delta);
+        UpdateWaveAnnouncement((float)delta);
 
         // Update box selection drag
         if (inputController != null)
@@ -345,6 +376,26 @@ public partial class MissionView : Node2D
             alarmNotificationLabel.AddThemeColorOverride("font_color", new Color(color.R, color.G, color.B, alpha));
         }
     }
+    
+    private void UpdateWaveAnnouncement(float delta)
+    {
+        if (!waveAnnouncementLabel.Visible)
+        {
+            return;
+        }
+
+        waveAnnouncementTimer -= delta;
+
+        if (waveAnnouncementTimer <= 0)
+        {
+            waveAnnouncementLabel.Visible = false;
+        }
+        else if (waveAnnouncementTimer < 1.0f)
+        {
+            var alpha = waveAnnouncementTimer;
+            waveAnnouncementLabel.AddThemeColorOverride("font_color", new Color(1.0f, 0.4f, 0.2f, alpha));
+        }
+    }
 
     // === Event Handlers ===
 
@@ -369,6 +420,40 @@ public partial class MissionView : Node2D
     private void OnEnemyDetectedCrew(Actor enemy, Actor crew)
     {
         SimLog.Log($"[MissionView] Enemy#{enemy.Id} detected Crew#{crew.Id}");
+    }
+    
+    private void OnWaveTriggered(WaveDefinition wave)
+    {
+        if (wave.Announced)
+        {
+            ShowWaveAnnouncement(wave);
+        }
+        
+        // Auto-pause on wave
+        CombatState.TimeSystem.Pause();
+        SimLog.Log($"[MissionView] Auto-paused: Wave '{wave.Name ?? wave.Id}' triggered!");
+    }
+    
+    private void ShowWaveAnnouncement(WaveDefinition wave)
+    {
+        var waveName = wave.Name ?? $"Wave {CombatState.Waves.WavesSpawned}";
+        waveAnnouncementLabel.Text = $"REINFORCEMENTS: {waveName}";
+        waveAnnouncementLabel.Visible = true;
+        waveAnnouncementTimer = WaveAnnouncementDuration;
+        
+        // Reset alpha
+        waveAnnouncementLabel.AddThemeColorOverride("font_color", new Color(1.0f, 0.4f, 0.2f, 1.0f));
+    }
+    
+    private void OnPhaseChanged(TacticalPhase oldPhase, TacticalPhase newPhase)
+    {
+        SimLog.Log($"[MissionView] Phase changed: {oldPhase} -> {newPhase}");
+        
+        // Auto-pause on significant phase changes
+        if (newPhase == TacticalPhase.Pressure || newPhase == TacticalPhase.Resolution)
+        {
+            CombatState.TimeSystem.Pause();
+        }
     }
 
     private void OnRestartRequested()
@@ -536,6 +621,8 @@ public partial class MissionView : Node2D
             CombatState.Perception.EnemyDetectedCrew -= OnEnemyDetectedCrew;
             CombatState.AbilitySystem.AbilityDetonated -= OnAbilityDetonated;
             CombatState.OverwatchSystem.ReactionFired -= OnReactionFired;
+            CombatState.Waves.WaveTriggered -= OnWaveTriggered;
+            CombatState.Phases.PhaseChanged -= OnPhaseChanged;
         }
 
         // Unsubscribe from input controller events

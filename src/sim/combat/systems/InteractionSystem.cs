@@ -458,4 +458,28 @@ public class InteractionSystem
         var interactable = GetInteractableAt(position);
         return interactable != null && interactable.IsDoor && interactable.BlocksLOS();
     }
+    
+    /// <summary>
+    /// Get an interactable by its string identifier (from Properties["id"]).
+    /// Used by WaveSystem to find doors by spawn point door IDs.
+    /// </summary>
+    public Interactable GetInteractableByStringId(string stringId)
+    {
+        if (string.IsNullOrEmpty(stringId)) return null;
+        
+        return interactables.Values.FirstOrDefault(i => 
+            i.Properties.TryGetValue("id", out var id) && id?.ToString() == stringId);
+    }
+    
+    /// <summary>
+    /// Set a door's state directly (used by WaveSystem for spawn doors).
+    /// </summary>
+    public void SetDoorState(int doorId, InteractableState newState)
+    {
+        var door = GetInteractable(doorId);
+        if (door != null && door.IsDoor)
+        {
+            door.SetState(newState);
+        }
+    }
 }

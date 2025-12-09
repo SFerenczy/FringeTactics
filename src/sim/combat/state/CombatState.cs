@@ -60,6 +60,15 @@ public partial class CombatState
     // Suppression system (suppressive fire)
     public SuppressionSystem Suppression { get; private set; }
     
+    // Phase system (HH3: mission phases)
+    public PhaseSystem Phases { get; private set; }
+    
+    // Wave system (HH3: reinforcement waves)
+    public WaveSystem Waves { get; private set; }
+    
+    // Deployment system (HH3: pre-combat unit placement)
+    public DeploymentSystem Deployment { get; private set; }
+    
     // Objective evaluator (replaces hardcoded CheckMissionEnd logic)
     public ObjectiveEvaluator ObjectiveEvaluator { get; private set; }
     
@@ -98,6 +107,9 @@ public partial class CombatState
         Perception = new PerceptionSystem(this);
         OverwatchSystem = new OverwatchSystem(this);
         Suppression = new SuppressionSystem(this);
+        Phases = new PhaseSystem(this);
+        Waves = new WaveSystem(this);
+        Deployment = new DeploymentSystem(this);
         ObjectiveEvaluator = new ObjectiveEvaluator(); // Empty by default, MissionFactory sets up objectives
         
         attackSystem = new AttackSystem(GetActorById);
@@ -178,8 +190,27 @@ public partial class CombatState
         // Update visibility after movement
         Visibility.UpdateVisibility(Actors);
 
+        // Process waves (HH3)
+        Waves.Tick();
+
+        // Check phase-based triggers (HH3)
+        CheckPhaseTriggers();
+
         // Check win/lose conditions
         CheckMissionEnd();
+    }
+    
+    private void CheckPhaseTriggers()
+    {
+        // Auto-escalate from Contact to Pressure after time
+        if (Phases.CurrentPhase == TacticalPhase.Contact)
+        {
+            var escalationTicks = MissionConfig?.EscalationDelayTicks ?? 600; // 30 seconds default
+            if (Phases.TicksInPhase >= escalationTicks)
+            {
+                Phases.Escalate();
+            }
+        }
     }
 
     private void OnAttackResolved(Actor attacker, Actor target, AttackResult result)

@@ -71,6 +71,33 @@ public class MissionInput
     /// Campaign context for this mission.
     /// </summary>
     public MissionContext Context { get; set; } = new();
+    
+    // === HH3: Phase and Wave Configuration ===
+    
+    /// <summary>
+    /// Whether this mission has a negotiation phase before combat.
+    /// </summary>
+    public bool HasNegotiationPhase { get; set; } = false;
+    
+    /// <summary>
+    /// Ticks after Contact phase starts before escalating to Pressure.
+    /// </summary>
+    public int EscalationDelayTicks { get; set; } = 600;
+    
+    /// <summary>
+    /// Spawn points for wave spawning.
+    /// </summary>
+    public List<SpawnPoint> SpawnPoints { get; set; } = new();
+    
+    /// <summary>
+    /// Wave definitions for reinforcement spawning.
+    /// </summary>
+    public List<WaveDefinition> Waves { get; set; } = new();
+    
+    /// <summary>
+    /// Deployment zone tiles for pre-combat unit placement.
+    /// </summary>
+    public List<Vector2I> DeploymentZone { get; set; } = new();
 }
 
 /// <summary>
